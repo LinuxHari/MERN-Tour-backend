@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
-import { categories, languages, submissionStatus } from "./modelConfig";
+import { categories, languages, minAge, submissionStatus } from "./modelConfig";
 
-const itinerarySchema = new mongoose.Schema({
+const itineraryType = {
   place: {
     type: String,
     required: true,
@@ -10,7 +10,18 @@ const itinerarySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-});
+}
+
+const faqType =  {
+  question: {
+    type: String,
+    required: true,
+  },
+  answer: {
+    type: String,
+    required: true,
+  },
+}
 
 const tourSchema = new mongoose.Schema({
   name: {
@@ -18,7 +29,7 @@ const tourSchema = new mongoose.Schema({
     required: true,
   },
   description: {
-    tyoe: String,
+    type: String,
     required: true,
   },
   keywords: {
@@ -28,7 +39,7 @@ const tourSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: categories
+    enum: categories,
   },
   highlights: {
     type: [String],
@@ -59,8 +70,8 @@ const tourSchema = new mongoose.Schema({
     required: true,
   },
   itinerary: {
-    type: [itinerarySchema],
-    requried: true,
+    type: [itineraryType],
+    required: true,
   },
   languages: {
     type: String,
@@ -68,16 +79,18 @@ const tourSchema = new mongoose.Schema({
     enum: languages,
   },
   faq: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: [faqType],
+    ref: "FAQ",
     required: true,
   },
   minAge: {
     type: Number,
-    enum: [0, 13, 18],
+    enum: minAge,
     required: true,
   },
   publisher: {
     type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
     required: true,
   },
   recurringEndDate: {
@@ -89,7 +102,7 @@ const tourSchema = new mongoose.Schema({
     required: true,
     enum: submissionStatus,
   },
-  freeCancelllation: {
+  freeCancellation: {
     type: Boolean,
     default: false,
   },
@@ -99,4 +112,6 @@ const tourSchema = new mongoose.Schema({
   },
 });
 
-export default mongoose.model("Tours", tourSchema)
+const Tour = mongoose.model("Tours", tourSchema);
+
+export default Tour;

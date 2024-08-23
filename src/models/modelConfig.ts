@@ -19,3 +19,5 @@ export const categories = [
 ];
 
 export const submissionStatus = ["Submitted", "Approved", "Rejected"];
+
+export const minAge = [0, 13, 18]
