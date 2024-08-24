@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { InferSchemaType } from "mongoose";
 import { categories, languages, minAge, submissionStatus } from "./modelConfig";
 
 const itineraryType = {
@@ -113,5 +113,7 @@ const tourSchema = new mongoose.Schema({
 });
 
 const Tour = mongoose.model("Tours", tourSchema);
+
+export type TourModel = InferSchemaType<typeof tourSchema>
 
 export default Tour;
