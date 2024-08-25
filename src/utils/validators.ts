@@ -1,118 +1,97 @@
-import { body } from "express-validator";
-import { categories, languages } from "../models/modelConfig";
+import { z } from 'zod';
+import { categories, languages } from '../models/modelConfig';
 
-const validateString = (
-  values: [string],
-  minLength: number,
-  maxLength: number
-) =>
-  values.every(
-    (value: string) =>
-      typeof value === "string" &&
-      value.length >= minLength &&
-      value.length <= maxLength
-  );
+const sanitizeString = (value: string) => value.trim().replace(/\s+/g, ' ');
 
-const sanitizeString = (value: string) => value.trim().replace(/\s+/g, " ");
+const TourSchema = z.object({
+  name: z.string()
+    .min(8, { message: 'Tour name should be minimum 8 characters' })
+    .max(40, { message: 'Tour name should be maximum 40 characters' })
+    .transform(sanitizeString),
 
-export const addTourValidator = [
-  body("name")
-    .isString()
-    .withMessage("Tour name must be string")
-    .customSanitizer(sanitizeString)
-    .isLength({ min: 8, max: 40 })
-    .withMessage(
-      "Tour name should be minimum 8 characters and maximum 40 characters"
-    ),
-  body("description")
-    .isString()
-    .withMessage("Tour description must be string")
-    .customSanitizer(sanitizeString)
-    .isLength({ min: 100, max: 400 })
-    .withMessage(
-      "Tour description should be minimum 8 characters and maximum 40 characters"
-    ),
-  body("keywords")
-    .optional()
-    .isArray({ min: 0, max: 10 })
-    .withMessage(
-      "Keywords must be given in an array and size should not be more than 10"
-    )
-    .customSanitizer((keywords) => keywords.map(sanitizeString))
-    .custom((keywords) => validateString(keywords, 2, 30))
-    .withMessage(
-      "Keywords must contain strings and their length should be less than 30 characters"
-    ),
-  body("category")
-    .customSanitizer(sanitizeString)
-    .notEmpty()
-    .withMessage("Invalid category name has given")
-    .custom((category: string) => categories.includes(category))
-    .withMessage("Category is not valid"),
-  body("hightlights")
-    .isArray({ min: 2, max: 10 })
-    .withMessage("Highlights must be an array and should be from 2 to 10")
-    .customSanitizer((highlights) => highlights.map(sanitizeString))
-    .custom((highlights) => validateString(highlights, 20, 100))
-    .withMessage(
-      "Highlights must contain atleast 20 characters and less than 100 characters"
-    ),
-  body("city")
-    .isString()
-    .withMessage("City must be string")
-    .customSanitizer(sanitizeString)
-    .isLength({ min: 2, max: 168 })
-    .withMessage("City name must not be empty"),
-  body("state")
-    .isString()
-    .withMessage("State must be string")
-    .customSanitizer(sanitizeString)
-    .isLength({ min: 2, max: 50 })
-    .withMessage("State name must not be empty"),
-  body("zipCode")
-    .isInt({ min: 7, max: 8 })
-    .withMessage("zip code must be a integer and should be 7 to 8 digits"),
-  body("price")
-    .isNumeric()
-    .withMessage("Price must be a number")
-    .customSanitizer((price) => price.toFixed(2))
-    .isFloat({ min: 5, max: 10000 })
-    .withMessage(
-      "Price should not be lesser than 5 and bigger than 10000 dollars"
-    ),
-  body("itinerary*place")
-    .isString()
-    .withMessage("Place must be string")
-    .customSanitizer(sanitizeString)
-    .isLength({ min: 4, max: 50 })
-    .withMessage(
-      "place name must not be empty and should not be more than 300 or less than 4 characters"
-    ),
-  body("itinerary*description")
-    .isString()
-    .withMessage("Description must be string")
-    .customSanitizer(sanitizeString)
-    .isLength({ min: 20, max: 300 })
-    .withMessage(
-      "Description name must not be empty and should not be more than 300 or less than 4 characters"
-    ),
-  body("languages")
-    .isArray({ min: 1, max: 8 })
-    .withMessage("Languages must be an array and should be from 1 to 10")
-    .customSanitizer((languages) => languages.map(sanitizeString))
-    .custom((guideLangs) =>
-      guideLangs.every((language: string) => languages.includes(language))
-    )
-    .withMessage("Invalid language has given"),
-  body("minAge")
-    .isInt({ min: 0, max: 18 })
-    .withMessage("Age must be integer and less than or equal to 18"),
-  body("freeCancellation")
-    .isBoolean()
-    .withMessage("Free cancellation must be provided"),
-  body("availableDates")
-    .isArray({ min: 1, max: 180 })
-    .withMessage(
-      "Atleast one date should be given and length should not be more than 180 dates"
-    ),
-];
+  description: z.string()
+    .min(100, { message: 'Tour description should be minimum 100 characters' })
+    .max(400, { message: 'Tour description should be maximum 400 characters' })
+    .transform(sanitizeString),
+    
+  category: z.string()
+    .transform(sanitizeString)
+    .refine(category => categories.includes(category), {
+      message: 'Category is not valid',
+    }),
+
+  highlights: z.array(z.string()
+    .min(20, { message: 'Highlight should be minimum 20 characters' })
+    .max(100, { message: 'Highlight should be maximum 100 characters' })
+    .transform(sanitizeString))
+    .min(2, { message: 'Highlights must have at least 2 entries' })
+    .max(10, { message: 'Highlights should not exceed 10 entries' }),
+
+  city: z.string()
+    .min(2, { message: 'City name must be at least 2 characters' })
+    .max(168, { message: 'City name must not exceed 168 characters' })
+    .transform(sanitizeString),
+
+  state: z.string()
+    .min(2, { message: 'State name must be at least 2 characters' })
+    .max(50, { message: 'State name must not exceed 50 characters' })
+    .transform(sanitizeString),
+
+  zipCode: z.string()
+    .regex(/^\d{7,8}$/, { message: 'Zip code must be 7 or 8 digits' }),
+
+  price: z.number()
+    .min(5, { message: 'Price should not be less than 5' })
+    .max(10000, { message: 'Price should not be more than 10000' })
+    .transform(value => parseFloat(value.toFixed(2))),
+
+  itinerary: z.array(z.object({
+    place: z.string()
+      .min(4, { message: 'Place must be at least 4 characters' })
+      .max(50, { message: 'Place must not exceed 50 characters' })
+      .transform(sanitizeString),
+
+    description: z.string()
+      .min(10, { message: 'Description must be at least 10 characters' })
+      .max(300, { message: 'Description must not exceed 300 characters' })
+      .transform(sanitizeString),
+  }))
+    .min(1, { message: 'Itinerary must have at least 1 entry' })
+    .max(10, { message: 'Itinerary should not exceed 10 entries' }),
+
+  languages: z.array(z.string().transform(sanitizeString))
+    .min(1, { message: 'At least one language must be provided' })
+    .max(8, { message: 'Languages should not exceed 8 entries' })
+    .refine(langArray => langArray.every(lang => languages.includes(lang)), {
+      message: 'Invalid language provided',
+    }),
+
+  faq: z.array(z.object({
+    question: z.string()
+      .min(8, { message: 'FAQ question must be at least 8 characters' })
+      .max(100, { message: 'FAQ question must not exceed 100 characters' })
+      .transform(sanitizeString),
+
+    answer: z.string()
+      .min(2, { message: 'FAQ answer must be at least 2 characters' })
+      .max(300, { message: 'FAQ answer must not exceed 300 characters' })
+      .transform(sanitizeString),
+  }))
+    .min(1, { message: 'At least one FAQ must be provided' })
+    .max(10, { message: 'FAQ should not exceed 10 entries' }),
+
+  minAge: z.number()
+    .int()
+    .min(0, { message: 'Age must be at least 0' })
+    .max(18, { message: 'Age must not be more than 18' }),
+
+  freeCancellation: z.boolean(),
+
+  availableDates: z.array(z.string().refine(date => !isNaN(Date.parse(date)), {
+    message: 'Invalid date format',
+  }))
+    .min(1, { message: 'At least one date must be provided' })
+    .max(180, { message: 'No more than 180 dates allowed' }),
+});
+
+export default TourSchema;
