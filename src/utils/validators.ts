@@ -3,7 +3,7 @@ import { categories, languages } from '../models/modelConfig';
 
 const sanitizeString = (value: string) => value.trim().replace(/\s+/g, ' ');
 
-const TourSchema = z.object({
+export const TourSchema = z.object({
   name: z.string()
     .min(8, { message: 'Tour name should be minimum 8 characters' })
     .max(40, { message: 'Tour name should be maximum 40 characters' })
@@ -37,8 +37,8 @@ const TourSchema = z.object({
     .max(50, { message: 'State name must not exceed 50 characters' })
     .transform(sanitizeString),
 
-  zipCode: z.string()
-    .regex(/^\d{7,8}$/, { message: 'Zip code must be 7 or 8 digits' }),
+  zipCode: z.number()
+  .refine(code => /^\d{7,8}$/.test(code.toString()), { message: 'Zip code must be 7 or 8 digits' }),
 
   price: z.number()
     .min(5, { message: 'Price should not be less than 5' })
@@ -56,7 +56,7 @@ const TourSchema = z.object({
       .max(300, { message: 'Description must not exceed 300 characters' })
       .transform(sanitizeString),
   }))
-    .min(1, { message: 'Itinerary must have at least 1 entry' })
+    .min(2, { message: 'Itinerary must have at least 1 entry' })
     .max(10, { message: 'Itinerary should not exceed 10 entries' }),
 
   languages: z.array(z.string().transform(sanitizeString))
@@ -85,7 +85,7 @@ const TourSchema = z.object({
     .min(0, { message: 'Age must be at least 0' })
     .max(18, { message: 'Age must not be more than 18' }),
 
-  freeCancellation: z.boolean(),
+  freeCancellation: z.boolean().optional().default(false),
 
   availableDates: z.array(z.string().refine(date => !isNaN(Date.parse(date)), {
     message: 'Invalid date format',
@@ -94,4 +94,4 @@ const TourSchema = z.object({
     .max(180, { message: 'No more than 180 dates allowed' }),
 });
 
-export default TourSchema;
+export type TourSchema = z.infer<typeof TourSchema>

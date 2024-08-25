@@ -32,10 +32,6 @@ const tourSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  keywords: {
-    type: [String],
-    default: [],
-  },
   category: {
     type: String,
     required: true,
@@ -74,13 +70,20 @@ const tourSchema = new mongoose.Schema({
     required: true,
   },
   languages: {
-    type: String,
+    type: [String],
     required: true,
     enum: languages,
   },
   faq: {
-    type: [faqType],
-    ref: "FAQ",
+    type: [ {
+      question: {
+        type: String,
+        required: true,
+      },
+      answer: {
+        type: String,
+        required: true,
+      }}],
     required: true,
   },
   minAge: {
