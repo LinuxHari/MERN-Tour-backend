@@ -8,16 +8,20 @@ const responseWithStatus = (
   data: ResponseData
 ) => res.status(statusCode).json(data);
 
-const error = (res: Response) =>
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+const error = (res: Response, stack: string) =>
   responseWithStatus(res, 500, {
     error: true,
     message: "Oops! Something worng!",
+    stack: isDevelopment ? stack : undefined
   });
 
-const badrequest = (res: Response, message: string) =>
+const badrequest = (res: Response, stack: string) =>
   responseWithStatus(res, 400, {
     error: true,
-    message,
+    message: "Bad request",
+    stack: isDevelopment ? stack : undefined
   });
 
 const ok = (res: Response, data: ResponseData) =>

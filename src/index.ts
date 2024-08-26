@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import allRoutes from "./routes/routes";
 import mongoose from "mongoose";
+import { errorHandler } from "./handlers/errorHandler";
 
 const app = express();
 
@@ -15,6 +16,8 @@ app.use("/api/v1", allRoutes);
 app.get("/test", (req: Request, res: Response) => {
   res.json({ message: "works" });
 });
+
+app.use(errorHandler);
 
 app.use("*", (req: Request, res: Response) => {
   res.status(404).send("Endpoint does not exist!");

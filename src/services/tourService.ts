@@ -1,3 +1,4 @@
+import { errorMessage } from "../handlers/errorHandler";
 import Tour from "../models/tourModel";
 import { generateToudId } from "../utils/generateId";
 import { TourSchema } from "../utils/validators";
@@ -22,7 +23,7 @@ export const updateTour = async (tourId: string, tourData: TourSchema) => {
   const existingTour = await Tour.findOne({ tourId });
 
   if (!existingTour) {
-    throw new Error("Not found");
+    throw new Error(errorMessage.notFound);
   }
 
   const updatedTour = {
