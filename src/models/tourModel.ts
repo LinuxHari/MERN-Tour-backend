@@ -89,7 +89,7 @@ const tourSchema = new mongoose.Schema({
   minAge: {
     type: Number,
     enum: minAge,
-    required: true,
+    required: true
   },
   publisher: {
     type: mongoose.Schema.Types.ObjectId,
