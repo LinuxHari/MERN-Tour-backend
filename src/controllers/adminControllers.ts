@@ -6,7 +6,7 @@ export const addTour = async (req: Request, res: Response, next: NextFunction) =
   try {
     await createTour(req.body)
     responseHandler.created(res, { message: "Tour added successfully" });
-  } catch (e) {
-    next(e);
+  } catch (err) {
+    next(err);
   }
 };

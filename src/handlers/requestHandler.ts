@@ -6,11 +6,11 @@ const validate = (schema: AnyZodObject) => async(req: Request, res: Response, ne
   try {
     req.body = await schema.parseAsync(req.body);
     next();
-  } catch (error) {
-    if (error instanceof ZodError) {
-      responseHandler.badrequest(res, error.name );
+  } catch (err) {
+    if (err instanceof ZodError) {
+      responseHandler.badrequest(res, err.name );
     } else {
-      next(error)
+      next(err)
     }
   }
 };

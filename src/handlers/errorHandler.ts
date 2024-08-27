@@ -9,7 +9,7 @@ export const errorMessage = {
     badRequest: "Bad request"
 }
 
-export const errorHandler = (err: any, req: Request, res: Response) => {
+export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
 
   console.log("Enters error handler")
 
