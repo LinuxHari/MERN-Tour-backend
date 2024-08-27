@@ -11,19 +11,17 @@ dotenv.config();
 
 app.use(cors({ origin: "*", methods: "GET,PUT,POST,DELETE" }));
 
+app.use(express.json())
+
 app.use("/api/v1", allRoutes);
-
-app.get("/test", (req: Request, res: Response) => {
-  res.json({ message: "works" });
-});
-
-app.use(errorHandler);
 
 app.use("*", (req: Request, res: Response) => {
   res.status(404).send("Endpoint does not exist!");
 });
 
-const PORT = process.env.PORT || 4000;
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 8000;
 
 mongoose
   .connect(process.env.MONGO_URI as string)

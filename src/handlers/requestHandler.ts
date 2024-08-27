@@ -1,18 +1,16 @@
 import { NextFunction, Request, Response } from "express";
 import {AnyZodObject, ZodError} from "zod"
+import responseHandler from "./responseHandler";
 
-const validate = (schema: AnyZodObject) => (req: Request, res: Response, next: NextFunction) => {
+const validate = (schema: AnyZodObject) => async(req: Request, res: Response, next: NextFunction) => {
   try {
-    schema.parse(req.body);
+    req.body = await schema.parseAsync(req.body);
     next();
   } catch (error) {
     if (error instanceof ZodError) {
-    const errorMessages = error.errors.map((issue: any) => ({
-          message: `${issue.path.join('.')} is ${issue.message}`,
-      }))
-      res.status(400).json({ error: true, message: errorMessages });
+      responseHandler.badrequest(res, error.name );
     } else {
-      res.status(500).json({ error: true, message: 'Internal server error' });
+      next(error)
     }
   }
 };

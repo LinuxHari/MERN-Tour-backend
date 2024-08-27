@@ -10,19 +10,26 @@ const responseWithStatus = (
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-const error = (res: Response, stack: string) =>
+const error = (res: Response, stack: string) => {
+
+  console.log('Error stack:', stack)
+
   responseWithStatus(res, 500, {
     error: true,
     message: "Oops! Something worng!",
     stack: isDevelopment ? stack : undefined
   });
+}
 
-const badrequest = (res: Response, stack: string) =>
+const badrequest = (res: Response, stack: string) => {
+
+  console.log("Bad request stack:", stack)
+
   responseWithStatus(res, 400, {
     error: true,
     message: "Bad request",
     stack: isDevelopment ? stack : undefined
-  });
+  })};
 
 const ok = (res: Response, data: ResponseData) =>
   responseWithStatus(res, 200, data);

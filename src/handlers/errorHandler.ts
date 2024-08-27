@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
-import responseHandler from './responseHandler.js'; // Adjust the path if necessary
+
 import { Request, Response, NextFunction } from 'express';
+import responseHandler from './responseHandler';
 
 export const errorMessage = {
     notFound: "Not found",
@@ -8,7 +9,9 @@ export const errorMessage = {
     badRequest: "Bad request"
 }
 
-export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+export const errorHandler = (err: any, req: Request, res: Response) => {
+
+  console.log("Enters error handler")
 
   if(errorMessage.badRequest){
     return responseHandler.badrequest(res, err.stack)
@@ -23,6 +26,7 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
   }
 
   else if (err instanceof mongoose.Error.ValidationError) {
+    
     return responseHandler.badrequest(res, err.stack || "Mongoose validation error");
   }
 
@@ -74,6 +78,8 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
     return responseHandler.badrequest(res, err.stack);
   }
 
-  return responseHandler.error(res, err.stack);
+  else {
+    return responseHandler.error(res, err.stack);
+  }
 };
 
