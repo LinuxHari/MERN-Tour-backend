@@ -1,5 +1,5 @@
 import mongoose, { InferSchemaType } from "mongoose";
-import { categories, languages, minAge, submissionStatus } from "./modelConfig";
+import { categories, languages, minAge, submissionStatus } from "../config/tourConfig";
 
 const itineraryType = {
   place: {

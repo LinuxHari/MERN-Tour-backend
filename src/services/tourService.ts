@@ -11,7 +11,7 @@ export const createTour = async (tourData: TourSchema) => {
     tourId: generateToudId(),
     images: [""],
     duration: tourData.itinerary.length,
-    submissionStatus: "Approved",
+    submissionStatus: "approved",
     recurringEndDate: new Date(),
     publisher: new ObjectId(),
   };

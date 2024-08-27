@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { categories, languages } from '../models/modelConfig';
+import { categories, languages } from '../config/tourConfig';
 
 const sanitizeString = (value: string) => value.trim().replace(/\s+/g, ' ');
 
