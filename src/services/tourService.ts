@@ -9,9 +9,8 @@ export const createTour = async (tourData: TourSchema) => {
     ...tourData,
     markAsDeleted: false,
     tourId: generateToudId(),
-    images: [""],
     duration: tourData.itinerary.length,
-    submissionStatus: "approved",
+    submissionStatus: "Approved",
     recurringEndDate: new Date(),
     publisher: new ObjectId(),
   };

@@ -2,11 +2,11 @@ import mongoose, { InferSchemaType } from "mongoose";
 import { categories, languages, minAge, submissionStatus } from "../config/tourConfig";
 
 const itineraryType = {
-  place: {
+  activity: {
     type: String,
     required: true,
   },
-  description: {
+  details: {
     type: String,
     required: true,
   },
@@ -54,7 +54,7 @@ const tourSchema = new mongoose.Schema({
     required: true,
   },
   zipCode: {
-    type: Number,
+    type: String,
     required: true,
   },
   price: {
@@ -75,15 +75,7 @@ const tourSchema = new mongoose.Schema({
     enum: languages,
   },
   faq: {
-    type: [ {
-      question: {
-        type: String,
-        required: true,
-      },
-      answer: {
-        type: String,
-        required: true,
-      }}],
+    type: [faqType],
     required: true,
   },
   minAge: {
