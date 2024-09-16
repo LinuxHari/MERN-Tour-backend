@@ -53,6 +53,10 @@ const tourSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  country: {
+    type: String,
+    required: true
+  },
   zipCode: {
     type: String,
     required: true,
