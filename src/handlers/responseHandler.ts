@@ -1,4 +1,5 @@
 import { Response } from "express";
+import { ZodIssue } from "zod";
 
 type ResponseData = object | object[];
 
@@ -21,7 +22,7 @@ const error = (res: Response, stack: string) => {
   });
 }
 
-const badrequest = (res: Response, stack: string) => {
+const badrequest = (res: Response, stack: string | ZodIssue[]) => {
 
   console.log("Bad request stack:", stack)
 

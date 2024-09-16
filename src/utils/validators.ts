@@ -1,7 +1,14 @@
-import { z } from 'zod';
-import { categories, languages } from '../config/tourConfig';
+import { z } from "zod";
+import { categories, languages } from "../config/tourConfig";
 
-const sanitizeString = (value: string) => value.trim().replace(/\s+/g, ' ');
+const sanitizeString = (value: string) => value.trim().replace(/\s+/g, " ");
+
+export const SearchSuggestionSchema = z.object({
+  searchText: z
+    .string()
+    .transform(sanitizeString)
+    .pipe(z.string().min(1).max(50)),
+});
 
 export const TourSchema = z.object({
   name: z
@@ -20,8 +27,12 @@ export const TourSchema = z.object({
     .pipe(
       z
         .string()
-        .min(100, { message: "Tour description should be minimum 100 characters" })
-        .max(400, { message: "Tour description should be maximum 400 characters" })
+        .min(100, {
+          message: "Tour description should be minimum 100 characters",
+        })
+        .max(400, {
+          message: "Tour description should be maximum 400 characters",
+        })
     ),
 
   category: z
@@ -31,23 +42,30 @@ export const TourSchema = z.object({
       message: "Category is not valid",
     }),
 
-    zipCode: z
+  zipCode: z
     .string()
-    .refine((code) => /^(?:[A-Z0-9]{2,4}\s?[A-Z0-9]{2,4}|[A-Z0-9]{5,7}|[0-9]{4,5}[A-Z]{2})$/i.test(code), {
-      message: "Invalid zip code",
-    }),
+    .refine(
+      (code) =>
+        /^(?:[A-Z0-9]{2,4}\s?[A-Z0-9]{2,4}|[A-Z0-9]{5,7}|[0-9]{4,5}[A-Z]{2})$/i.test(
+          code
+        ),
+      {
+        message: "Invalid zip code",
+      }
+    ),
 
   highlights: z
     .array(
-       z
-          .string()
-          .transform(sanitizeString)
-          .pipe(
-            z
-              .string()
-              .min(20, { message: "Highlight should be minimum 20 characters" })
-              .max(100, { message: "Highlight should be maximum 100 characters" })
-          ))
+      z
+        .string()
+        .transform(sanitizeString)
+        .pipe(
+          z
+            .string()
+            .min(20, { message: "Highlight should be minimum 20 characters" })
+            .max(100, { message: "Highlight should be maximum 100 characters" })
+        )
+    )
     .min(2, { message: "Highlights must have at least 2 entries" })
     .max(10, { message: "Highlights should not exceed 10 entries" }),
 
@@ -112,8 +130,12 @@ export const TourSchema = z.object({
           .pipe(
             z
               .string()
-              .min(10, { message: "Description must be at least 10 characters" })
-              .max(300, { message: "Description must not exceed 300 characters" })
+              .min(10, {
+                message: "Description must be at least 10 characters",
+              })
+              .max(300, {
+                message: "Description must not exceed 300 characters",
+              })
           ),
         lat: z.number().min(-90).max(90),
         lon: z.number().min(-180).max(180),
@@ -123,12 +145,15 @@ export const TourSchema = z.object({
     .max(10, { message: "Itinerary should not exceed 10 entries" }),
 
   languages: z
-  .array(z.string().transform(sanitizeString))
-  .min(1, { message: "At least one language must be checked" })
-  .max(8, { message: "Languages should not exceed 8 entries" })
-  .refine((langArray) => langArray.every((lang) => languages.includes(lang)), {
-    message: "Invalid language provided",
-  }),
+    .array(z.string().transform(sanitizeString))
+    .min(1, { message: "At least one language must be checked" })
+    .max(8, { message: "Languages should not exceed 8 entries" })
+    .refine(
+      (langArray) => langArray.every((lang) => languages.includes(lang)),
+      {
+        message: "Invalid language provided",
+      }
+    ),
 
   faq: z
     .array(
@@ -140,7 +165,9 @@ export const TourSchema = z.object({
             z
               .string()
               .min(8, { message: "FAQ question must be at least 8 characters" })
-              .max(100, { message: "FAQ question must not exceed 100 characters" })
+              .max(100, {
+                message: "FAQ question must not exceed 100 characters",
+              })
           ),
 
         answer: z
@@ -150,7 +177,9 @@ export const TourSchema = z.object({
             z
               .string()
               .min(2, { message: "FAQ answer must be at least 2 characters" })
-              .max(300, { message: "FAQ answer must not exceed 300 characters" })
+              .max(300, {
+                message: "FAQ answer must not exceed 300 characters",
+              })
           ),
       })
     )
@@ -177,13 +206,15 @@ export const TourSchema = z.object({
 
   images: z
     .array(
-      z.string().transform(sanitizeString)
-      .pipe(
-        z
-          .string()
-          .min(30, { message: "Invalid image url" })
-          .max(400, { message: "Invalid image url too long" })
-      ),
+      z
+        .string()
+        .transform(sanitizeString)
+        .pipe(
+          z
+            .string()
+            .min(30, { message: "Invalid image url" })
+            .max(400, { message: "Invalid image url too long" })
+        )
     )
     .min(2, { message: "Atleast 2 images needed" })
     .max(10, { message: "Can't upload more than 10 images" }),
