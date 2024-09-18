@@ -5,6 +5,6 @@ import requestHandler from "../handlers/requestHandler"
 
 const router = express.Router()
 
-router.post('/add-tour', requestHandler(TourSchema), addTour)
+router.post('/tour', requestHandler(TourSchema), addTour)
 
 export default router
