@@ -1,12 +1,9 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import responseHandler from "../handlers/responseHandler";
 import { createTour } from "../services/tourService";
+import asyncWrapper from "../asyncWrapper";
 
-export const addTour = async (req: Request, res: Response, next: NextFunction) => {
-  try {    
-    await createTour(req.body)
-    responseHandler.created(res, { message: "Tour added successfully" });
-  } catch (err) {
-    next(err);
-  }
-};
+export const addTour = asyncWrapper(async (req: Request, res: Response) => {
+  await createTour(req.body)
+  responseHandler.created(res, { message: "Tour added successfully" });
+})

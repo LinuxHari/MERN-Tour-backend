@@ -1,111 +1,28 @@
 import { errorMessage } from "../handlers/errorHandler";
 import Tour from "../models/tourModel";
 import { generateToudId } from "../utils/generateId";
-import { TourSchema } from "../utils/validators";
+import { TourSchema } from "../validators/adminValidators";
 import { ObjectId } from "mongodb";
+import { TourListingSchemaType } from "../validators/tourValidators";
+import tourAggregations from "../aggregations/tourAggegations";
 
 export const searchSuggestions = async (searchText: string) => {
     const regex = new RegExp(searchText, "i")
-    const result = await Tour.aggregate(
-      [
-        {
-          $match: {
-            $or: [
-              { city: regex },
-              { state: regex },
-              { country: regex }
-            ]
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            states: {
-              $addToSet: {
-                $cond: [{ $regexMatch: { input: "$state", regex } }, "$state", null]
-              }
-            },
-            cities: {
-              $addToSet: {
-                $cond: [{ $regexMatch: { input: "$city", regex } }, "$city", null]
-              }
-            },
-            countries: {
-              $addToSet: {
-                $cond: [{ $regexMatch: { input: "$country", regex } }, "$country", null]
-              }
-            }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            states: {
-              $filter: {
-                input: "$states",
-                as: "state",
-                cond: { $ne: ["$$state", null] }
-              }
-            },
-            cities: {
-              $filter: {
-                input: "$cities",
-                as: "city",
-                cond: { $ne: ["$$city", null] }
-              }
-            },
-            countries: {
-              $filter: {
-                input: "$countries",
-                as: "country",
-                cond: { $ne: ["$$country", null] }
-              }
-            }
-          }
-        },
-        {
-          $project: {
-            states: {
-              $cond: {
-                if: { $gt: [{ $size: "$states" }, 0] },
-                then: { $slice: ["$states", 5] },
-                else: "$$REMOVE"
-              }
-            },
-            cities: {
-              $cond: {
-                if: { $gt: [{ $size: "$cities" }, 0] },
-                then: {
-                  $slice: [
-                    "$cities",
-                    { $subtract: [5, { $size: "$states" }] }
-                  ]
-                },
-                else: "$$REMOVE"
-              }
-            },
-            countries: {
-              $cond: {
-                if: { $gt: [{ $size: "$countries" }, 0] },
-                then: {
-                  $slice: [
-                    "$countries",
-                    { $subtract: [5, { $add: [{ $size: "$states" }, { $size: "$cities" }] }] }
-                  ]
-                },
-                else: "$$REMOVE"
-              }
-            }
-          }
-        }
-      ]
-      
-    )
+    const result = await Tour.aggregate(tourAggregations.suggestions(regex))
 
     const [locations] = result;
     const fallbackValue = { states: [], cities: [], countries: [] }
 
     return locations || fallbackValue
+}
+
+export const getTours = async (params: TourListingSchemaType) => {
+  const { destination, destinationType, adults, children, infants, page, startDate, endDate } = params
+  const minAge = Boolean(infants)? 0: Boolean(children)? 3: 18
+  const duration = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+ 
+  const tours = await Tour.aggregate(tourAggregations.getTours(destinationType, destination, minAge, duration)).skip(page * 10).limit(10);
+  return tours;
 }
 
 export const createTour = async (tourData: TourSchema) => {

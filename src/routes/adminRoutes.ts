@@ -1,6 +1,6 @@
 import express from "express"
 import { addTour } from "../controllers/adminControllers"
-import { TourSchema } from "../utils/validators"
+import { TourSchema } from "../validators/adminValidators"
 import requestHandler from "../handlers/requestHandler"
 
 const router = express.Router()

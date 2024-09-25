@@ -10,14 +10,18 @@ export const languages = [
 ];
 
 export const categories = [
-  "Nature Tours",
-  "Adventure Tours",
-  "Cultural Tours",
-  "Food Tours",
-  "City Tours",
-  "Cruises Tours",
+  "Nature",
+  "Adventure",
+  "Cultural",
+  "Food",
+  "City",
+  "Cruises",
 ];
+
+export const tourTypes = [...categories, "All tours"]
 
 export const submissionStatus = ["Submitted", "Approved", "Rejected"];
 
-export const minAge = [0, 13, 18]
+export const minAge = [0, 3, 18]
+
+export const destinationTypes = ["City", "State", "Country"]

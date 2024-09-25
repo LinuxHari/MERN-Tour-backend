@@ -1,14 +1,6 @@
 import { z } from "zod";
 import { categories, languages } from "../config/tourConfig";
-
-const sanitizeString = (value: string) => value.trim().replace(/\s+/g, " ");
-
-export const SearchSuggestionSchema = z.object({
-  searchText: z
-    .string()
-    .transform(sanitizeString)
-    .pipe(z.string().min(1).max(50)),
-});
+import sanitizeString from "../utils/sanitizeString";
 
 export const TourSchema = z.object({
   name: z
