@@ -7,23 +7,43 @@ import { TourListingSchemaType } from "../validators/tourValidators";
 import tourAggregations from "../aggregations/tourAggegations";
 
 export const searchSuggestions = async (searchText: string) => {
-    const regex = new RegExp(searchText, "i")
-    const result = await Tour.aggregate(tourAggregations.suggestions(regex))
+  const regex = new RegExp(searchText, "i");
+  const result = await Tour.aggregate(tourAggregations.suggestions(regex));
 
-    const [locations] = result;
-    const fallbackValue = { states: [], cities: [], countries: [] }
+  const [locations] = result;
+  const fallbackValue = { states: [], cities: [], countries: [] };
 
-    return locations || fallbackValue
-}
+  return locations || fallbackValue;
+};
 
 export const getTours = async (params: TourListingSchemaType) => {
-  const { destination, destinationType, adults, children, infants, page, startDate, endDate } = params
-  const minAge = Boolean(infants)? 0: Boolean(children)? 3: 18
-  const duration = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
- 
-  const tours = await Tour.aggregate(tourAggregations.getTours(destinationType, destination, minAge, duration)).skip(page * 10).limit(10);
-  return tours;
-}
+  const {
+    destination,
+    destinationType,
+    adults,
+    children,
+    infants,
+    page,
+    startDate,
+    endDate,
+  } = params;
+  
+  const minAge = Boolean(infants) ? 0 : Boolean(children) ? 3 : 18;
+  const duration = Math.ceil(
+    (new Date(endDate).getTime() - new Date(startDate).getTime()) /
+      (1000 * 60 * 60 * 24)
+  );
+  const result = await Tour.aggregate(
+    tourAggregations.getTours(
+      destinationType.toLowerCase(),
+      destination,
+      minAge,
+      duration,
+      page
+    )
+  );
+  return result[0]?.tours ? result[0] : {};
+};
 
 export const createTour = async (tourData: TourSchema) => {
   const newTour = {

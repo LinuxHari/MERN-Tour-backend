@@ -59,14 +59,14 @@ const tourAggregations = {
         },
         {
           $project: {
-            states: {
+            State: {
               $cond: {
                 if: { $gt: [{ $size: "$states" }, 0] },
                 then: { $slice: ["$states", 5] },
                 else: "$$REMOVE"
               }
             },
-            cities: {
+            City: {
               $cond: {
                 if: { $gt: [{ $size: "$cities" }, 0] },
                 then: {
@@ -78,7 +78,7 @@ const tourAggregations = {
                 else: "$$REMOVE"
               }
             },
-            countries: {
+            Country: {
               $cond: {
                 if: { $gt: [{ $size: "$countries" }, 0] },
                 then: {
@@ -93,7 +93,7 @@ const tourAggregations = {
           }
         }
       ],
-      getTours: (destinationType: string, destination: string, minAge: number, duration: number):PipelineStage[] => [
+      getTours: (destinationType: string, destination: string, minAge: number, duration: number, page: number):PipelineStage[] => [
         {
           $match: {
             [destinationType]: destination,
@@ -101,43 +101,61 @@ const tourAggregations = {
           }
         },
         {
-          $project: {
-            _id: 0,
-            destination: {
-              $switch: {
-                branches: [
-                  { case: { $eq: [destinationType, "city"] }, then: { $concat: ["$city", ", ", "$state", ", ", "$country"] } },
-                  { case: { $eq: [destinationType, "state"] }, then: { $concat: ["$state", ", ", "$country"] } }
-                ],
-                default: "$country"
+          $facet: {
+            priceRange: [
+              {
+                $group: {
+                  _id: null,
+                  minPrice: { $min: "$price" },
+                  maxPrice: { $max: "$price" }
+                }
+              },
+              {
+                $project: {
+                  _id: 0,
+                  minPrice: 1,
+                  maxPrice: 1
+                }
               }
-            },
-            title: "$name",
-            description: 1,
-            freeCancellation: 1,
-            duration: { $literal: duration },
-            imageurl: { $arrayElemAt: ["$images", 0] },
-            minPrice: "$price",
-            maxPrice: "$price",
-            sort: { price: 1 }
+            ],
+            paginatedResults: [
+              {
+                $project: {
+                  _id: 0,
+                  destination: {
+                    $switch: {
+                      branches: [
+                        { case: { $eq: [destinationType, "city"] }, then: { $concat: ["$city", ", ", "$state", ", ", "$country"] } },
+                        { case: { $eq: [destinationType, "state"] }, then: { $concat: ["$state", ", ", "$country"] } }
+                      ],
+                      default: "$country"
+                    }
+                  },
+                  name: 1,
+                  description: 1,
+                  freeCancellation: 1,
+                  duration: { $literal: duration },
+                  images: { $slice: ["$images", 1] },
+                  price: 1
+                }
+              },
+              { $skip: (page - 1) * 10 },
+              { $limit: 10 }
+            ],
+            totalCount: [
+              { $count: "total" }
+            ]
           }
         },
         {
-          $group: {
-            _id: "$destination",
-            title: { $first: "$title" },
-            description: { $first: "$description" },
-            freeCancellation: { $first: "$freeCancellation" },
-            duration: { $first: "$duration" },
-            imageurl: { $first: "$imageurl" },
-            minPrice: { $min: "$minPrice" },
-            maxPrice: { $max: "$maxPrice" }
+          $project: {
+            tours: "$paginatedResults",
+            minPrice: { $arrayElemAt: ["$priceRange.minPrice", 0] },
+            maxPrice: { $arrayElemAt: ["$priceRange.maxPrice", 0] },
+            totalCount: { $arrayElemAt: ["$totalCount.total", 0] }
           }
-        },
-        {
-          $sort: { minPrice: 1 }
         }
-      ]
+      ]      
 }
 
 export default tourAggregations
