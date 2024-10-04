@@ -25,3 +25,5 @@ export const submissionStatus = ["Submitted", "Approved", "Rejected"];
 export const minAge = [0, 3, 18]
 
 export const destinationTypes = ["City", "State", "Country"]
+
+export const specials = ["Free Cancellation"]

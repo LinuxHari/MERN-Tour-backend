@@ -26,6 +26,14 @@ export const getTours = async (params: TourListingSchemaType) => {
     page,
     startDate,
     endDate,
+    filters,
+    sortType,
+    specials,
+    languages,
+    rating,
+    tourTypes,
+    minPrice,
+    maxPrice
   } = params;
   
   const minAge = Boolean(infants) ? 0 : Boolean(children) ? 3 : 18;
@@ -39,10 +47,22 @@ export const getTours = async (params: TourListingSchemaType) => {
       destination,
       minAge,
       duration,
-      page
+      page,
+      filters,
+      sortType,
+      rating,
+      minPrice,
+      maxPrice,
+      tourTypes,
+      specials,
+      languages,
     )
   );
-  return result[0]?.tours ? result[0] : {};
+
+  const returnResult = result[0]?.tours? {...result[0], tours: result[0].tours} : {}
+  if(result[0]?.filters?.[0])
+    returnResult.filters = result[0].filters[0]
+  return returnResult;
 };
 
 export const createTour = async (tourData: TourSchema) => {
