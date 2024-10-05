@@ -1,5 +1,10 @@
 import mongoose, { InferSchemaType } from "mongoose";
-import { categories, languages, minAge, submissionStatus } from "../config/tourConfig";
+import {
+  categories,
+  languages,
+  minAge,
+  submissionStatus,
+} from "../config/tourConfig";
 
 const itineraryType = {
   activity: {
@@ -10,9 +15,9 @@ const itineraryType = {
     type: String,
     required: true,
   },
-}
+};
 
-const faqType =  {
+const faqType = {
   question: {
     type: String,
     required: true,
@@ -21,9 +26,13 @@ const faqType =  {
     type: String,
     required: true,
   },
-}
+};
 
 const tourSchema = new mongoose.Schema({
+  tourId: {
+    type: String,
+    required: true,
+  },
   name: {
     type: String,
     required: true,
@@ -55,7 +64,7 @@ const tourSchema = new mongoose.Schema({
   },
   country: {
     type: String,
-    required: true
+    required: true,
   },
   zipCode: {
     type: String,
@@ -85,7 +94,7 @@ const tourSchema = new mongoose.Schema({
   minAge: {
     type: Number,
     enum: minAge,
-    required: true
+    required: true,
   },
   publisher: {
     type: mongoose.Schema.Types.ObjectId,
@@ -113,6 +122,6 @@ const tourSchema = new mongoose.Schema({
 
 const Tour = mongoose.model("Tours", tourSchema);
 
-export type TourModel = InferSchemaType<typeof tourSchema>
+export type TourModel = InferSchemaType<typeof tourSchema>;
 
 export default Tour;

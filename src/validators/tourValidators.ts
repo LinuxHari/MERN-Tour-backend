@@ -29,11 +29,7 @@ export const TourListingSchema = z.object({
     .string()
     .min(2, { message: "Invalid destination name" })
     .max(85, { message: "Destination name is too long" }),
-  destinationType: z
-    .string()
-    .refine((value) => destinationTypes.includes(value), {
-      message: "Invalid destination type",
-    }),
+  destinationType: z.enum(destinationTypes as [string, ...string[]]),
   startDate: z.string().refine(isValidDate),
   endDate: z.string().refine(isValidDate),
   adults: z
@@ -79,7 +75,7 @@ export const TourListingSchema = z.object({
     .min(6)
     .max(50)
     .transform(strToArr)
-    .refine((types) => types.every((type) => tourTypes.includes(type)))
+    .pipe(z.array(z.enum(tourTypes as [string, ...string[]])))
     .optional(),
   rating: z
     .string()
@@ -91,20 +87,14 @@ export const TourListingSchema = z.object({
     .min(3)
     .max(100)
     .transform(strToArr)
-    .refine((selectedLangs) =>
-      selectedLangs.every((language) => languages.includes(language))
-    )
+    .pipe(z.array(z.enum(languages as [string, ...string[]])))
     .optional(),
   specials: z
     .string()
     .min(5)
     .max(50)
     .transform(strToArr)
-    .refine((selectedSpecials) =>
-      selectedSpecials.every((selectedSpecial) =>
-        specials.includes(selectedSpecial)
-      )
-    )
+    .pipe(z.array(z.enum(specials as [string, ...string[]])))
     .optional(),
   minPrice: z
     .string()

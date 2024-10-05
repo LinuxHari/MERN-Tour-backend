@@ -191,6 +191,7 @@ const tourAggregations = {
             duration: 1,
             images: { $slice: ["$images", 1] },
             price: 1,
+            tourId: 1
           },
         },
         { $skip: (page - 1) * 10 },
@@ -225,7 +226,7 @@ const tourAggregations = {
         {
           $project: {
             _id: 0,
-            tourTypes: { $setUnion: "$tourTypes" }, // Ensure we return unique types
+            tourTypes: { $setUnion: "$tourTypes" }, //Filter duplicate values
             specials: { $setDifference: ["$specials", [null]] },
             languages: {
               $reduce: {

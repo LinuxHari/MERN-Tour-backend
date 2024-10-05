@@ -27,12 +27,9 @@ export const TourSchema = z.object({
         })
     ),
 
-  category: z
-    .string()
-    .transform(sanitizeString)
-    .refine((category) => categories.includes(category), {
-      message: "Category is not valid",
-    }),
+  category: z.enum(categories as [string, ...string[]], {
+    message: "Category is not valid",
+  }),
 
   zipCode: z
     .string()
@@ -137,15 +134,9 @@ export const TourSchema = z.object({
     .max(10, { message: "Itinerary should not exceed 10 entries" }),
 
   languages: z
-    .array(z.string().transform(sanitizeString))
+    .array(z.enum(languages as [string, ...string[]]))
     .min(1, { message: "At least one language must be checked" })
-    .max(8, { message: "Languages should not exceed 8 entries" })
-    .refine(
-      (langArray) => langArray.every((lang) => languages.includes(lang)),
-      {
-        message: "Invalid language provided",
-      }
-    ),
+    .max(8, { message: "Languages should not exceed 8 entries" }),
 
   faq: z
     .array(
