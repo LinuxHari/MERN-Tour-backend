@@ -65,6 +65,14 @@ export const getTours = async (params: TourListingSchemaType) => {
   return returnResult;
 };
 
+export const getTour = async(tourId: string) => {
+  const valuesToSkip = { markAsDeleted: 0, recurringEndDate: 0, publisher: 0, zipCode: 0, submissionStatus: 0, _id: 0, creadAt: 0 }
+  const tour = await Tour.findOne({ tourId }, valuesToSkip).lean()
+  if(!tour)
+    throw new Error(errorMessage.notFound)
+  return tour
+}
+
 export const createTour = async (tourData: TourSchema) => {
   const newTour = {
     ...tourData,

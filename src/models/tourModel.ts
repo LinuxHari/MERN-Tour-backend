@@ -5,6 +5,7 @@ import {
   minAge,
   submissionStatus,
 } from "../config/tourConfig";
+import { modelOptions } from "./modelConfig";
 
 const itineraryType = {
   activity: {
@@ -27,6 +28,18 @@ const faqType = {
     required: true,
   },
 };
+
+const includedType =  {
+  beveragesAndFood: Boolean,
+  localTaxes: Boolean,
+  hotelPickup: Boolean,
+  insuranceTransfer: Boolean,
+  softDrinks: Boolean,
+  tourGuide: Boolean,
+  towel: Boolean,
+  tips: Boolean,
+  alcoholicBeverages: Boolean,
+}
 
 const tourSchema = new mongoose.Schema({
   tourId: {
@@ -78,6 +91,14 @@ const tourSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  capacity: {
+    type: Number,
+    requried: true
+  },
+  included: {
+    type: includedType,
+    required: true
+  },
   itinerary: {
     type: [itineraryType],
     required: true,
@@ -118,7 +139,7 @@ const tourSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-});
+}, modelOptions);
 
 const Tour = mongoose.model("Tours", tourSchema);
 
