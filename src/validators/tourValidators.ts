@@ -40,7 +40,7 @@ export const TourListingSchema = z.object({
         .number()
         .int()
         .min(1, { message: "Atleast 1 adult required" })
-        .max(9, "Number of adults should not exceed 9")
+        .max(10, "Number of adults should not exceed 9")
     ),
   children: z
     .string()
@@ -50,9 +50,19 @@ export const TourListingSchema = z.object({
         .number()
         .int()
         .min(0)
-        .max(9, { message: "Number of children should not exceed 9" })
+        .max(10, { message: "Number of children should not exceed 9" })
     ),
   infants: z
+    .string()
+    .transform(parseToInt)
+    .pipe(
+      z
+        .number()
+        .int()
+        .min(0)
+        .max(9, { message: "Number of infant should not exceed 9" })
+    ),
+    teens: z
     .string()
     .transform(parseToInt)
     .pipe(

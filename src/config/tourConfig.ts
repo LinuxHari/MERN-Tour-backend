@@ -22,7 +22,7 @@ export const tourTypes = [...categories, "All tours"]
 
 export const submissionStatus = ["Submitted", "Approved", "Rejected"];
 
-export const minAge = [0, 3, 18]
+export const minAge = [0, 3, 13, 18]
 
 export const destinationTypes = ["City", "State", "Country"]
 

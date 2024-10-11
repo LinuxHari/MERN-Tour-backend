@@ -97,11 +97,13 @@ const tourSchema = new mongoose.Schema({
   },
   included: {
     type: includedType,
-    required: true
+    required: true,
+    _id: false
   },
   itinerary: {
     type: [itineraryType],
     required: true,
+    _id: false
   },
   languages: {
     type: [String],
@@ -111,6 +113,7 @@ const tourSchema = new mongoose.Schema({
   faq: {
     type: [faqType],
     required: true,
+    _id: false
   },
   minAge: {
     type: Number,
