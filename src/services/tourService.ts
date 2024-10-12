@@ -37,7 +37,7 @@ export const getTours = async (params: TourListingSchemaType) => {
     maxPrice
   } = params;
   
-  const minAge = Boolean(infants) ? 0 : Boolean(children) ? 3: Boolean(teens)? 13 : 18;
+  const minAge = Boolean(infants)? 0 : Boolean(children)? 3: Boolean(teens)? 13 : 18;
   const duration = Math.ceil(
     (new Date(endDate).getTime() - new Date(startDate).getTime()) /
       (1000 * 60 * 60 * 24)
