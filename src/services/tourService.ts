@@ -1,10 +1,11 @@
 import { errorMessage } from "../handlers/errorHandler";
 import Tour from "../models/tourModel";
-import { generateToudId } from "../utils/generateId";
+import generateId from "../utils/generateId";
 import { TourSchema } from "../validators/adminValidators";
 import { ObjectId } from "mongodb";
 import { TourListingSchemaType } from "../validators/tourValidators";
 import tourAggregations from "../aggregations/tourAggegations";
+import Destination, { DestinationType } from "../models/destinationModel";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
@@ -74,17 +75,56 @@ export const getTour = async(tourId: string) => {
   return tour
 }
 
+const createDestination = async (destinationType: DestinationType["destinationType"], destination: string, parentDestinationId?: string) => {
+  if((destinationType === "Country" && parentDestinationId) || (destinationType !== "Country" && !parentDestinationId))
+    throw new Error(errorMessage.serverError)
+
+  const destinationDetails: DestinationType = {
+    destinationType,
+    destination,
+    parentDestinationId,
+    destinationId: generateId()
+  }
+  await Destination.create(destinationDetails)
+  return destinationDetails
+}
+
+const createMissingDestinations = async (city: string, state: string, country: string) => {
+  const countryDestinationDetails = await Destination.findOne({destination: country})
+  if(!countryDestinationDetails){
+    const destinationCountry = await createDestination("Country", country)
+    const destinationState = await createDestination("State", state, destinationCountry.destinationId)
+    await createDestination("City", city, destinationState.destinationId)
+    return
+  }
+
+  const stateDestinationDetails = await Destination.findOne({destination: state, parentDestinationId: countryDestinationDetails?.parentDestinationId})
+  if(!stateDestinationDetails){
+    const destinationState = await createDestination("State", state, countryDestinationDetails?.destinationId)
+    await createDestination("City", city, destinationState.destinationId)
+    return
+  }
+
+  const cityDestinationDetails = await Destination.findOne({destination: city, parentDestinationId: stateDestinationDetails?.parentDestinationId})
+  if(!cityDestinationDetails){
+    await createDestination("City", city, stateDestinationDetails?.destinationId)
+  }
+}
+
 export const createTour = async (tourData: TourSchema) => {
+  const { city, state, country, ...extractedTourData } = tourData
+  await createMissingDestinations(city, state, country)
+  
   const newTour = {
-    ...tourData,
+    ...extractedTourData,
     markAsDeleted: false,
-    tourId: generateToudId(),
+    tourId: generateId(),
+    destinationId: generateId(),
     duration: tourData.itinerary.length,
     submissionStatus: "Approved",
     recurringEndDate: new Date(),
     publisher: new ObjectId(),
   };
-
   await Tour.create(newTour);
 };
 
