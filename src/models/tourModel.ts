@@ -120,6 +120,10 @@ const tourSchema = new mongoose.Schema({
     enum: minAge,
     required: true,
   },
+  destinationId: {
+    type: String,
+    required: true,
+  },
   publisher: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
