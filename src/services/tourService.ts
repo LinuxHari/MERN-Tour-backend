@@ -94,26 +94,27 @@ const createMissingDestinations = async (city: string, state: string, country: s
   if(!countryDestinationDetails){
     const destinationCountry = await createDestination("Country", country)
     const destinationState = await createDestination("State", state, destinationCountry.destinationId)
-    await createDestination("City", city, destinationState.destinationId)
-    return
+    const destinationCity = await createDestination("City", city, destinationState.destinationId)
+    return destinationCity.destinationId
   }
 
   const stateDestinationDetails = await Destination.findOne({destination: state, parentDestinationId: countryDestinationDetails?.parentDestinationId})
   if(!stateDestinationDetails){
     const destinationState = await createDestination("State", state, countryDestinationDetails?.destinationId)
-    await createDestination("City", city, destinationState.destinationId)
-    return
+    const destinationCity = await createDestination("City", city, destinationState.destinationId)
+    return destinationCity.destinationId
   }
 
   const cityDestinationDetails = await Destination.findOne({destination: city, parentDestinationId: stateDestinationDetails?.parentDestinationId})
   if(!cityDestinationDetails){
-    await createDestination("City", city, stateDestinationDetails?.destinationId)
+    const destinationCity = await createDestination("City", city, stateDestinationDetails?.destinationId)
+    return destinationCity.destinationId
   }
 }
 
 export const createTour = async (tourData: TourSchema) => {
   const { city, state, country, ...extractedTourData } = tourData
-  await createMissingDestinations(city, state, country)
+   await createMissingDestinations(city, state, country)
   
   const newTour = {
     ...extractedTourData,
@@ -131,9 +132,8 @@ export const createTour = async (tourData: TourSchema) => {
 export const updateTour = async (tourId: string, tourData: TourSchema) => {
   const existingTour = await Tour.findOne({ tourId });
 
-  if (!existingTour) {
+  if (!existingTour)
     throw new Error(errorMessage.notFound);
-  }
 
   const updatedTour = {
     ...tourData,

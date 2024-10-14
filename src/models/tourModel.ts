@@ -16,6 +16,14 @@ const itineraryType = {
     type: String,
     required: true,
   },
+  lat: {
+    type: Number,
+    required: true,
+  },
+  lon: {
+    type: Number,
+    required: true,
+  },
 };
 
 const faqType = {
@@ -29,7 +37,7 @@ const faqType = {
   },
 };
 
-const includedType =  {
+const includedType = {
   beveragesAndFood: Boolean,
   localTaxes: Boolean,
   hotelPickup: Boolean,
@@ -39,114 +47,117 @@ const includedType =  {
   towel: Boolean,
   tips: Boolean,
   alcoholicBeverages: Boolean,
-}
+};
 
-const tourSchema = new mongoose.Schema({
-  tourId: {
-    type: String,
-    required: true,
+const tourSchema = new mongoose.Schema(
+  {
+    tourId: {
+      type: String,
+      required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    category: {
+      type: String,
+      required: true,
+      enum: categories,
+    },
+    highlights: {
+      type: [String],
+      required: true,
+    },
+    images: {
+      type: [String],
+      required: true,
+    },
+    // city: {
+    //   type: String,
+    //   required: true,
+    // },
+    // state: {
+    //   type: String,
+    //   required: true,
+    // },
+    // country: {
+    //   type: String,
+    //   required: true,
+    // },
+    zipCode: {
+      type: String,
+      required: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+    },
+    duration: {
+      type: Number,
+      required: true,
+    },
+    capacity: {
+      type: Number,
+      requried: true,
+    },
+    included: {
+      type: includedType,
+      required: true,
+      _id: false,
+    },
+    itinerary: {
+      type: [itineraryType],
+      required: true,
+      _id: false,
+    },
+    languages: {
+      type: [String],
+      required: true,
+      enum: languages,
+    },
+    faq: {
+      type: [faqType],
+      required: true,
+      _id: false,
+    },
+    minAge: {
+      type: Number,
+      enum: minAge,
+      required: true,
+    },
+    destinationId: {
+      type: String,
+      required: true,
+    },
+    publisher: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    recurringEndDate: {
+      type: Date,
+      required: true,
+    },
+    submissionStatus: {
+      type: String,
+      required: true,
+      enum: submissionStatus,
+    },
+    freeCancellation: {
+      type: Boolean,
+      default: false,
+    },
+    markAsDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
-  name: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-    required: true,
-  },
-  category: {
-    type: String,
-    required: true,
-    enum: categories,
-  },
-  highlights: {
-    type: [String],
-    required: true,
-  },
-  images: {
-    type: [String],
-    required: true,
-  },
-  // city: {
-  //   type: String,
-  //   required: true,
-  // },
-  // state: {
-  //   type: String,
-  //   required: true,
-  // },
-  // country: {
-  //   type: String,
-  //   required: true,
-  // },
-  zipCode: {
-    type: String,
-    required: true,
-  },
-  price: {
-    type: Number,
-    required: true,
-  },
-  duration: {
-    type: Number,
-    required: true,
-  },
-  capacity: {
-    type: Number,
-    requried: true
-  },
-  included: {
-    type: includedType,
-    required: true,
-    _id: false
-  },
-  itinerary: {
-    type: [itineraryType],
-    required: true,
-    _id: false
-  },
-  languages: {
-    type: [String],
-    required: true,
-    enum: languages,
-  },
-  faq: {
-    type: [faqType],
-    required: true,
-    _id: false
-  },
-  minAge: {
-    type: Number,
-    enum: minAge,
-    required: true,
-  },
-  destinationId: {
-    type: String,
-    required: true,
-  },
-  publisher: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
-  recurringEndDate: {
-    type: Date,
-    required: true,
-  },
-  submissionStatus: {
-    type: String,
-    required: true,
-    enum: submissionStatus,
-  },
-  freeCancellation: {
-    type: Boolean,
-    default: false,
-  },
-  markAsDeleted: {
-    type: Boolean,
-    default: false,
-  },
-}, modelOptions);
+  modelOptions
+);
 
 const Tour = mongoose.model("Tours", tourSchema);
 
