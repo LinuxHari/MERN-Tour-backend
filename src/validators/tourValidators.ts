@@ -1,7 +1,6 @@
 import { z } from "zod";
 import sanitizeString from "../utils/sanitizeString";
 import {
-  destinationTypes,
   languages,
   specials,
   tourTypes,
@@ -25,11 +24,10 @@ export const SearchSuggestionSchema = z.object({
 });
 
 export const TourListingSchema = z.object({
-  destination: z
+  destinationId: z
     .string()
-    .min(2, { message: "Invalid destination name" })
-    .max(85, { message: "Destination name is too long" }),
-  destinationType: z.enum(destinationTypes),
+    .min(8, { message: "Invalid destination id" })
+    .max(8, { message: "Destination id is not valid" }),
   startDate: z.string().refine(isValidDate),
   endDate: z.string().refine(isValidDate),
   adults: z

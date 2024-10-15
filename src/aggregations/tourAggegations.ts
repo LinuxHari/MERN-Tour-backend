@@ -1,14 +1,45 @@
-import { PipelineStage } from "mongoose";
-
 const tourAggregations = {
+  destinationQuery:(destinationId: string) => [
+    {
+      $match: {
+        $or: [
+          { destinationId: destinationId },
+          { parentDestinationId: destinationId },
+        ],
+      },
+    },
+    {
+      $graphLookup: {
+        from: "destinations",
+        startWith: "$destinationId",
+        connectFromField: "destinationId",
+        connectToField: "parentDestinationId",
+        as: "descendantDestinations",
+      },
+    },
+    {
+      $project: {
+        destinationIds: {
+          $cond: [
+            { $eq: ["$destinationType", "City"] },
+            ["$destinationId"],
+            {
+              $map: {
+                input: "$descendantDestinations",
+                as: "city",
+                in: "$$city.destinationId",
+              },
+            },
+          ],
+        },
+      },
+    },
+  ],
   getTours: (
-    destinationType: string,
-    destination: string,
+    cityDestinationIds: string[],
     minAge: number,
-    duration: number,
     page: number,
     filters: boolean,
-    sortType: string,
     rating?: number,
     minPrice?: number,
     maxPrice?: number,
@@ -16,110 +47,60 @@ const tourAggregations = {
     specials?: string[],
     languages?: string[]
   ) => {
+
     const matchStage: Record<string, any> = {
-      [destinationType]: destination,
+      destinationId: { $in: cityDestinationIds },
       minAge: { $lte: minAge },
     };
-  
-    // Conditionally add fields to matchStage
-    if (minPrice) {
-      matchStage.price = { $gte: minPrice };
-    }
-  
+
+    if (minPrice) matchStage.price = { $gte: minPrice };
     if (maxPrice) {
-      if (!matchStage.price) {
-        matchStage.price = { $lte: maxPrice };
-      } else {
-        matchStage.price.$lte = maxPrice;
-      }
+      matchStage.price = matchStage.price ? { ...matchStage.price, $lte: maxPrice } : { $lte: maxPrice };
     }
   
-    if (rating) {
-      matchStage.rating = { $gte: rating };
-    }
+    if (rating) matchStage.rating = { $gte: rating };
   
-    if (languages && languages.length > 0) {
-      matchStage.languages = { $in: languages };
-    }
+    if (languages && languages.length > 0) matchStage.languages = { $in: languages };
   
-    if (specials && specials.includes("Free Cancellation")) {
-      matchStage.freeCancellation = true;
-    }
+    if (tourTypes && tourTypes.length > 0) matchStage.category = { $in: tourTypes };
   
-    const facetStage: Record<string, any> = {
-      // priceRange: [
-      //   {
-      //     $group: {
-      //       _id: null,
-      //       minPrice: { $min: "$price" },
-      //       maxPrice: { $max: "$price" },
-      //     },
-      //   },
-      //   {
-      //     $project: {
-      //       _id: 0,
-      //       minPrice: 1,
-      //       maxPrice: 1,
-      //     },
-      //   },
-      // ],
+    if (specials && specials.includes("Free Cancellation")) matchStage.freeCancellation = true;
+  
+    const facetStage: {
+      paginatedResults: any[];
+      totalCount: any[];
+      filters?: any[];
+    } = {
       paginatedResults: [
-        {
-          $match: { ...matchStage, ...(tourTypes && tourTypes.length > 0 ? { category: { $in: tourTypes } } : {}) }, // Apply tourTypes filter here
-        },
+        { $match: matchStage },
         {
           $project: {
             _id: 0,
-            destination: {
-              $switch: {
-                branches: [
-                  {
-                    case: { $eq: [destinationType, "city"] },
-                    then: {
-                      $concat: ["$city", ", ", "$state", ", ", "$country"],
-                    },
-                  },
-                  {
-                    case: { $eq: [destinationType, "state"] },
-                    then: { $concat: ["$state", ", ", "$country"] },
-                  },
-                ],
-                default: "$country",
-              },
-            },
+            destination: 1,
             name: 1,
             description: 1,
-            freeCancellation: 1,
-            duration: 1,
-            images: { $slice: ["$images", 1] },
             price: 1,
-            tourId: 1
+            duration: 1,
+            freeCancellation: 1,
+            images: { $slice: ["$images", 1] },
+            tourId: 1,
           },
         },
         { $skip: (page - 1) * 10 },
         { $limit: 10 },
       ],
-      totalCount: [
-        {
-          $match: { ...matchStage, ...(tourTypes && tourTypes.length > 0 ? { category: { $in: tourTypes } } : {}) }, // Apply the same filters here
-        },
-        { $count: "total" },
-      ],
+      totalCount: [{ $match: matchStage }, { $count: "total" }],
     };
   
     if (filters) {
-      facetStage.filters = [
+      facetStage["filters"] = [
         {
           $group: {
             _id: null,
-            tourTypes: { $addToSet: "$category" }, // Collect all unique tour types
+            tourTypes: { $addToSet: "$category" },
             specials: {
               $addToSet: {
-                $cond: [
-                  { $eq: ["$freeCancellation", true] },
-                  "Free Cancellation",
-                  null,
-                ],
+                $cond: [{ $eq: ["$freeCancellation", true] }, "Free Cancellation", null],
               },
             },
             languages: { $addToSet: "$languages" },
@@ -128,7 +109,7 @@ const tourAggregations = {
         {
           $project: {
             _id: 0,
-            tourTypes: { $setUnion: "$tourTypes" }, //Filter duplicate values
+            tourTypes: 1,
             specials: { $setDifference: ["$specials", [null]] },
             languages: {
               $reduce: {
@@ -142,51 +123,20 @@ const tourAggregations = {
       ];
     }
   
-    const aggregationPipeline: Array<
-      | { $match: Record<string, any> }
-      | { $facet: Record<string, any> }
-      | {
-          $project: {
-            tours: string;
-            // minPrice: { $arrayElemAt: (string | number)[] };
-            // maxPrice: { $arrayElemAt: (string | number)[] };
-            totalCount: { $arrayElemAt: (string | number)[] };
-            filters?: {
-              tourTypes: { $arrayElemAt: (string | number)[] };
-              specials: { $arrayElemAt: (string | number)[] };
-              languages: { $arrayElemAt: (string | number)[] };
-            };
-          };
-        }
-    > = [
-      {
-        $match: matchStage,
-      },
-      {
-        $facet: facetStage,
-      },
+    const aggregationPipeline = [
+      { $facet: facetStage },
       {
         $project: {
           tours: "$paginatedResults",
-          // minPrice: { $arrayElemAt: ["$priceRange.minPrice", 0] },
-          // maxPrice: { $arrayElemAt: ["$priceRange.maxPrice", 0] },
           totalCount: { $arrayElemAt: ["$totalCount.total", 0] },
+          filters: filters ? "$filters" : [],
         },
       },
     ];
   
-    // Safely add filters to the project stage if it exists
-    if (filters) {
-      const projectStage = aggregationPipeline[2] as { $project: Record<string, any> };
-      projectStage.$project.filters = {
-        tourTypes: { $arrayElemAt: ["$filters.tourTypes", 0] },
-        specials: { $arrayElemAt: ["$filters.specials", 0] },
-        languages: { $arrayElemAt: ["$filters.languages", 0] },
-      };
-    }
-  
     return aggregationPipeline;
-  },
+  }
+  
 };
 
 export default tourAggregations;
