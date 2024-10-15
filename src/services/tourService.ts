@@ -9,12 +9,9 @@ import Destination, { DestinationType } from "../models/destinationModel";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
-  const result = await Tour.aggregate(tourAggregations.suggestions(regex));
+  const result = await Destination.find({destination: regex}, {_id: 0, parentDestinationId: 0, __v: 0}).limit(5).lean()
 
-  const [locations] = result;
-  const fallbackValue = { states: [], cities: [], countries: [] };
-
-  return locations || fallbackValue;
+  return result;
 };
 
 export const getTours = async (params: TourListingSchemaType) => {

@@ -1,5 +1,6 @@
 import mongoose, { InferSchemaType } from "mongoose";
 import { destinationTypes } from "../config/tourConfig";
+import { modelOptions } from "./modelConfig";
 
 const destinationSchema = new mongoose.Schema({
     destination: {
