@@ -1,5 +1,5 @@
 import mongoose, { InferSchemaType } from "mongoose";
-import { destinationTypes } from "../config/tourConfig";
+import { DESTINATION_TYPES } from "../config/tourConfig";
 
 const destinationSchema = new mongoose.Schema({
     destination: {
@@ -8,7 +8,7 @@ const destinationSchema = new mongoose.Schema({
     },
     destinationType: {
         type: String,
-        enum: destinationTypes,
+        enum: DESTINATION_TYPES,
         required: true
     },
     destinationId: {

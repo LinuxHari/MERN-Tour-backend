@@ -1,4 +1,4 @@
-export const languages = [
+export const LANGUAGES = [
   "English",
   "Spanish",
   "French",
@@ -9,7 +9,7 @@ export const languages = [
   "Russian",
 ] as const
 
-export const categories = [
+export const CATEGORIES = [
   "Nature",
   "Adventure",
   "Cultural",
@@ -18,12 +18,12 @@ export const categories = [
   "Cruises",
 ] as const
 
-export const tourTypes = [...categories, "All tours"] as const
+export const TOUR_TYPES = [...CATEGORIES, "All tours"] as const
 
-export const submissionStatus = ["Submitted", "Approved", "Rejected"] as const 
+export const SUBMISSION_STATUS = ["Submitted", "Approved", "Rejected"] as const 
 
-export const minAge = [0, 3, 13, 18] as const
+export const MIN_AGE = [0, 3, 13, 18] as const
 
-export const destinationTypes = ["City", "State", "Country"] as const
+export const DESTINATION_TYPES = ["City", "State", "Country"] as const
 
-export const specials = ["Free Cancellation"] as const
+export const SPECIALS = ["Free Cancellation"] as const

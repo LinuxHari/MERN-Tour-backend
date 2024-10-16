@@ -1,7 +1,7 @@
 import { errorMessage } from "../handlers/errorHandler";
 import Tour from "../models/tourModel";
 import generateId from "../utils/generateId";
-import { TourSchema } from "../validators/adminValidators";
+import { TourSchemaType } from "../validators/adminValidators";
 import { ObjectId } from "mongodb";
 import { TourListingSchemaType } from "../validators/tourValidators";
 import tourAggregations from "../aggregations/tourAggegations";
@@ -74,7 +74,7 @@ export const getTour = async(tourId: string) => {
   return tour
 }
 
-export const createTour = async (tourData: TourSchema) => {
+export const createTour = async (tourData: TourSchemaType) => {
 
   const createDestination = async (destinationType: DestinationType["destinationType"], destination: string, parentDestinationId?: string) => {
     if((destinationType === "Country" && parentDestinationId) || (destinationType !== "Country" && !parentDestinationId))
@@ -129,7 +129,7 @@ export const createTour = async (tourData: TourSchema) => {
   await Tour.create(newTour);
 };
 
-export const updateTour = async (tourId: string, tourData: TourSchema) => {
+export const updateTour = async (tourId: string, tourData: TourSchemaType) => {
   const existingTour = await Tour.findOne({ tourId });
 
   if (!existingTour)

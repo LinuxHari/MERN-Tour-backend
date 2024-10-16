@@ -1,9 +1,9 @@
 import mongoose, { InferSchemaType } from "mongoose";
 import {
-  categories,
-  languages,
-  minAge,
-  submissionStatus,
+  CATEGORIES,
+  LANGUAGES,
+  MIN_AGE,
+  SUBMISSION_STATUS,
 } from "../config/tourConfig";
 import { modelOptions } from "./modelConfig";
 
@@ -66,7 +66,7 @@ const tourSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: categories,
+      enum: CATEGORIES,
     },
     highlights: {
       type: [String],
@@ -117,7 +117,7 @@ const tourSchema = new mongoose.Schema(
     languages: {
       type: [String],
       required: true,
-      enum: languages,
+      enum: LANGUAGES,
     },
     faq: {
       type: [faqType],
@@ -126,7 +126,7 @@ const tourSchema = new mongoose.Schema(
     },
     minAge: {
       type: Number,
-      enum: minAge,
+      enum: MIN_AGE,
       required: true,
     },
     destinationId: {
@@ -145,7 +145,7 @@ const tourSchema = new mongoose.Schema(
     submissionStatus: {
       type: String,
       required: true,
-      enum: submissionStatus,
+      enum: SUBMISSION_STATUS,
     },
     freeCancellation: {
       type: Boolean,

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { categories, languages } from "../config/tourConfig";
+import { CATEGORIES, LANGUAGES } from "../config/tourConfig";
 import sanitizeString from "../utils/sanitizeString";
 
 export const TourSchema = z.object({
@@ -27,7 +27,7 @@ export const TourSchema = z.object({
         })
     ),
 
-  category: z.enum(categories, {
+  category: z.enum(CATEGORIES, {
     message: "Category is not valid",
   }),
 
@@ -134,7 +134,7 @@ export const TourSchema = z.object({
     .max(10, { message: "Itinerary should not exceed 10 entries" }),
 
   languages: z
-    .array(z.enum(languages))
+    .array(z.enum(LANGUAGES))
     .min(1, { message: "At least one language must be checked" })
     .max(8, { message: "Languages should not exceed 8 entries" }),
 
@@ -210,4 +210,4 @@ export const TourSchema = z.object({
     .default("yes"),
 });
 
-export type TourSchema = z.infer<typeof TourSchema>;
+export type TourSchemaType = z.infer<typeof TourSchema>;
