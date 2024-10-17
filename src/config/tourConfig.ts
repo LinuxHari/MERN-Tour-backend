@@ -18,8 +18,6 @@ export const CATEGORIES = [
   "Cruises",
 ] as const
 
-export const TOUR_TYPES = [...CATEGORIES, "All tours"] as const
-
 export const SUBMISSION_STATUS = ["Submitted", "Approved", "Rejected"] as const 
 
 export const MIN_AGE = [0, 3, 13, 18] as const

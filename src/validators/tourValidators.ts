@@ -1,9 +1,9 @@
 import { z } from "zod";
 import sanitizeString from "../utils/sanitizeString";
 import {
+  CATEGORIES,
   LANGUAGES,
-  SPECIALS,
-  TOUR_TYPES,
+  SPECIALS
 } from "../config/tourConfig";
 
 const isValidDate = (date: string) =>
@@ -83,7 +83,7 @@ export const TourListingSchema = z.object({
     .min(6)
     .max(50)
     .transform(strToArr)
-    .pipe(z.array(z.enum(TOUR_TYPES)))
+    .pipe(z.array(z.enum(CATEGORIES)))
     .optional(),
   rating: z
     .string()

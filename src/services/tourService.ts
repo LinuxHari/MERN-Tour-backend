@@ -67,11 +67,12 @@ export const getTours = async (params: TourListingSchemaType) => {
 };
 
 export const getTour = async(tourId: string) => {
-  const valuesToSkip = { markAsDeleted: 0, recurringEndDate: 0, publisher: 0, zipCode: 0, submissionStatus: 0, _id: 0, creadAt: 0 }
-  const tour = await Tour.findOne({ tourId }, valuesToSkip).lean()
-  if(!tour)
+  
+  const tour = await Tour.aggregate(tourAggregations.getTour(tourId)).exec();
+  
+  if(!tour.length)
     throw new Error(errorMessage.notFound)
-  return tour
+  return tour[0]
 }
 
 export const createTour = async (tourData: TourSchemaType) => {
@@ -114,13 +115,13 @@ export const createTour = async (tourData: TourSchemaType) => {
   }
 
   const { city, state, country, ...extractedTourData } = tourData
-   await createMissingDestinations(city, state, country)
+  const cityDestinationId = await createMissingDestinations(city, state, country)
   
   const newTour = {
     ...extractedTourData,
     markAsDeleted: false,
     tourId: generateId(),
-    destinationId: generateId(),
+    destinationId: cityDestinationId,
     duration: tourData.itinerary.length,
     submissionStatus: "Approved",
     recurringEndDate: new Date(),
