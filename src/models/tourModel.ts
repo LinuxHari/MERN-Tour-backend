@@ -37,6 +37,25 @@ const faqType = {
   },
 };
 
+const priceType = {
+  adult: {
+    type: Number,
+    required: true,
+  }, 
+  teen: {
+    type: Number,
+    required: true,
+  },
+  child: {
+    type: Number,
+    required: true,
+  },
+  infant: {
+    type: Number,
+    required: true,
+  }
+}
+
 const includedType = {
   beveragesAndFood: Boolean,
   localTaxes: Boolean,
@@ -93,7 +112,7 @@ const tourSchema = new mongoose.Schema(
       required: true,
     },
     price: {
-      type: Number,
+      type: priceType,
       required: true,
     },
     duration: {

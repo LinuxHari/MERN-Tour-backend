@@ -94,11 +94,33 @@ export const TourSchema = z.object({
     .max(10000, { message: "Capacity should not be more than 1000" })
     .transform((value) => parseFloat(value.toFixed(2))),
 
-  price: z
-    .number()
-    .min(5, { message: "Price should not be less than 5" })
-    .max(10000, { message: "Price should not be more than 10000" })
-    .transform((value) => parseFloat(value.toFixed(2))),
+    price: z.object(
+      {
+        adult: z
+        .number()
+        .min(5, { message: "Price should not be less than 5" })
+        .max(10000, { message: "Price should not be more than 10000" })
+        .transform((value) => parseFloat(value.toFixed(2))),
+      
+        teen: z
+        .number()
+        .min(5, { message: "Price should not be less than 5" })
+        .max(10000, { message: "Price should not be more than 10000" })
+        .transform((value) => parseFloat(value.toFixed(2))),
+    
+        child: z
+        .number()
+        .min(5, { message: "Price should not be less than 5" })
+        .max(10000, { message: "Price should not be more than 10000" })
+        .transform((value) => parseFloat(value.toFixed(2))),
+    
+        infant: z
+        .number()
+        .min(5, { message: "Price should not be less than 5" })
+        .max(10000, { message: "Price should not be more than 10000" })
+        .transform((value) => parseFloat(value.toFixed(2))),
+      }
+    ),
 
   itinerary: z
     .array(
