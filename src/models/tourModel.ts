@@ -44,15 +44,12 @@ const priceType = {
   }, 
   teen: {
     type: Number,
-    required: true,
   },
   child: {
     type: Number,
-    required: true,
   },
   infant: {
     type: Number,
-    required: true,
   }
 }
 

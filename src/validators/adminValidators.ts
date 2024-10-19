@@ -106,19 +106,19 @@ export const TourSchema = z.object({
         .number()
         .min(5, { message: "Price should not be less than 5" })
         .max(10000, { message: "Price should not be more than 10000" })
-        .transform((value) => parseFloat(value.toFixed(2))),
+        .transform((value) => parseFloat(value.toFixed(2))).optional(),
     
         child: z
         .number()
         .min(5, { message: "Price should not be less than 5" })
         .max(10000, { message: "Price should not be more than 10000" })
-        .transform((value) => parseFloat(value.toFixed(2))),
+        .transform((value) => parseFloat(value.toFixed(2))).optional(),
     
         infant: z
         .number()
         .min(5, { message: "Price should not be less than 5" })
         .max(10000, { message: "Price should not be more than 10000" })
-        .transform((value) => parseFloat(value.toFixed(2))),
+        .transform((value) => parseFloat(value.toFixed(2))).optional(),
       }
     ),
 
