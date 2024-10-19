@@ -100,18 +100,19 @@ export const createTour = async (tourData: TourSchemaType) => {
       return destinationCity.destinationId
     }
   
-    const stateDestinationDetails = await Destination.findOne({destination: state, parentDestinationId: countryDestinationDetails?.parentDestinationId})
+    const stateDestinationDetails = await Destination.findOne({destination: state, parentDestinationId: countryDestinationDetails.destinationId})
     if(!stateDestinationDetails){
       const destinationState = await createDestination("State", state, countryDestinationDetails?.destinationId)
       const destinationCity = await createDestination("City", city, destinationState.destinationId)
       return destinationCity.destinationId
     }
   
-    const cityDestinationDetails = await Destination.findOne({destination: city, parentDestinationId: stateDestinationDetails?.parentDestinationId})
+    const cityDestinationDetails = await Destination.findOne({destination: city, parentDestinationId: stateDestinationDetails.destinationId})
     if(!cityDestinationDetails){
       const destinationCity = await createDestination("City", city, stateDestinationDetails?.destinationId)
       return destinationCity.destinationId
     }
+    return cityDestinationDetails.destinationId
   }
 
   const { city, state, country, ...extractedTourData } = tourData

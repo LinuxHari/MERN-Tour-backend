@@ -157,7 +157,7 @@ export const TourSchema = z.object({
 
   languages: z
     .array(z.enum(LANGUAGES))
-    .min(1, { message: "At least one language must be checked" })
+    .min(1, { message: "At least one language must be selected" })
     .max(8, { message: "Languages should not exceed 8 entries" }),
 
   faq: z
