@@ -110,6 +110,7 @@ const tourSchema = new mongoose.Schema(
     },
     price: {
       type: priceType,
+      _id: false,
       required: true,
     },
     duration: {

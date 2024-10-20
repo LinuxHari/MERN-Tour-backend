@@ -187,7 +187,8 @@ const tourAggregations = {
           images: 1,
           highlights: 1,
           faq: 1,
-          included: 1
+          included: 1,
+          price: 1
         },
       },
     ];
