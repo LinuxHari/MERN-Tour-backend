@@ -11,8 +11,6 @@ export const errorMessage = {
 
 export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
 
-  console.log("Enters error handler")
-
   if(errorMessage.badRequest){
     return responseHandler.badrequest(res, err.stack)
   }

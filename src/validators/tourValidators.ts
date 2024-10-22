@@ -80,7 +80,7 @@ export const TourListingSchema = z.object({
   sortType: z.string().min(11).max(25),
   tourTypes: z
     .string()
-    .min(6)
+    .min(4)
     .max(50)
     .transform(strToArr)
     .pipe(z.array(z.enum(CATEGORIES)))

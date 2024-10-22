@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from "express";
-import {AnyZodObject, ZodError} from "zod"
+import {ZodType, ZodError} from "zod"
 import responseHandler from "./responseHandler";
 
 type DataToValidate = "query" | "body" | "cookies" | "params"
 
-const validate = (schema: AnyZodObject, dataToValidate: DataToValidate = "body") => async(req: Request, res: Response, next: NextFunction) => {
+const validate = (schema: ZodType<any, any>, dataToValidate: DataToValidate = "body") => async(req: Request, res: Response, next: NextFunction) => {
   try {
     req[dataToValidate] = await schema.parseAsync(req[dataToValidate]);
     next();

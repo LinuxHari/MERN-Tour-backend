@@ -152,7 +152,7 @@ const tourSchema = new mongoose.Schema(
     },
     publisher: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Users",
       required: true,
     },
     recurringEndDate: {
