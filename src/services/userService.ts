@@ -1,13 +1,8 @@
 import { errorMessage } from "../handlers/errorHandler";
 import User from "../models/userModel";
+import { SignupSchemaType } from "../validators/userValidators";
 
-type UserData = {
-    name: string;
-    email: string;
-    password: string;
-}
-
-export const createUser = async(userData: UserData) => {
+export const createUser = async(userData: Omit<SignupSchemaType, "confirmPassword">) => {
     const existingUser = await User.findOne({email: userData.email})
     if(existingUser)
         throw new Error(errorMessage.badRequest)

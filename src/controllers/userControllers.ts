@@ -1,10 +1,14 @@
 import { Request, Response } from "express"
 import asyncWrapper from "../asyncWrapper"
+import { createUser } from "../services/userService"
 
-export const signup = asyncWrapper((req:Request, res: Response) => {
-    res.send("account created")
+export const signup = asyncWrapper(async(req:Request, res: Response) => {
+    const { firstName, lastName, password, email } = req.body
+    await createUser({firstName, lastName, email, password})
 })
 
-export const login = asyncWrapper((req:Request, res: Response) => {
+export const login = asyncWrapper(async (req:Request, res: Response) => {
+    const { email, password } = req.body
+    // await createUser({ email,  password})
     res.send("account created")
 })

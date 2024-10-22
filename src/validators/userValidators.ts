@@ -19,11 +19,6 @@ const alphabetSchema = (type: string) =>
       message: `${type} must contain only alphabets`,
     });
 
-export const LoginSchema = z.object({
-  email: emailSchema,
-  password: passwordSchema,
-});
-
 export const SignupSchema = z.object({
     firstName: z
       .string({ message: "Invalid first name" })
@@ -42,3 +37,12 @@ export const SignupSchema = z.object({
   .refine(({ password, confirmPassword }) => password === confirmPassword, {
     message: "Password did not match",
   });
+
+export const LoginSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+});
+  
+
+export type SignupSchemaType = z.infer<typeof SignupSchema>
+export type LoginSchemaType = z.infer<typeof LoginSchema>
