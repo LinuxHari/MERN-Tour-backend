@@ -1,6 +1,7 @@
 import mongoose, { InferSchemaType } from "mongoose";
 import bcrypt from "bcrypt"
 import { errorMessage } from "../handlers/errorHandler";
+import { ROLE } from "../config/userConfig";
 
 const userSchema = new mongoose.Schema({
     firstName: {
@@ -28,7 +29,8 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ["Traveler", "Publisher", "Admin"]
+        enum: ROLE,
+        required: true
     },
     profile: {
         type: String,

@@ -1,9 +1,10 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import allRoutes from "./routes/routes";
 import mongoose from "mongoose";
+import cookieParser from "cookie-parser"
 import { errorHandler } from "./handlers/errorHandler";
+import allRoutes from "./routes/routes";
 
 const app = express();
 
@@ -13,9 +14,11 @@ app.use(cors({ origin: "*", methods: "GET,PUT,POST,DELETE" }));
 
 app.use(express.json())
 
+app.use(cookieParser(process.env.COOKIE_SECRET))
+
 app.use("/api/v1", allRoutes);
 
-app.use("*", (req: Request, res: Response) => {
+app.use("*", (_, res: Response) => {
   res.status(404).send("Endpoint does not exist!");
 });
 

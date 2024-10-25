@@ -1,0 +1,1 @@
+export const ROLE = ["Traveler", "Publisher", "Admin"] as const

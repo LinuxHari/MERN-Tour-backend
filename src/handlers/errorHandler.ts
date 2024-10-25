@@ -6,21 +6,22 @@ import responseHandler from './responseHandler';
 export const errorMessage = {
     notFound: "Not found",
     serverError: "Internal server error",
-    badRequest: "Bad request"
+    badRequest: "Bad request",
+    conflict: "Conflict"
 }
 
 export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
 
-  if(errorMessage.badRequest){
+  if(errorMessage.badRequest === err.message){
     return responseHandler.badrequest(res, err.stack)
   }
 
-  else if(errorMessage.notFound){
+  else if(errorMessage.notFound === err.message){
     return responseHandler.notfound(res)
   }
 
-  else if(errorMessage.serverError){
-    responseHandler.error(res, err.stack)
+  else if(errorMessage.serverError === err.message){
+    responseHandler.error(res, err.message)
   }
 
   else if (err instanceof mongoose.Error.ValidationError) {

@@ -22,15 +22,12 @@ const error = (res: Response, stack: string) => {
   });
 }
 
-const badrequest = (res: Response, stack: string | ZodIssue[]) => {
-
-  console.log("Bad request stack:", stack)
-
+const badrequest = (res: Response, stack: string | ZodIssue[]) => 
   responseWithStatus(res, 400, {
     error: true,
     message: "Bad request",
     stack: isDevelopment ? stack : undefined
-  })};
+  })
 
 const ok = (res: Response, data: ResponseData) =>
   responseWithStatus(res, 200, data);
@@ -50,6 +47,11 @@ const notfound = (res: Response) =>
     message: "Resource not found",
   });
 
+const conflict = (res: Response) => responseWithStatus(res, 409, {
+  error: true,
+  message: "Conflict"
+})
+
 const responseHandler = {
   error,
   badrequest,
@@ -57,6 +59,7 @@ const responseHandler = {
   created,
   unauthorize,
   notfound,
+  conflict
 };
 
 export default responseHandler;
