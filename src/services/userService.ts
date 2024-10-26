@@ -14,7 +14,7 @@ export const createUser = async (
   const existingUser = await User.findOne({ email: userData.email });
   if (existingUser) throw new Error(errorMessage.conflict);
   const newUser = new User({...userData, role: ROLE[0]});
-  newUser.hashPassword(userData.password);
+  await newUser.hashPassword(userData.password);
   await newUser.save();
 };
 

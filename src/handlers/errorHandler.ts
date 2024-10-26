@@ -20,6 +20,10 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
     return responseHandler.notfound(res)
   }
 
+  else if(errorMessage.conflict === err.message){
+    responseHandler.conflict(res)
+  }
+
   else if(errorMessage.serverError === err.message){
     responseHandler.error(res, err.message)
   }

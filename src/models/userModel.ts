@@ -55,13 +55,9 @@ const userSchema = new mongoose.Schema({
     }
 })
 
-userSchema.method("hashPassword", function(password: string){
+userSchema.method("hashPassword", async function(password: string){
     const saltCount = 10
-    bcrypt.hash(password, saltCount, (err, hash) => {
-        if(err)
-            throw new Error(errorMessage.serverError)
-        this.password = hash
-    })
+    this.password = await bcrypt.hash(password, saltCount)
 })
 
 
