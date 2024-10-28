@@ -1,4 +1,4 @@
-import { errorMessage } from "../handlers/errorHandler";
+import { NotFoundError, ServerError } from "../handlers/errorHandler";
 import Tour from "../models/tourModel";
 import generateId from "../utils/generateId";
 import { TourSchemaType } from "../validators/adminValidators";
@@ -75,7 +75,7 @@ export const getTour = async(tourId: string) => {
   const tour = await Tour.aggregate(tourAggregations.getTour(tourId)).exec();
   
   if(!tour.length)
-    throw new Error(errorMessage.notFound)
+    throw new NotFoundError("Tour not found")
   return tour[0]
 }
 
@@ -83,7 +83,7 @@ export const createTour = async (tourData: TourSchemaType) => {
 
   const createDestination = async (destinationType: DestinationType["destinationType"], destination: string, parentDestinationId?: string) => {
     if((destinationType === "Country" && parentDestinationId) || (destinationType !== "Country" && !parentDestinationId))
-      throw new Error(errorMessage.serverError)
+      throw new ServerError("Something went wrong")
   
     const destinationDetails: DestinationType = {
       destinationType,
@@ -139,7 +139,7 @@ export const updateTour = async (tourId: string, tourData: TourSchemaType) => {
   const existingTour = await Tour.findOne({ tourId });
 
   if (!existingTour)
-    throw new Error(errorMessage.notFound);
+    throw new NotFoundError("Tour not found");
 
   const updatedTour = {
     ...tourData,

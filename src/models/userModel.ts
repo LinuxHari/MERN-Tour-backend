@@ -1,6 +1,5 @@
 import mongoose, { InferSchemaType } from "mongoose";
 import bcrypt from "bcrypt"
-import { errorMessage } from "../handlers/errorHandler";
 import { ROLE } from "../config/userConfig";
 
 const userSchema = new mongoose.Schema({

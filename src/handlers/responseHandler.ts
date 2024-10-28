@@ -13,8 +13,6 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 const error = (res: Response, stack: string) => {
 
-  console.log('Error stack:', stack)
-
   responseWithStatus(res, 500, {
     error: true,
     message: "Oops! Something worng!",
@@ -35,7 +33,7 @@ const ok = (res: Response, data: ResponseData) =>
 const created = (res: Response, data: ResponseData) =>
   responseWithStatus(res, 201, data);
 
-const unauthorize = (res: Response) =>
+const unauthorized = (res: Response) =>
   responseWithStatus(res, 401, {
     error: true,
     message: "Unathorized",
@@ -57,7 +55,7 @@ const responseHandler = {
   badrequest,
   ok,
   created,
-  unauthorize,
+  unauthorized,
   notfound,
   conflict
 };

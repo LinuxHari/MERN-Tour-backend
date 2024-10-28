@@ -1,5 +1,5 @@
 import { z } from "zod";
-import sanitizeString from "../utils/sanitizeString";
+import removeSpaces from "../utils/removeSpaces";
 import {
   CATEGORIES,
   LANGUAGES,
@@ -19,7 +19,7 @@ const strToArr = (values: string) => {
 export const SearchSuggestionSchema = z.object({
   searchText: z
     .string()
-    .transform(sanitizeString)
+    .transform(removeSpaces)
     .pipe(z.string().min(1).max(50)),
 });
 

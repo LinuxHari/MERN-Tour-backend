@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import asyncWrapper from "../asyncWrapper";
-import { authenticateUser, createUser } from "../services/userService";
+import { authenticateUser, createUser, getUserInfo } from "../services/userService";
 import responseHandler from "../handlers/responseHandler";
 
 export const signup = asyncWrapper(async (req: Request, res: Response) => {
@@ -14,3 +14,8 @@ export const login = asyncWrapper(async (req: Request, res: Response) => {
   res.cookie("authToken", authToken, {signed: true})
   responseHandler.ok(res, { message: "Login success" });
 });
+
+export const userInfo = asyncWrapper(async (req: Request, res: Response) => {
+    const userInfo = getUserInfo(res.locals.email)
+    responseHandler.ok(res, userInfo)
+})
