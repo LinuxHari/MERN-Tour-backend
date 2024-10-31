@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import cookieParser from "cookie-parser"
+import cookieParser from "cookie-parser";
 import { errorHandler } from "./handlers/errorHandler";
 import allRoutes from "./routes/routes";
 
@@ -10,11 +10,17 @@ const app = express();
 
 dotenv.config();
 
-app.use(cors({ origin: "*", methods: "GET,PUT,POST,DELETE" }));
+app.use(
+  cors({
+    origin: "http://localhost:4000",
+    methods: "GET,PUT,POST,DELETE",
+    credentials: true,
+  })
+);
 
-app.use(express.json())
+app.use(express.json());
 
-app.use(cookieParser(process.env.COOKIE_SECRET))
+app.use(cookieParser(process.env.COOKIE_SECRET));
 
 app.use("/api/v1", allRoutes);
 

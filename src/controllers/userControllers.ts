@@ -11,11 +11,19 @@ export const signup = asyncWrapper(async (req: Request, res: Response) => {
 
 export const login = asyncWrapper(async (req: Request, res: Response) => {
   const authToken = await authenticateUser(req.body);
-  res.cookie("authToken", authToken, {signed: true})
-  responseHandler.ok(res, { message: "Login success" });
+  res.cookie("authToken", authToken, {
+    signed: true,
+    httpOnly: true,
+    secure: process.env.NODE_ENV !==  "development",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365
+  }).send();
 });
 
-export const userInfo = asyncWrapper(async (req: Request, res: Response) => {
-    const userInfo = getUserInfo(res.locals.email)
+export const logout = asyncWrapper(async(req: Request, res: Response) => res.clearCookie("authToken").send())
+
+export const userInfo = asyncWrapper(async (_: Request, res: Response) => {
+    const userInfo = await getUserInfo(res.locals.email)
+    console.log(userInfo, "user info")
     responseHandler.ok(res, userInfo)
 })

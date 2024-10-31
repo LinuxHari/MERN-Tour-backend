@@ -30,7 +30,8 @@ export const authenticateUser = async (userData: LoginSchemaType) => {
 };
 
 export const getUserInfo = async (email: string) => {
-  const userInfo = await User.findOne({email},{_id: 0, favorites: 0, publishedTours: 0, password: 0}).lean()
+  const userInfo = await User.findOne({email},{_id: 0, favorites: 0, publishedTours: 0, password: 0, __v: 0}).lean()
   if(!userInfo)
     throw new NotFoundError("User not found")
+  return userInfo
 }

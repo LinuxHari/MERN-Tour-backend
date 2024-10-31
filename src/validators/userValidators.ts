@@ -3,6 +3,10 @@ import { LocationSchema } from "./adminValidators"
 import { EmailSchema, NameSchema } from "./authValidators"
 import removeSpaces from "../utils/removeSpaces"
 
+export const TokenSchema = z.object({
+  authToken: z.string()
+})
+
 export const UserSchema = z.object({
   phone: z.number().min(4).max(11),
   profile:  
