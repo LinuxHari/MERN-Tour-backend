@@ -9,7 +9,7 @@ const router = express.Router()
 
 router.post("/signup", requestHandler(SignupSchema), signup)
 router.post("/login", requestHandler(LoginSchema), login)
-router.get("/logout", requestHandler(TokenSchema, "signedCookies"), verifyAuthToken, logout)
+router.post("/logout", requestHandler(TokenSchema, "signedCookies"), verifyAuthToken, logout)
 router.get("/info", requestHandler(TokenSchema, "signedCookies"), verifyAuthToken, userInfo )
 
 export default router
