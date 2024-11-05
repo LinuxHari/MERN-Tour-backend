@@ -23,7 +23,6 @@ export const login = asyncWrapper(async (req: Request, res: Response) => {
 export const logout = asyncWrapper(async(_: Request, res: Response) => res.clearCookie("authToken").send())
 
 export const userInfo = asyncWrapper(async (_: Request, res: Response) => {
-    const userInfo = await getUserInfo(res.locals.email)
-    console.log(userInfo, "user info")
+  const userInfo = await getUserInfo(res.locals.email)
     responseHandler.ok(res, userInfo)
 })

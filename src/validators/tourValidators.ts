@@ -116,4 +116,33 @@ export const TourListingSchema = z.object({
     .optional(),
 });
 
+export const SingleTourSchema = z.object({
+  tourId: z.string().length(8)
+})
+
+export const ReserveTourSchema = z.object({
+  startDate: z.string().transform((dateStr) => new Date(dateStr)).pipe(z.date({message: "Invalid start date"})),
+  endDate: z.string().transform((dateStr) => new Date(dateStr)).pipe(z.date({message: "Invalid end date"})),
+  pax: z.object({
+    adults: z.number().int().min(1, { message: "Atleast 1 adult required" }).max(10, "Number of adults should not exceed 9"),
+  children: z
+        .number()
+        .int()
+        .min(0)
+        .max(10, { message: "Number of children should not exceed 9" }).optional(),
+  infants: 
+      z
+        .number()
+        .int()
+        .min(0)
+        .max(9, { message: "Number of infant should not exceed 9" }).optional(),
+    teens: z
+        .number()
+        .int()
+        .min(0)
+        .max(9, { message: "Number of infant should not exceed 9" }).optional(),
+  })
+}).merge(SingleTourSchema)
+
 export type TourListingSchemaType = z.infer<typeof TourListingSchema>;
+export type ReserveTourType = z.infer<typeof ReserveTourSchema>
