@@ -3,9 +3,11 @@ import Tour from "../models/tourModel";
 import generateId from "../utils/generateId";
 import { TourSchemaType } from "../validators/adminValidators";
 import { ObjectId } from "mongodb";
-import { TourListingSchemaType } from "../validators/tourValidators";
+import { ReserveTourType, TourListingSchemaType } from "../validators/tourValidators";
 import tourAggregations from "../aggregations/tourAggegations";
 import Destination, { DestinationType } from "../models/destinationModel";
+import User from "../models/userModel";
+import Reserved from "../models/reserveModel";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
@@ -151,3 +153,19 @@ export const updateTour = async (tourId: string, tourData: TourSchemaType) => {
 
   await Tour.updateOne({ tourId }, updatedTour, { runValidators: true });
 };
+
+export const reserveTour = async (reserveDetails: ReserveTourType, email: string) => {
+  const reserveId = generateId()
+  const { startDate, endDate, tourId, pax } = reserveDetails
+  const userId = await User.findOne({email}, {_id: 1}).lean()
+  if(!userId)
+    throw new NotFoundError("User not found")
+  const now = new Date()
+  const expiresAt = new Date(now.setMinutes(now.getMinutes() + 10)).getTime()
+  await Reserved.create({tourId, reserveId, startDate, endDate, userId, passengers: pax, expiresAt})
+  return reserveId
+}
+
+export const getReservedDetails = async(reserveId: string, email: string) => {
+
+}

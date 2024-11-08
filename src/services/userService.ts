@@ -7,9 +7,6 @@ import {
   SignupSchemaType,
 } from "../validators/authValidators";
 import bcrypt from "bcrypt"
-import { ReserveTourType } from "../validators/tourValidators";
-import generateId from "../utils/generateId";
-import Reserved from "../models/reserveModel";
 
 export const createUser = async (
   userData: Omit<SignupSchemaType, "confirmPassword">
@@ -37,16 +34,4 @@ export const getUserInfo = async (email: string) => {
   if(!userInfo)
     throw new NotFoundError("User not found")
   return userInfo
-}
-
-export const reserveTour = async (reserveDetails: ReserveTourType, email: string) => {
-  const reserveId = generateId()
-  const { startDate, endDate, tourId, pax } = reserveDetails
-  const userId = await User.findOne({email}, {_id: 1}).lean()
-  if(!userId)
-    throw new NotFoundError("User not found")
-  const now = new Date()
-  const expiresAt = new Date(now.setMinutes(now.getMinutes() + 10)).getTime()
-  await Reserved.create({tourId, reserveId, startDate, endDate, userId, passengers: pax, expiresAt})
-  return reserveId
 }

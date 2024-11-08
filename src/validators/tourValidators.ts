@@ -26,8 +26,7 @@ export const SearchSuggestionSchema = z.object({
 export const TourListingSchema = z.object({
   destinationId: z
     .string()
-    .min(8, { message: "Invalid destination id" })
-    .max(8, { message: "Destination id is not valid" }),
+    .length(8, { message: "Invalid destination id" }),
   startDate: z.string().refine(isValidDate),
   endDate: z.string().refine(isValidDate),
   adults: z
@@ -143,6 +142,12 @@ export const ReserveTourSchema = z.object({
         .max(9, { message: "Number of infant should not exceed 9" }).optional(),
   })
 }).merge(SingleTourSchema)
+
+export const ReserveTourParamSchema = z.object({
+  reserveId: z
+.string()
+.length(8, { message: "Invalid reserve id" }
+)})
 
 export type TourListingSchemaType = z.infer<typeof TourListingSchema>;
 export type ReserveTourType = z.infer<typeof ReserveTourSchema>
