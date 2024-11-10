@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import asyncWrapper from "../asyncWrapper";
-import { authenticateUser, createUser, getUserInfo } from "../services/userService";
+import { authenticateUser, createUser, getUserInfo } from "../services/userServices";
 import responseHandler from "../handlers/responseHandler";
 
 export const signup = asyncWrapper(async (req: Request, res: Response) => {

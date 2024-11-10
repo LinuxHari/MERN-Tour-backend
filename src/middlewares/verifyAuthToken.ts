@@ -10,6 +10,7 @@ const verifyAuthToken = asyncWrapper(async (req: Request, res: Response, next: N
         throw new UnauthroizedError("User is unauthorized")
     try{
         const payload = verifyToken(token) as JwtData
+        console.log(payload)
         res.locals.email = payload.email
         next()
     } catch(err){

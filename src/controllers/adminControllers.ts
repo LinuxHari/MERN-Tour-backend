@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import responseHandler from "../handlers/responseHandler";
-import { createTour } from "../services/tourService";
+import { createTour } from "../services/tourServices";
 import asyncWrapper from "../asyncWrapper";
 
 export const addTour = asyncWrapper(async (req: Request, res: Response) => {

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getReservedDetails, getTour, getTours, reserveTour, searchSuggestions } from "../services/tourService";
+import { getReservedDetails, getTour, getTours, reserveTour, searchSuggestions } from "../services/tourServices";
 import responseHandler from "../handlers/responseHandler";
 import asyncWrapper from "../asyncWrapper";
 import { TourListingSchemaType } from "../validators/tourValidators";
@@ -29,4 +29,5 @@ export const reserve = asyncWrapper(async (req: Request, res: Response) => {
 
 export const reservedDetails = asyncWrapper(async (req: Request, res: Response) => {
   const reserved = await getReservedDetails(req.params.reserveId, res.locals.email)
+  responseHandler.ok(res, reserved)
 })

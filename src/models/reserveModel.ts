@@ -1,4 +1,5 @@
 import mongoose, { InferSchemaType } from "mongoose";
+import { modelOptions } from "./modelConfig";
 
 const passengerSchema = {
   adults: {
@@ -45,7 +46,7 @@ const reservedSchema = new mongoose.Schema({
     type: Number, //It will be Epoach time in milliseconds
     required: true
   }
-});
+}, modelOptions);
 
 const Reserved = mongoose.model("reserved", reservedSchema)
 

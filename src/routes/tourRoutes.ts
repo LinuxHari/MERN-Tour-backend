@@ -9,7 +9,7 @@ const router = express.Router()
 router.get('/search', requestHandler(SearchSuggestionSchema, "query"), search)
 router.get('/', requestHandler(TourListingSchema, "query"), tours)
 router.get('/:tourId', requestHandler(SingleTourSchema, "params"), tour)
-router.post('/reserve', requestHandler(ReserveTourSchema), verifyAuthToken, reserve)
-router.get('/reserve/:reserveId', requestHandler(ReserveTourParamSchema, "params"), verifyAuthToken, reservedDetails)
+router.post('/reserve', verifyAuthToken, requestHandler(ReserveTourSchema), reserve)
+router.get('/reserve/:reserveId', verifyAuthToken, requestHandler(ReserveTourParamSchema, "params"), reservedDetails)
 
 export default router
