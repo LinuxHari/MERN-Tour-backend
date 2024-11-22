@@ -216,6 +216,16 @@ export const reserveTour = async (
   const { startDate, endDate, tourId, pax } = reserveDetails;
   const userId = await User.findOne({ email }, { _id: 1 }).lean();
   if (!userId) throw new NotFoundError(`User with ${email} email not found`);
+  const tour = await Tour.findOne({tourId}, {price: 1})
+  if (!tour) throw new NotFoundError(`Tour with ${tourId} id not found`);
+  const totalAmount = (() => {
+    const { price } = tour;
+    let totalAmount = pax.adults * price.adult;
+    if (price?.teen) totalAmount += price.teen * (pax.teens || 0);
+    if (price?.child) totalAmount += price.child * (pax.children || 0);
+    if (price?.infant) totalAmount += price.infant * (pax.infants || 0);
+    return totalAmount;
+  })();
   const now = new Date();
   const expiresAt = new Date(now.setMinutes(now.getMinutes() + 10)).getTime();
   await Reserved.create({
@@ -226,6 +236,7 @@ export const reserveTour = async (
     userId,
     passengers: pax,
     expiresAt,
+    totalAmount
   });
   return reserveId;
 };

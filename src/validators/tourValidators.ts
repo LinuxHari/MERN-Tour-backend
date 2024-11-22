@@ -5,6 +5,8 @@ import {
   LANGUAGES,
   SPECIALS
 } from "../config/tourConfig";
+import { EmailSchema } from "./authValidators";
+import { LocationSchema } from "./adminValidators";
 
 const isValidDate = (date: string) =>
   date === new Date(date).toISOString().split("T")[0];
@@ -149,5 +151,16 @@ export const ReserveTourParamSchema = z.object({
 .length(8, { message: "Invalid reserve id" }
 )})
 
+export const BookingSchema = z.object({
+  fullName: z.string().min(2, {message: "Full name must contain atleast 2 characters"}).max(64, {message: "Full name must not exceed 64 characters"}),
+  countryCode: z.number({message: "Country code must be a number"}).min(1, {message: "Invalid country code"}).max(999, {message: "Country code is invalid"}),
+  phone: z.number({message: "Phone number must be number"}).min(1000,{message: "Invalid phone number"}).max(99999999999, {message: "Invalid phone number"})
+}).merge(EmailSchema).merge(LocationSchema.omit({city: true}))
+
+export type BookingSchemaType = z.infer<typeof BookingSchema>
+
+export default BookingSchema
+
 export type TourListingSchemaType = z.infer<typeof TourListingSchema>;
 export type ReserveTourType = z.infer<typeof ReserveTourSchema>
+export type BookingTourType = z.infer<typeof BookingSchema>

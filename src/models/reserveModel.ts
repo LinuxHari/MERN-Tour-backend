@@ -42,6 +42,10 @@ const reservedSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
+  totalAmount: {
+    type: Number,
+    required: true
+  },
   expiresAt: {
     type: Number, //It will be Epoach time in milliseconds
     required: true
