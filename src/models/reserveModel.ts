@@ -1,7 +1,7 @@
 import mongoose, { InferSchemaType } from "mongoose";
 import { modelOptions } from "./modelConfig";
 
-const passengerSchema = {
+export const passengerSchema = {
   adults: {
     type: Number,
     required: true,
@@ -17,7 +17,7 @@ const passengerSchema = {
   },
 };
 
-const reservedSchema = new mongoose.Schema({
+export const reservedSchema = new mongoose.Schema({
   userId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true

@@ -4,6 +4,7 @@ import generateId from "../utils/generateId";
 import { TourSchemaType } from "../validators/adminValidators";
 import { ObjectId } from "mongodb";
 import {
+  BookingSchemaType,
   ReserveTourType,
   TourListingSchemaType,
 } from "../validators/tourValidators";
@@ -246,7 +247,6 @@ export const getReservedDetails = async (reserveId: string, email: string) => {
   if(!reserved)
     throw new NotFoundError(`Reserve id ${reserveId} is not found`)
   const user = await User.findById(reserved.userId).lean({email: 1}) // Prevent someone else other than reserved user intercepts with valid reserve id
-  console.log(user, email)
   if(user?.email !== email)
     throw new BadRequestError(`Reserve id ${reserveId} is not valid`)
   reserved.expiresAt = reserved.expiresAt - 60000 // We are sending expire time one minute less than stored time since submission backend process may go upto 1 minute
@@ -254,3 +254,8 @@ export const getReservedDetails = async (reserveId: string, email: string) => {
   const {tourId, userId, ...reservedDetails} = reserved
   return {...reservedDetails, tourDetails: tour}
 };
+
+export const bookReservedTour = async(tourData: BookingSchemaType, reserveId: string, email: string) => {
+  const reservedTour = await Reserved.findOne({ reserveId })
+  
+}
