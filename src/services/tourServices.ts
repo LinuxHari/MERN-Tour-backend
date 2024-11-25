@@ -1,4 +1,4 @@
-import { BadRequestError, NotFoundError, ServerError } from "../handlers/errorHandler";
+import { BadRequestError, GoneError, NotFoundError, ServerError } from "../handlers/errorHandler";
 import Tour from "../models/tourModel";
 import generateId from "../utils/generateId";
 import { TourSchemaType } from "../validators/adminValidators";
@@ -257,5 +257,15 @@ export const getReservedDetails = async (reserveId: string, email: string) => {
 
 export const bookReservedTour = async(tourData: BookingSchemaType, reserveId: string, email: string) => {
   const reservedTour = await Reserved.findOne({ reserveId })
+  if(!reservedTour)
+    throw new BadRequestError(`Invalid booking for reserve id ${reserveId}`)
+  const user = await User.findById(reservedTour.userId)
+  if(!user)
+    throw new BadRequestError(`Invalid user id ${reservedTour.userId} used for booking`)
+  if((String(reservedTour.userId) !== String(user._id)) || user.email !== email)
+    throw new BadRequestError(`Invalid user id ${user.id} or reserve id ${reserveId} used for booking`)
+  const now = new Date()
+  if(reservedTour.expiresAt < now.getTime())
+    throw new GoneError(`Reservation ${reservedTour.id} is timed out`)
   
 }

@@ -50,6 +50,11 @@ const conflict = (res: Response) => responseWithStatus(res, 409, {
   message: "Conflict"
 })
 
+const gone = (res: Response) => responseWithStatus(res, 410, {
+  error: true,
+  message: "Gone"
+})
+
 const responseHandler = {
   error,
   badrequest,
@@ -57,7 +62,8 @@ const responseHandler = {
   created,
   unauthorized,
   notfound,
-  conflict
+  conflict,
+  gone
 };
 
 export default responseHandler;
