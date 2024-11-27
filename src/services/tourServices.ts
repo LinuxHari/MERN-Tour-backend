@@ -1,4 +1,9 @@
-import { BadRequestError, GoneError, NotFoundError, ServerError } from "../handlers/errorHandler";
+import {
+  BadRequestError,
+  GoneError,
+  NotFoundError,
+  ServerError,
+} from "../handlers/errorHandler";
 import Tour from "../models/tourModel";
 import generateId from "../utils/generateId";
 import { TourSchemaType } from "../validators/adminValidators";
@@ -12,6 +17,9 @@ import tourAggregations from "../aggregations/tourAggegations";
 import Destination, { DestinationType } from "../models/destinationModel";
 import User from "../models/userModel";
 import Reserved from "../models/reserveModel";
+import { stripeCreate } from "./stripeService";
+import Booking, { BookingType } from "../models/bookingModel";
+import responseHandler from "../handlers/responseHandler";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
@@ -196,7 +204,8 @@ export const createTour = async (tourData: TourSchemaType) => {
 export const updateTour = async (tourId: string, tourData: TourSchemaType) => {
   const existingTour = await Tour.findOne({ tourId });
 
-  if (!existingTour) throw new NotFoundError(`Tour with id ${tourId} not found`);
+  if (!existingTour)
+    throw new NotFoundError(`Tour with id ${tourId} not found`);
 
   const updatedTour = {
     ...tourData,
@@ -217,7 +226,7 @@ export const reserveTour = async (
   const { startDate, endDate, tourId, pax } = reserveDetails;
   const userId = await User.findOne({ email }, { _id: 1 }).lean();
   if (!userId) throw new NotFoundError(`User with ${email} email not found`);
-  const tour = await Tour.findOne({tourId}, {price: 1})
+  const tour = await Tour.findOne({ tourId }, { price: 1 });
   if (!tour) throw new NotFoundError(`Tour with ${tourId} id not found`);
   const totalAmount = (() => {
     const { price } = tour;
@@ -237,35 +246,76 @@ export const reserveTour = async (
     userId,
     passengers: pax,
     expiresAt,
-    totalAmount
+    totalAmount,
   });
   return reserveId;
 };
 
 export const getReservedDetails = async (reserveId: string, email: string) => {
-  const reserved = await Reserved.findOne({ reserveId }, {_id: 0, __v: 0}).lean();
-  if(!reserved)
-    throw new NotFoundError(`Reserve id ${reserveId} is not found`)
-  const user = await User.findById(reserved.userId).lean({email: 1}) // Prevent someone else other than reserved user intercepts with valid reserve id
-  if(user?.email !== email)
-    throw new BadRequestError(`Reserve id ${reserveId} is not valid`)
-  reserved.expiresAt = reserved.expiresAt - 60000 // We are sending expire time one minute less than stored time since submission backend process may go upto 1 minute
-  const tour = await Tour.findOne({ tourId: reserved.tourId }, {duration: 1, price: 1, images: 1, name: 1, minAge: 1}).lean()
-  const {tourId, userId, ...reservedDetails} = reserved
-  return {...reservedDetails, tourDetails: tour}
+  const reserved = await Reserved.findOne(
+    { reserveId },
+    { _id: 0, __v: 0 }
+  ).lean();
+  if (!reserved)
+    throw new NotFoundError(`Reserve id ${reserveId} is not found`);
+  const user = await User.findById(reserved.userId).lean({ email: 1 }); // Prevent someone else other than reserved user intercepts with valid reserve id
+  if (user?.email !== email)
+    throw new BadRequestError(`Reserve id ${reserveId} is not valid`);
+  reserved.expiresAt = reserved.expiresAt - 60000; // We are sending expire time one minute less than stored time since submission backend process may go upto 1 minute
+  const tour = await Tour.findOne(
+    { tourId: reserved.tourId },
+    { duration: 1, price: 1, images: 1, name: 1, minAge: 1 }
+  ).lean();
+  const { tourId, userId, ...reservedDetails } = reserved;
+  return { ...reservedDetails, tourDetails: tour };
 };
 
-export const bookReservedTour = async(tourData: BookingSchemaType, reserveId: string, email: string) => {
-  const reservedTour = await Reserved.findOne({ reserveId })
-  if(!reservedTour)
-    throw new BadRequestError(`Invalid booking for reserve id ${reserveId}`)
-  const user = await User.findById(reservedTour.userId)
-  if(!user)
-    throw new BadRequestError(`Invalid user id ${reservedTour.userId} used for booking`)
-  if((String(reservedTour.userId) !== String(user._id)) || user.email !== email)
-    throw new BadRequestError(`Invalid user id ${user.id} or reserve id ${reserveId} used for booking`)
-  const now = new Date()
-  if(reservedTour.expiresAt < now.getTime())
-    throw new GoneError(`Reservation ${reservedTour.id} is timed out`)
-  
-}
+export const bookReservedTour = async (
+  tourData: BookingSchemaType,
+  reserveId: string,
+  email: string
+) => {
+  const reservedTour = await Reserved.findOne({ reserveId });
+  if (!reservedTour)
+    throw new BadRequestError(`Invalid booking for reserve id ${reserveId}`);
+  const user = await User.findById(reservedTour.userId);
+  if (!user)
+    throw new BadRequestError(
+      `Invalid user id ${reservedTour.userId} used for booking`
+    );
+  if (String(reservedTour.userId) !== String(user._id) || user.email !== email)
+    throw new BadRequestError(
+      `Invalid user id ${user.id} or reserve id ${reserveId} used for booking`
+    );
+  const now = new Date();
+  const currency = "USD"
+  if (reservedTour.expiresAt < now.getTime())
+    throw new GoneError(`Reservation ${reservedTour.id} is timed out`);
+  const newBooking = new Booking();
+  const { clientSecret, paymentId, amount } = await stripeCreate({
+    amount: reservedTour.totalAmount,
+    currency,
+    bookingId: newBooking.id,
+    userId: user.id,
+  });
+  const bookingDetails: BookingType = {
+    bookingId: generateId(),
+    userId: user._id,
+    tourId: reservedTour.tourId,
+    reserveId: reservedTour.id,
+    passengers: reservedTour.passengers,
+    startDate: reservedTour.startDate,
+    endDate: reservedTour.endDate,
+    bookingStatus: "Init",
+    transaction: {
+      clientSecret: clientSecret as string,
+      paymentId,
+      currency,
+      amount,
+      paymentStatus: "unpaid"
+    }
+  };
+  Object.assign(newBooking, bookingDetails);
+  await newBooking.save()
+  return clientSecret
+};

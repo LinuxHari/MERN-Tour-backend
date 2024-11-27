@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
+import mongoose, { InferSchemaType } from "mongoose";
 import { passengerSchema } from "./reserveModel";
 
-const transactionSchema = new mongoose.Schema({
+const transactionSchema = {
     clientSecret: {
         type: String,
         required: true
@@ -23,7 +23,7 @@ const transactionSchema = new mongoose.Schema({
         type: Number,
         required: true
     }
-})
+}
 
 const bookingSchema = new mongoose.Schema({
     bookingId: {
@@ -56,14 +56,39 @@ const bookingSchema = new mongoose.Schema({
     },
     bookingStatus: {
         type: String,
-        enum: ["Pending", "Failed", "Success"]
+        enum: ["Init", "Failed", "Success"]
     },
     transaction: {
-        type: transactionSchema,
+        type: {
+            clientSecret: {
+                type: String,
+                required: true
+            },
+            paymentId: {
+                type: String,
+                required: true
+            },
+            paymentStatus: {
+                type: String,
+                required: true
+            },
+            currency: {
+                type: String,
+                enum: ["INR","USD"],
+                required: true
+            },
+            amount: {
+                type: Number,
+                required: true
+            }
+        },
+        _id: false,
         requried: true
     }
 })
 
 const Booking = mongoose.model("Booking", bookingSchema)
+
+export type BookingType = InferSchemaType<typeof bookingSchema> 
 
 export default Booking

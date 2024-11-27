@@ -1,7 +1,8 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-import { Request, Response, NextFunction } from 'express';
-import responseHandler from './responseHandler';
+import { Request, Response, NextFunction } from "express";
+import responseHandler from "./responseHandler";
+import Stripe from "stripe";
 
 export class BadRequestError extends Error {
   constructor(message: string) {
@@ -44,74 +45,42 @@ export class ServerError extends Error {
   }
 }
 
-
 export const errorHandler = (err: any, _: Request, res: Response, __: NextFunction) => {
+  if (err instanceof BadRequestError) return responseHandler.badrequest(res, err.stack || "");
+  if (err instanceof UnauthroizedError) return responseHandler.unauthorized(res);
+  if (err instanceof NotFoundError) return responseHandler.notfound(res);
+  if (err instanceof ConflictError) return responseHandler.conflict(res);
+  if (err instanceof GoneError) return responseHandler.gone(res);
+  if (err instanceof ServerError) return responseHandler.error(res, err.message);
 
-  if(err instanceof BadRequestError){
-    return responseHandler.badrequest(res, err?.stack || "")
+  if (err instanceof mongoose.Error) {
+    switch (err.name) {
+      case "ValidationError":
+      case "CastError":
+      case "StrictModeError":
+      case "StrictPopulateError":
+      case "ValidatorError":
+        return responseHandler.badrequest(res, err.stack || "Mongoose error");
+      default:
+        return responseHandler.error(res, err.stack || "Mongoose error");
+    }
   }
 
-  if(err instanceof UnauthroizedError){
-    return responseHandler.unauthorized(res)
+  if (err.code === 11000) return responseHandler.badrequest(res, "Duplicate key error");
+
+  switch (err.constructor.name) {
+    case "StripeCardError":
+      return responseHandler.paymentRequired(res, "Invalid card, try another card for payment");
+    case "StripeRateLimitError":
+      return responseHandler.manyRequests(res);
+    case "StripeInvalidRequestError":
+    case "StripeAPIError":
+    case "StripeConnectionError":
+    case "StripeAuthenticationError":
+      return responseHandler.error(res, err.message);
+    default:
+      break;
   }
 
-  else if(err instanceof NotFoundError){
-    return responseHandler.notfound(res)
-  }
-
-  else if(err instanceof ConflictError){
-    return responseHandler.conflict(res)
-  }
-
-  else if(err instanceof GoneError){
-    return responseHandler.gone(res)
-  }
-
-  else if(err instanceof ServerError){
-    return responseHandler.error(res, err.message)
-  }
-
-  else if (err instanceof mongoose.Error.ValidationError)  
-    return responseHandler.badrequest(res, err.stack || "Mongoose validation error");
-
-  else if (err instanceof mongoose.Error.CastError) 
-    return responseHandler.badrequest(res, err.stack || "Mongoose cast error");
-  
-  else if (err instanceof mongoose.Error.DivergentArrayError) 
-    return responseHandler.error(res, err.stack || "Mongoose divergent array error");
-
-  else if (err instanceof mongoose.Error.DocumentNotFoundError)  
-    return responseHandler.notfound(res);
-
-  else if (err instanceof mongoose.Error.MissingSchemaError)
-    return responseHandler.error(res, err.stack || "Mongoose missing schema error");
-
-  else if (err instanceof mongoose.Error.MongooseServerSelectionError) 
-    return responseHandler.error(res, err.stack || "Mongoose server selection error");
-
-  else if (err instanceof mongoose.Error.OverwriteModelError) 
-    return responseHandler.error(res, err.stack || "Mongoose overwrite model error");
-
-  else if (err instanceof mongoose.Error.ParallelSaveError) 
-    return responseHandler.error(res, err.stack || "Mongoose parallel save error");
-
-  else if (err instanceof mongoose.Error.StrictModeError) 
-    return responseHandler.badrequest(res, err.stack || "Mongoose strict mode error");
-
-  else if (err instanceof mongoose.Error.StrictPopulateError)
-    return responseHandler.badrequest(res, err.stack || "Mongoose strict populate error");
-
-  else if (err instanceof mongoose.Error.ValidatorError) 
-    return responseHandler.badrequest(res, err.stack || "Mongoose validator error");
-
-  else if (err instanceof mongoose.Error.VersionError) 
-    return responseHandler.error(res, err.stack || "Mongoose version error");
-
-  else if (err.code === 11000) 
-    return responseHandler.badrequest(res, err.stack);
-
-  else {
-    return responseHandler.error(res, err.stack);
-  }
+  return responseHandler.error(res, err.stack || "An unexpected error occurred");
 };
-

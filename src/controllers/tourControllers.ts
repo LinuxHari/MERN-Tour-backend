@@ -34,4 +34,5 @@ export const reservedDetails = asyncWrapper(async (req: Request, res: Response) 
 
 export const bookTour = asyncWrapper(async (req: Request, res: Response) => {
   const clientSecret = await bookReservedTour(req.body, req.params.reserveId, res.locals.email)
+  responseHandler.ok(res, { clientSecret })
 })

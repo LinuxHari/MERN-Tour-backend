@@ -39,6 +39,12 @@ const unauthorized = (res: Response) =>
     message: "Unathorized",
   });
 
+const paymentRequired = (res: Response, message: string) => 
+  responseWithStatus(res, 402, {
+    error: true,
+    message
+  })
+
 const notfound = (res: Response) =>
   responseWithStatus(res, 404, {
     error: true,
@@ -55,15 +61,22 @@ const gone = (res: Response) => responseWithStatus(res, 410, {
   message: "Gone"
 })
 
+const manyRequests = (res: Response) => responseWithStatus(res, 429, {
+  error: true,
+  message: "Too many requests"
+})
+
 const responseHandler = {
   error,
   badrequest,
   ok,
   created,
   unauthorized,
+  paymentRequired,
   notfound,
   conflict,
-  gone
+  gone,
+  manyRequests
 };
 
 export default responseHandler;

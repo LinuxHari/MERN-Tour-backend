@@ -10,7 +10,7 @@ type StripeData = {
 const stripe =  new Stripe(process.env.STRIPE_SECRET as string)
 
 export const stripeCreate = async ({amount, currency, bookingId, userId}: StripeData) => {
-    const chargeDetails = await stripe.charges.create({
+    const {id, client_secret, amount: chargeAmount} = await stripe.paymentIntents.create({
         amount,
         currency,
         metadata: {
@@ -18,4 +18,6 @@ export const stripeCreate = async ({amount, currency, bookingId, userId}: Stripe
             userId
         }
     })
+
+    return {paymentId: id, clientSecret: client_secret, amount: chargeAmount}
 }
