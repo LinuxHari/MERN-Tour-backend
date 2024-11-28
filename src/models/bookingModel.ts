@@ -1,6 +1,29 @@
 import mongoose, { InferSchemaType } from "mongoose";
 import { passengerSchema } from "./reserveModel";
 
+const bookerInfoSchema = {
+    name: {
+        type: String,
+        required: true
+    },
+    email: {
+        type: String,
+        required: true
+    },
+    country: {
+        type: String,
+        required: true
+    },
+    state: {
+        type: String,
+        required: true
+    }, 
+    phoneNumber: {
+        type: String,
+        required: true
+    }
+}
+
 const transactionSchema = {
     clientSecret: {
         type: String,
@@ -12,6 +35,7 @@ const transactionSchema = {
     },
     paymentStatus: {
         type: String,
+        enum: ["unpaid", "paid"],
         required: true
     },
     currency: {
@@ -46,6 +70,9 @@ const bookingSchema = new mongoose.Schema({
       type: String,
       required: true,
     },
+    bookerInfo: {
+
+    },
     startDate: {
       type: Date,
       requried: true
@@ -59,29 +86,7 @@ const bookingSchema = new mongoose.Schema({
         enum: ["Init", "Failed", "Success"]
     },
     transaction: {
-        type: {
-            clientSecret: {
-                type: String,
-                required: true
-            },
-            paymentId: {
-                type: String,
-                required: true
-            },
-            paymentStatus: {
-                type: String,
-                required: true
-            },
-            currency: {
-                type: String,
-                enum: ["INR","USD"],
-                required: true
-            },
-            amount: {
-                type: Number,
-                required: true
-            }
-        },
+        type: transactionSchema,
         _id: false,
         requried: true
     }

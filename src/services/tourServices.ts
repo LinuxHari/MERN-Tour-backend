@@ -298,8 +298,10 @@ export const bookReservedTour = async (
     bookingId: newBooking.id,
     userId: user.id,
   });
+
+  const bookingId = generateId()
   const bookingDetails: BookingType = {
-    bookingId: generateId(),
+    bookingId,
     userId: user._id,
     tourId: reservedTour.tourId,
     reserveId: reservedTour.id,
@@ -313,9 +315,16 @@ export const bookReservedTour = async (
       currency,
       amount,
       paymentStatus: "unpaid"
+    },
+    bookerInfo: {
+      name: tourData.fullName,
+      email: tourData.email,
+      country: tourData.country,
+      state: tourData.state,
+      phoneNumber: `${tourData.countryCode} ${tourData.phone}`
     }
   };
   Object.assign(newBooking, bookingDetails);
   await newBooking.save()
-  return clientSecret
+  return {clientSecret, bookingId}
 };
