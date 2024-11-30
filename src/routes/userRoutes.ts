@@ -4,7 +4,6 @@ import requestHandler from "../handlers/requestHandler"
 import { LoginSchema, SignupSchema } from "../validators/authValidators"
 import { TokenSchema } from "../validators/userValidators"
 import verifyAuthToken from "../middlewares/verifyAuthToken"
-import { ReserveTourSchema } from "../validators/tourValidators"
 
 const router = express.Router()
 

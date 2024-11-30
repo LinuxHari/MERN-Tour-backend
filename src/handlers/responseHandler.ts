@@ -12,7 +12,6 @@ const responseWithStatus = (
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 const error = (res: Response, stack: string) => {
-
   responseWithStatus(res, 500, {
     error: true,
     message: "Oops! Something worng!",

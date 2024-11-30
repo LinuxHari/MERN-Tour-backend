@@ -1,10 +1,10 @@
-import express from "express"
+import { Router } from "express"
 import { bookTour, reserve, reservedDetails, search, tour, tours } from "../controllers/tourControllers"
 import requestHandler from "../handlers/requestHandler"
 import BookingSchema, { ReserveTourParamSchema, ReserveTourSchema, SearchSuggestionSchema, SingleTourSchema, TourListingSchema } from "../validators/tourValidators"
 import verifyAuthToken from "../middlewares/verifyAuthToken"
 
-const router = express.Router()
+const router = Router()
 
 router.get('/search', requestHandler(SearchSuggestionSchema, "query"), search)
 router.get('/', requestHandler(TourListingSchema, "query"), tours)
