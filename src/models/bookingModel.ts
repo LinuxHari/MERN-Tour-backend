@@ -43,7 +43,11 @@ const transactionSchema = {
         enum: ["INR","USD"],
         required: true
     },
-    amount: {
+    totalAmount: {
+        type: Number,
+        required: true
+    },
+    amountCharged: {
         type: Number,
         required: true
     }
@@ -71,7 +75,8 @@ const bookingSchema = new mongoose.Schema({
       required: true,
     },
     bookerInfo: {
-
+      type: bookerInfoSchema,
+      required: true
     },
     startDate: {
       type: Date,

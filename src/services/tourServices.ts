@@ -313,8 +313,9 @@ export const bookReservedTour = async (
       clientSecret: clientSecret as string,
       paymentId,
       currency,
-      amount,
-      paymentStatus: "unpaid"
+      totalAmount: amount,
+      paymentStatus: "unpaid",
+      amountCharged: 0
     },
     bookerInfo: {
       name: tourData.fullName,
