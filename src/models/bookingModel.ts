@@ -43,14 +43,10 @@ const transactionSchema = {
         enum: ["INR","USD"],
         required: true
     },
-    totalAmount: {
+    amount: {
         type: Number,
         required: true
     },
-    amountCharged: {
-        type: Number,
-        required: true
-    }
 }
 
 const bookingSchema = new mongoose.Schema({
@@ -88,12 +84,13 @@ const bookingSchema = new mongoose.Schema({
     },
     bookingStatus: {
         type: String,
-        enum: ["Init", "Failed", "Success"]
+        enum: ["Init", "Failed", "Success"],
+        required: true
     },
     transaction: {
         type: transactionSchema,
         _id: false,
-        requried: true
+        required: true
     }
 })
 
