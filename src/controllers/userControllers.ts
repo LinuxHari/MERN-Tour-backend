@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import asyncWrapper from "../asyncWrapper";
 import { authenticateUser, createUser, getUserInfo } from "../services/userServices";
 import responseHandler from "../handlers/responseHandler";
+import envConfig from "../config/envConfig";
 
 export const signup = asyncWrapper(async (req: Request, res: Response) => {
   const { firstName, lastName, password, email } = req.body;
@@ -14,7 +15,7 @@ export const login = asyncWrapper(async (req: Request, res: Response) => {
   res.cookie("authToken", authToken, {
     signed: true,
     httpOnly: true,
-    secure: process.env.NODE_ENV !==  "development",
+    secure: envConfig.environment !==  "development",
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 365 * 1000
   }).send();

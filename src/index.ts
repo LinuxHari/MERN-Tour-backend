@@ -1,14 +1,12 @@
-import express, { Request, Response } from "express";
+import express, { Response } from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import { errorHandler } from "./handlers/errorHandler";
 import allRoutes from "./routes/routes";
+import envConfig from "./config/envConfig";
 
 const app = express();
-
-dotenv.config();
 
 app.use(
   cors({
@@ -20,7 +18,7 @@ app.use(
 
 app.use(express.json());
 
-app.use(cookieParser(process.env.COOKIE_SECRET));
+app.use(cookieParser());
 
 app.use("/api/v1", allRoutes);
 
@@ -30,10 +28,10 @@ app.use("*", (_, res: Response) => {
 
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 8000;
+const PORT = envConfig.port || 8000;
 
 mongoose
-  .connect(process.env.MONGO_URI as string)
+  .connect(envConfig.mongoUri as string)
   .then(() => {
     app.listen(PORT, () => console.log(`Server is running in port ${PORT}`));
   })

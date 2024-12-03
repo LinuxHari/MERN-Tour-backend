@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { ZodIssue } from "zod";
+import envConfig from "../config/envConfig";
 
 type ResponseData = object | object[];
 
@@ -9,7 +10,7 @@ const responseWithStatus = (
   data: ResponseData
 ) => res.status(statusCode).json(data);
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = envConfig.environment === 'development';
 
 const error = (res: Response, stack: string) => {
   responseWithStatus(res, 500, {

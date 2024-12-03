@@ -1,6 +1,7 @@
 import Stripe from "stripe"
 import { BadRequestError, NotFoundError } from "../handlers/errorHandler"
 import Booking from "../models/bookingModel"
+import envConfig from "../config/envConfig"
 
 type StripeCreateParam = {
     amount: number
@@ -20,7 +21,9 @@ type StripeWebhookSuccessparam = {
     bookingId: string
 }
 
-const stripe =  new Stripe(process.env.STRIPE_SECRET as string)
+const stripe =  new Stripe(envConfig.stripeSecret as string)
+
+console.log(envConfig.stripeSecret)
 
 export const stripeCreate = async ({amount, currency, bookingId, userId}: StripeCreateParam) => {
     const {id, client_secret, amount: chargeAmount} = await stripe.paymentIntents.create({
@@ -37,7 +40,7 @@ export const stripeCreate = async ({amount, currency, bookingId, userId}: Stripe
 
 export const stripeValidate = ({data, signature}: StripeValidateParam) => {
     try{
-        return Stripe.webhooks.constructEvent(data, signature, process.env.STRIPE_WEBHOOK_SECRET as string)
+        return Stripe.webhooks.constructEvent(data, signature, envConfig.stripeWebhookSecret as string)
     } catch(err){
         throw new BadRequestError("Invalid signature")
     }
