@@ -5,8 +5,26 @@ import cookieParser from "cookie-parser";
 import { errorHandler } from "./handlers/errorHandler";
 import allRoutes from "./routes/routes";
 import envConfig from "./config/envConfig";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import slowDown from "express-slow-down";
 
 const app = express();
+
+app.use(helmet())
+
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+});
+app.use(limiter);
+
+const speedLimiter = slowDown({
+  windowMs: 60 * 1000,
+  delayAfter: 20, 
+  delayMs: 1000,
+});
+app.use(speedLimiter);
 
 app.use(
   cors({
