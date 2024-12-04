@@ -27,7 +27,6 @@ export const stripeWebhook = asyncWrapper((req: Request, res: Response) => {
       stripeFailed(event.data.object.metadata.bookingId);
       break;
     default:
-      responseHandler.ok(res, { message: "success" });
+      return responseHandler.ok(res, { message: "success" });
   }
-  responseHandler.ok(res, { message: "success" });
 });

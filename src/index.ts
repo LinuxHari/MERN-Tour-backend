@@ -3,11 +3,12 @@ import cors from "cors";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import { errorHandler } from "./handlers/errorHandler";
-import allRoutes from "./routes/routes";
+import clientRoutes from "./routes/routes";
 import envConfig from "./config/envConfig";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import slowDown from "express-slow-down";
+import webhookRoutes from "./routes/webhookRoutes";
 
 const app = express();
 
@@ -22,7 +23,7 @@ app.use(limiter);
 const speedLimiter = slowDown({
   windowMs: 60 * 1000,
   delayAfter: 20, 
-  delayMs: 1000,
+  delayMs: () => 1000,
 });
 app.use(speedLimiter);
 
@@ -34,11 +35,13 @@ app.use(
   })
 );
 
+app.use("/webhook", webhookRoutes)
+
 app.use(express.json());
 
-app.use(cookieParser());
+app.use(cookieParser(envConfig.cookieSecret));
 
-app.use("/api/v1", allRoutes);
+app.use("/api/v1", clientRoutes);
 
 app.use("*", (_, res: Response) => {
   res.status(404).send("Endpoint does not exist!");
