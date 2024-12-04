@@ -1,8 +1,6 @@
 import mongoose from "mongoose";
-
 import { Request, Response, NextFunction } from "express";
 import responseHandler from "./responseHandler";
-import Stripe from "stripe";
 
 export class BadRequestError extends Error {
   constructor(message: string) {

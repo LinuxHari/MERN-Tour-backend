@@ -23,10 +23,8 @@ type StripeWebhookSuccessparam = {
 
 const stripe =  new Stripe(envConfig.stripeSecret as string)
 
-console.log(envConfig.stripeSecret)
-
 export const stripeCreate = async ({amount, currency, bookingId, userId}: StripeCreateParam) => {
-    const {id, client_secret, amount: chargeAmount} = await stripe.paymentIntents.create({
+    const {id, client_secret} = await stripe.paymentIntents.create({
         amount,
         currency,
         metadata: {
@@ -35,13 +33,15 @@ export const stripeCreate = async ({amount, currency, bookingId, userId}: Stripe
         }
     })
 
-    return {paymentId: id, clientSecret: client_secret, amount: chargeAmount}
+    return {paymentId: id, clientSecret: client_secret}
 }
 
 export const stripeValidate = ({data, signature}: StripeValidateParam) => {
+    console.log(data, signature, envConfig.stripeWebhookSecret)
     try{
         return Stripe.webhooks.constructEvent(data, signature, envConfig.stripeWebhookSecret as string)
     } catch(err){
+        console.log(err)
         throw new BadRequestError("Invalid signature")
     }
 }
@@ -56,11 +56,10 @@ export const stripeAuthorized = async (bookingId: string) => {
 
 export const stripeSuccess = async ({amountCharged, userId, bookingId}: StripeWebhookSuccessparam) => {
     const existingBooking = await Booking.findById(bookingId)
-    if(!existingBooking)
+    if(!existingBooking || userId !== String(existingBooking.userId))
         throw new NotFoundError(`Existing Booking with ${bookingId} is not found for stripe authorization`)
-    if(amountCharged !== existingBooking.transaction.amount){
-
-    }
+    if(amountCharged !== existingBooking.transaction.amount)
+        throw new BadRequestError(`Amount mismatch for booking ${bookingId}`)
     existingBooking.bookingStatus = "Success"
     existingBooking.transaction.paymentStatus = "paid"
     await existingBooking.save()

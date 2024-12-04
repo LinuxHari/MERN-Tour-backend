@@ -292,8 +292,9 @@ export const bookReservedTour = async (
   if (reservedTour.expiresAt < now.getTime())
     throw new GoneError(`Reservation ${reservedTour.id} is timed out`);
   const newBooking = new Booking();
-  const { clientSecret, paymentId, amount } = await stripeCreate({
-    amount: reservedTour.totalAmount,
+  const amount = reservedTour.totalAmount * 100 
+  const { clientSecret, paymentId } = await stripeCreate({
+    amount,
     currency,
     bookingId: newBooking.id,
     userId: user.id,
@@ -324,6 +325,7 @@ export const bookReservedTour = async (
       phoneNumber: `${tourData.countryCode} ${tourData.phone}`
     }
   };
+  // reservedTour.expiresAt = new Date().getTime()
   Object.assign(newBooking, bookingDetails);
   await newBooking.save()
   return {clientSecret, bookingId}

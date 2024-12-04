@@ -11,6 +11,7 @@ router.get('/', requestHandler(TourListingSchema, "query"), tours)
 router.get('/:tourId', requestHandler(SingleTourSchema, "params"), tour)
 router.post('/reserve', verifyAuthToken, requestHandler(ReserveTourSchema), reserve)
 router.get('/reserve/:reserveId', verifyAuthToken, requestHandler(ReserveTourParamSchema, "params"), reservedDetails)
+router.get('/book', verifyAuthToken, )
 router.post('/book/:reserveId', verifyAuthToken, requestHandler(ReserveTourParamSchema, "params") ,requestHandler(BookingSchema), bookTour)
 
-export default router
+export default router;
