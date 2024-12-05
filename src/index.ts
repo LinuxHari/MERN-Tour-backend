@@ -53,6 +53,6 @@ const PORT = envConfig.port || 8000;
 
 export const server = app.listen(PORT, () => console.log(`Server is running in port ${PORT}`))
 mongoose
-  .connect(envConfig.mongoUri as string)
+  .connect(envConfig.mongoUri as string).then(() => console.log("DB is connected"))
 
 

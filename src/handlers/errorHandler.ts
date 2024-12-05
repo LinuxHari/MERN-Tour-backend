@@ -83,29 +83,37 @@ export const errorHandler = (err: any, _: Request, res: Response, __: NextFuncti
   return responseHandler.error(res, err.stack || "An unexpected error occurred");
 };
 
-const shutdown = () => {
-  console.log("Shutting down...")
-  server.close()
-  process.exit(1)
-}
+const shutdown = (type: number) => {
+  console.log("Shutting down...");
+
+  server.close(() => {
+    console.log("Server closed");
+    process.exit(type);
+  });
+
+  setTimeout(() => {
+    console.error('Forced shutdown due to lingering connections.');
+    process.exit(1);
+  }, 10000);
+};
 
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
-  shutdown();
+  shutdown(1);
 });
 
 process.on("unhandledRejection", (err: any, ) => {
   console.error("Promise got rejected unhandled", err.name, err.message, err?.stack)
-  shutdown()
+  shutdown(1)
 })
 
 
 process.on('SIGTERM', () => {
   console.log('Received SIGTERM');
-  shutdown();
+  shutdown(0);
 });
 
 process.on('SIGINT', () => {
   console.log('Received SIGINT');
-  shutdown();
+  shutdown(0);
 });
