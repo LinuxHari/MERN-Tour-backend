@@ -51,9 +51,8 @@ app.use(errorHandler);
 
 const PORT = envConfig.port || 8000;
 
+export const server = app.listen(PORT, () => console.log(`Server is running in port ${PORT}`))
 mongoose
   .connect(envConfig.mongoUri as string)
-  .then(() => {
-    app.listen(PORT, () => console.log(`Server is running in port ${PORT}`));
-  })
-  .catch(() => process.exit());
+
+

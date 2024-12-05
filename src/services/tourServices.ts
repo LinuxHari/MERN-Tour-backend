@@ -325,7 +325,7 @@ export const bookReservedTour = async (
       phoneNumber: `${tourData.countryCode} ${tourData.phone}`
     }
   };
-  // reservedTour.expiresAt = new Date().getTime()
+  
   Object.assign(newBooking, bookingDetails);
   await newBooking.save()
   return {clientSecret, bookingId}

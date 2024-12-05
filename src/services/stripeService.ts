@@ -1,7 +1,8 @@
 import Stripe from "stripe"
-import { BadRequestError, NotFoundError } from "../handlers/errorHandler"
+import { BadRequestError, NotFoundError, ServerError } from "../handlers/errorHandler"
 import Booking from "../models/bookingModel"
 import envConfig from "../config/envConfig"
+import Reserved from "../models/reserveModel"
 
 type StripeCreateParam = {
     amount: number
@@ -54,21 +55,28 @@ export const stripeAuthorized = async (bookingId: string) => {
     await existingBooking.save()
 }
 
-export const stripeSuccess = async ({amountCharged, userId, bookingId}: StripeWebhookSuccessparam) => {
-    const existingBooking = await Booking.findById(bookingId)
-    if(!existingBooking || userId !== String(existingBooking.userId))
-        throw new NotFoundError(`Existing Booking with ${bookingId} is not found for stripe authorization`)
-    if(amountCharged !== existingBooking.transaction.amount)
-        throw new BadRequestError(`Amount mismatch for booking ${bookingId}`)
-    existingBooking.bookingStatus = "Success"
-    existingBooking.transaction.paymentStatus = "paid"
-    await existingBooking.save()
-}
-
 export const stripeFailed = async ( bookingId: string) => {
     const existingBooking = await Booking.findById(bookingId)
     if(!existingBooking)
         throw new NotFoundError(`Existing Booking with ${bookingId} is not found for stripe failure`)
     existingBooking.bookingStatus = "Failed"
+    await existingBooking.save()
+}
+
+export const stripeSuccess = async ({amountCharged, userId, bookingId}: StripeWebhookSuccessparam) => {
+    const existingBooking = await Booking.findById(bookingId)
+    if(!existingBooking || userId !== String(existingBooking.userId))
+        throw new NotFoundError(`Existing Booking with ${bookingId} is not found for stripe success`)
+    const reservation = await Reserved.findOne({reserveId: existingBooking.reserveId})
+    if(!reservation)
+        throw new ServerError(`Reservation for ${existingBooking.bookingId} is not found in stripe success`)
+    if(amountCharged !== existingBooking.transaction.amount){
+        stripeFailed(bookingId)
+        throw new BadRequestError(`Amount mismatch for booking ${bookingId}`)
+    }
+    existingBooking.bookingStatus = "Success"
+    existingBooking.transaction.paymentStatus = "paid"
+    reservation.expiresAt = new Date().getTime()
+    await reservation.save()
     await existingBooking.save()
 }

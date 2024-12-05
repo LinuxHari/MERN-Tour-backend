@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { Request, Response, NextFunction } from "express";
 import responseHandler from "./responseHandler";
-
+import { server} from "../index" 
 export class BadRequestError extends Error {
   constructor(message: string) {
     super(message);
@@ -67,8 +67,8 @@ export const errorHandler = (err: any, _: Request, res: Response, __: NextFuncti
   if (err.code === 11000) return responseHandler.badrequest(res, "Duplicate key error");
 
   switch (err.constructor.name) {
-    case "StripeCardError":
-      return responseHandler.paymentRequired(res, "Invalid card, try another card for payment");
+    // case "StripeCardError":
+    //   return responseHandler.paymentRequired(res, "Invalid card, try another card for payment");
     case "StripeRateLimitError":
       return responseHandler.manyRequests(res);
     case "StripeInvalidRequestError":
@@ -82,3 +82,30 @@ export const errorHandler = (err: any, _: Request, res: Response, __: NextFuncti
 
   return responseHandler.error(res, err.stack || "An unexpected error occurred");
 };
+
+const shutdown = () => {
+  console.log("Shutting down...")
+  server.close()
+  process.exit(1)
+}
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  shutdown();
+});
+
+process.on("unhandledRejection", (err: any, ) => {
+  console.error("Promise got rejected unhandled", err.name, err.message, err?.stack)
+  shutdown()
+})
+
+
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM');
+  shutdown();
+});
+
+process.on('SIGINT', () => {
+  console.log('Received SIGINT');
+  shutdown();
+});
