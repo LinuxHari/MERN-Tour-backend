@@ -19,7 +19,6 @@ import User from "../models/userModel";
 import Reserved from "../models/reserveModel";
 import { stripeCreate } from "./stripeService";
 import Booking, { BookingType } from "../models/bookingModel";
-import responseHandler from "../handlers/responseHandler";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
@@ -291,17 +290,18 @@ export const bookReservedTour = async (
   const currency = "USD"
   if (reservedTour.expiresAt < now.getTime())
     throw new GoneError(`Reservation ${reservedTour.id} is timed out`);
-  const newBooking = new Booking();
+  const existingBooking = await Booking.findOne({reserveId})
+  const booking = existingBooking? existingBooking: new Booking();
   const amount = reservedTour.totalAmount * 100 
   const { clientSecret, paymentId } = await stripeCreate({
     amount,
     currency,
-    bookingId: newBooking.id,
+    bookingId: booking.id,
     userId: user.id,
   });
 
   const bookingId = generateId()
-  const bookingDetails: BookingType = {
+  const bookingDetails = {
     bookingId,
     userId: user._id,
     tourId: reservedTour.tourId,
@@ -310,12 +310,18 @@ export const bookReservedTour = async (
     startDate: reservedTour.startDate,
     endDate: reservedTour.endDate,
     bookingStatus: "Init",
+    attempts: existingBooking? existingBooking.attempts + 1: 1,
     transaction: {
-      clientSecret: clientSecret as string,
-      paymentId,
-      currency,
-      amount,
       paymentStatus: "unpaid",
+      history: 
+        [{
+          clientSecret: clientSecret as string,
+          paymentId,
+          currency,
+          amount,
+          status: "pending",
+          attemptDate: new Date()
+        }]
     },
     bookerInfo: {
       name: tourData.fullName,
@@ -324,9 +330,9 @@ export const bookReservedTour = async (
       state: tourData.state,
       phoneNumber: `${tourData.countryCode} ${tourData.phone}`
     }
-  };
+  } as BookingType;
   
-  Object.assign(newBooking, bookingDetails);
-  await newBooking.save()
+  Object.assign(booking, bookingDetails);
+  await booking.save()
   return {clientSecret, bookingId}
 };

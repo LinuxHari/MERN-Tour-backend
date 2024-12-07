@@ -24,7 +24,7 @@ const bookerInfoSchema = {
   },
 };
 
-const historySchema = new mongoose.Schema({
+const historySchema = {
     clientSecret: {
       type: String,
       required: true,
@@ -46,7 +46,7 @@ const historySchema = new mongoose.Schema({
     },
     currency: {
       type: String,
-      enum: ["INR", "USD"],
+      enum: ["INR", "USD"] as const ,
       required: true,
     },
     amount: {
@@ -55,7 +55,7 @@ const historySchema = new mongoose.Schema({
     },
     status: {
       type: String,
-      enum: ["pending", "failed", "successful"],
+      enum: ["pending", "failed", "successful"] as const,
       required: true, 
       default: "pending", 
     },
@@ -64,10 +64,10 @@ const historySchema = new mongoose.Schema({
       required: true,
       default: new Date(),
     },
-  }, { _id: false });
+  };
   
 
-const transactionSchema = new mongoose.Schema({
+const transactionSchema = {
   paymentStatus: {
     type: String,
     enum: ["unpaid", "paid"],
@@ -75,10 +75,10 @@ const transactionSchema = new mongoose.Schema({
     required: true,
   },
   history: {
-    type: historySchema,
+    type: [historySchema],
     required: true,
   },
-}, {_id: false});
+};
 
 const bookingSchema = new mongoose.Schema({
   bookingId: {
@@ -125,6 +125,7 @@ const bookingSchema = new mongoose.Schema({
   },
   transaction: {
     type: transactionSchema,
+    _id: false,
     required: true,
   },
 });
