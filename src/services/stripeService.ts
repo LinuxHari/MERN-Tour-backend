@@ -1,6 +1,6 @@
 import Stripe from "stripe"
 import { BadRequestError, NotFoundError, ServerError } from "../handlers/errorHandler"
-import Booking from "../models/bookingModel"
+import Booking, { BookingType, PaymentType } from "../models/bookingModel"
 import envConfig from "../config/envConfig"
 import Reserved from "../models/reserveModel"
 
@@ -19,7 +19,8 @@ type StripeValidateParam = {
 type StripeWebhookSuccessparam = {
     amountCharged: number;
     userId: string;
-    bookingId: string
+    bookingId: string;
+    data: Stripe.PaymentIntent
 }
 
 const stripe =  new Stripe(envConfig.stripeSecret as string)
@@ -47,35 +48,44 @@ export const stripeValidate = ({data, signature}: StripeValidateParam) => {
     }
 }
 
-export const stripeAuthorized = async (bookingId: string) => {
+const updatePayment = (payment: PaymentType, card: Stripe.Card) => {
+    payment.card.number = card.last4
+    payment.card.brand = card.brand
+    payment.card.expMonth = card.exp_month
+    payment.card.expYear = card.exp_year
+}
+
+export const stripeAuthorized = async (bookingId: string, data: Stripe.PaymentIntent) => {
     const existingBooking = await Booking.findById(bookingId)
     if(!existingBooking)
         throw new NotFoundError(`Existing Booking with ${bookingId} is not found for stripe authorization`)
-    existingBooking.bookingStatus = "Init"
+    existingBooking.bookingStatus = "init"
     await existingBooking.save()
 }
 
-export const stripeFailed = async ( bookingId: string) => {
+export const stripeFailed = async ( bookingId: string, data: Stripe.PaymentIntent) => {
     const existingBooking = await Booking.findById(bookingId)
     if(!existingBooking)
         throw new NotFoundError(`Existing Booking with ${bookingId} is not found for stripe failure`)
-    existingBooking.bookingStatus = "Failed"
+    existingBooking.bookingStatus = "failed"
     await existingBooking.save()
 }
 
-export const stripeSuccess = async ({amountCharged, userId, bookingId}: StripeWebhookSuccessparam) => {
+export const stripeSuccess = async ({amountCharged, userId, bookingId, data}: StripeWebhookSuccessparam) => {
     const existingBooking = await Booking.findById(bookingId)
     if(!existingBooking || userId !== String(existingBooking.userId))
         throw new NotFoundError(`Existing Booking with ${bookingId} is not found for stripe success`)
     const reservation = await Reserved.findOne({reserveId: existingBooking.reserveId})
     if(!reservation)
         throw new ServerError(`Reservation for ${existingBooking.bookingId} is not found in stripe success`)
-    if(amountCharged !== existingBooking.transaction.amount){
-        stripeFailed(bookingId)
+    const payment = existingBooking.transaction.history[existingBooking.transaction.history.length - 1]
+    if(amountCharged !== payment.amount){
+        await stripeFailed(bookingId, data)
         throw new BadRequestError(`Amount mismatch for booking ${bookingId}`)
     }
-    existingBooking.bookingStatus = "Success"
+    existingBooking.bookingStatus = "success"
     existingBooking.transaction.paymentStatus = "paid"
+    
     reservation.expiresAt = new Date().getTime()
     await reservation.save()
     await existingBooking.save()

@@ -309,7 +309,7 @@ export const bookReservedTour = async (
     passengers: reservedTour.passengers,
     startDate: reservedTour.startDate,
     endDate: reservedTour.endDate,
-    bookingStatus: "Init",
+    bookingStatus: "init",
     attempts: existingBooking? existingBooking.attempts + 1: 1,
     transaction: {
       paymentStatus: "unpaid",

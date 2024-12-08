@@ -38,11 +38,23 @@ const historySchema = {
         type: String, // Card numbers are generally stored as strings
         required: true,
       },
-      type: {
+      brand: {
         type: String,
         required: true,
       },
+      expMonth:{
+        type: Number,
+        required: true,
+      },
+      expYear: {
+        type: Number,
+        required: true,
+      },
       required: false
+    },
+    reciept: {
+      type: String,
+      required: true,
     },
     currency: {
       type: String,
@@ -55,7 +67,7 @@ const historySchema = {
     },
     status: {
       type: String,
-      enum: ["pending", "failed", "successful"] as const,
+      enum: ["pending", "failed", "success"] as const,
       required: true, 
       default: "pending", 
     },
@@ -65,9 +77,12 @@ const historySchema = {
       default: new Date(),
     },
   };
-  
 
 const transactionSchema = {
+  amount: {
+    type: Number,
+    required: true
+  },
   paymentStatus: {
     type: String,
     enum: ["unpaid", "paid"],
@@ -115,8 +130,8 @@ const bookingSchema = new mongoose.Schema({
   },
   bookingStatus: {
     type: String,
-    enum: ["Init", "Failed", "Success"],
-    default: "Init",
+    enum: ["init", "failed", "success"],
+    default: "init",
     required: true,
   },
   attempts: {
@@ -133,5 +148,7 @@ const bookingSchema = new mongoose.Schema({
 const Booking = mongoose.model("Booking", bookingSchema);
 
 export type BookingType = InferSchemaType<typeof bookingSchema>;
+
+export type PaymentType = BookingType["transaction"]["history"][0]
 
 export default Booking;
