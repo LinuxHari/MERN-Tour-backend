@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { Request, Response, NextFunction } from "express";
 import responseHandler from "./responseHandler";
-import { server} from "../index" 
+import { server, shutdown} from "../index" 
 export class BadRequestError extends Error {
   constructor(message: string) {
     super(message);
@@ -81,20 +81,6 @@ export const errorHandler = (err: any, _: Request, res: Response, __: NextFuncti
   }
 
   return responseHandler.error(res, err.stack || "An unexpected error occurred");
-};
-
-const shutdown = (type: number) => {
-  console.log("Shutting down...");
-
-  server.close(() => {
-    console.log("Server closed");
-    process.exit(type);
-  });
-
-  setTimeout(() => {
-    console.error('Forced shutdown due to lingering connections.');
-    process.exit(1);
-  }, 10000);
 };
 
 process.on('uncaughtException', (err) => {

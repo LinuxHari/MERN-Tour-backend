@@ -50,7 +50,6 @@ const historySchema = {
         type: Number,
         required: true,
       },
-      required: false
     },
     reciept: {
       type: String,
