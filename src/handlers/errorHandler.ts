@@ -36,6 +36,13 @@ export class GoneError extends Error {
   }
 }
 
+export class ManyRequests extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TooManyRequests";
+  }
+}
+
 export class ServerError extends Error {
   constructor(message: string) {
     super(message);
@@ -49,6 +56,7 @@ export const errorHandler = (err: any, _: Request, res: Response, __: NextFuncti
   if (err instanceof NotFoundError) return responseHandler.notfound(res);
   if (err instanceof ConflictError) return responseHandler.conflict(res);
   if (err instanceof GoneError) return responseHandler.gone(res);
+  if (err instanceof ManyRequests) return responseHandler.manyRequests(res);
   if (err instanceof ServerError) return responseHandler.error(res, err.message);
 
   if (err instanceof mongoose.Error) {
@@ -92,7 +100,6 @@ process.on("unhandledRejection", (err: any, ) => {
   console.error("Promise got rejected unhandled", err.name, err.message, err?.stack)
   shutdown(1)
 })
-
 
 process.on('SIGTERM', () => {
   console.log('Received SIGTERM');

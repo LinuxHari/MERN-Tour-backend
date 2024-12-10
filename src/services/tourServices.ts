@@ -1,6 +1,7 @@
 import {
   BadRequestError,
   GoneError,
+  ManyRequests,
   NotFoundError,
   ServerError,
 } from "../handlers/errorHandler";
@@ -19,6 +20,7 @@ import User from "../models/userModel";
 import Reserved from "../models/reserveModel";
 import { stripeCreate } from "./stripeService";
 import Booking, { BookingType } from "../models/bookingModel";
+import { MAX_BOOKING_RETRY } from "../config/tourConfig";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
@@ -300,6 +302,30 @@ export const bookReservedTour = async (
     userId: user.id,
   });
 
+  if(existingBooking){
+    if(existingBooking.attempts === MAX_BOOKING_RETRY)
+      throw new ManyRequests("Maximum booking attempts reached")
+    booking.bookerInfo = {
+      name: tourData.fullName,
+      email: tourData.email,
+      country: tourData.country,
+      state: tourData.state,
+      phoneNumber: `${tourData.countryCode} ${tourData.phone}`
+    }
+    existingBooking.attempts = existingBooking.attempts + 1
+    const newTransaction = {
+      clientSecret: clientSecret as string,
+      paymentId,
+      currency,
+      amount,
+      status: "pending",
+      attemptDate: new Date()
+    }
+    existingBooking.transaction.history.push(newTransaction)
+    await existingBooking.save()
+    return {clientSecret, bookingId: existingBooking.bookingId}
+  }
+
   const bookingId = generateId()
   const bookingDetails = {
     bookingId,
@@ -310,7 +336,7 @@ export const bookReservedTour = async (
     startDate: reservedTour.startDate,
     endDate: reservedTour.endDate,
     bookingStatus: "init",
-    attempts: existingBooking? existingBooking.attempts + 1: 1,
+    attempts: 1,
     transaction: {
       paymentStatus: "unpaid",
       history: 

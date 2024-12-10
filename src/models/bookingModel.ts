@@ -36,19 +36,15 @@ const historySchema = {
     card: {
       number: {
         type: String, // Card numbers are generally stored as strings
-        required: true,
       },
       brand: {
         type: String,
-        required: true,
       },
       expMonth:{
         type: Number,
-        required: true,
       },
       expYear: {
         type: Number,
-        required: true,
       },
     },
     reciept: {
@@ -84,7 +80,7 @@ const transactionSchema = {
   },
   paymentStatus: {
     type: String,
-    enum: ["unpaid", "paid"],
+    enum: ["unpaid", "paid"] as const,
     default: "unpaid",
     required: true,
   },

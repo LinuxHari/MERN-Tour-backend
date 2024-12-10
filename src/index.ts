@@ -54,14 +54,13 @@ const PORT = envConfig.port || 8000;
 
 export const server = app.listen(PORT, () => console.log(`Server is running in port ${PORT}`))
 
-export const shutdown = (type: number) => {
+export const shutdown = async(type: number) => {
   console.log("Shutting down...");
-  // try{
-  //  await dbDisconnect()
-  // }catch(err){
-  //   console.log();
-    
-  // }
+  try {
+   await dbDisconnect()
+  } catch(err) {
+    console.log(err); 
+  }
   if(server){
     server.close(() => {
       server.close(() => {

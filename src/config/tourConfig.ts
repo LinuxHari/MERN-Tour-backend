@@ -25,3 +25,5 @@ export const MIN_AGE = [0, 3, 13, 18] as const
 export const DESTINATION_TYPES = ["City", "State", "Country"] as const
 
 export const SPECIALS = ["Free Cancellation"] as const
+
+export const MAX_BOOKING_RETRY = 3

@@ -14,7 +14,7 @@ export const stripeWebhook = asyncWrapper(async(req: Request, res: Response) => 
   const event = stripeValidate({ data, signature });
   switch (event.type) {
     case "payment_intent.amount_capturable_updated":
-      await stripeAuthorized(event.data.object.metadata.bookingId, data);
+      await stripeAuthorized(event.data.object.metadata.bookingId);
       break;
     case "payment_intent.succeeded":
       await stripeSuccess({
