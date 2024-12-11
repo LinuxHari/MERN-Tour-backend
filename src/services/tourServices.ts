@@ -293,6 +293,8 @@ export const bookReservedTour = async (
   if (reservedTour.expiresAt < now.getTime())
     throw new GoneError(`Reservation ${reservedTour.id} is timed out`);
   const existingBooking = await Booking.findOne({reserveId})
+  if(existingBooking && existingBooking.attempts === MAX_BOOKING_RETRY)
+   throw new ManyRequests("Maximum booking attempts reached")
   const booking = existingBooking? existingBooking: new Booking();
   const amount = reservedTour.totalAmount * 100 
   const { clientSecret, paymentId } = await stripeCreate({
@@ -303,8 +305,6 @@ export const bookReservedTour = async (
   });
 
   if(existingBooking){
-    if(existingBooking.attempts === MAX_BOOKING_RETRY)
-      throw new ManyRequests("Maximum booking attempts reached")
     booking.bookerInfo = {
       name: tourData.fullName,
       email: tourData.email,
