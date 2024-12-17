@@ -117,8 +117,8 @@ export const TourListingSchema = z.object({
     .optional(),
 });
 
-export const SingleTourSchema = z.object({
-  tourId: z.string().length(8)
+export const SingleTourParamSchema = z.object({
+  tourId: z.string().length(8, {message: "Invalid tour id"})
 })
 
 export const ReserveTourSchema = z.object({
@@ -143,7 +143,7 @@ export const ReserveTourSchema = z.object({
         .min(0)
         .max(9, { message: "Number of infant should not exceed 9" }).optional(),
   })
-}).merge(SingleTourSchema)
+}).merge(SingleTourParamSchema)
 
 export const ReserveTourParamSchema = z.object({
   reserveId: z
@@ -156,6 +156,12 @@ export const BookingSchema = z.object({
   countryCode: z.number({message: "Country code must be a number"}).min(1, {message: "Invalid country code"}).max(999, {message: "Country code is invalid"}),
   phone: z.number({message: "Phone number must be number"}).min(1000,{message: "Invalid phone number"}).max(99999999999, {message: "Invalid phone number"})
 }).merge(EmailSchema).merge(LocationSchema.omit({city: true}))
+
+export const BookingTourParamSchema = z.object({
+  bookingId: z
+.string()
+.length(8, { message: "Invalid booking id" }
+)})
 
 export type BookingSchemaType = z.infer<typeof BookingSchema>
 

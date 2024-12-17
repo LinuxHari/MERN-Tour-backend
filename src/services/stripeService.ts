@@ -48,7 +48,6 @@ export const stripeCreate = async ({
 };
 
 export const stripeValidate = ({ data, signature }: StripeValidateParam) => {
-  console.log(data, signature, envConfig.stripeWebhookSecret);
   try {
     return Stripe.webhooks.constructEvent(
       data,
@@ -128,6 +127,8 @@ export const stripeSuccess = async ({
     await stripeFailed(bookingId, data);
     throw new BadRequestError(`Amount mismatch for booking ${bookingId}`);
   }
+  
+  payment.reciept = data.receipt_url
   existingBooking.bookingStatus = "success";
   existingBooking.transaction.paymentStatus = "paid";
 

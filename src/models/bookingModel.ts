@@ -48,8 +48,7 @@ const historySchema = {
       },
     },
     reciept: {
-      type: String,
-      required: true,
+      type: String
     },
     currency: {
       type: String,
@@ -117,7 +116,7 @@ const bookingSchema = new mongoose.Schema({
   },
   startDate: {
     type: Date,
-    requried: true,
+    required: true,
   },
   endDate: {
     type: Date,
@@ -138,7 +137,7 @@ const bookingSchema = new mongoose.Schema({
     _id: false,
     required: true,
   },
-});
+}, { timestamps: true });
 
 const Booking = mongoose.model("Booking", bookingSchema);
 

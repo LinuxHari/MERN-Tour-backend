@@ -21,6 +21,7 @@ import Reserved from "../models/reserveModel";
 import { stripeCreate } from "./stripeService";
 import Booking, { BookingType } from "../models/bookingModel";
 import { MAX_BOOKING_RETRY } from "../config/tourConfig";
+import getDuration from "../utils/getDuration";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
@@ -61,10 +62,7 @@ export const getTours = async (params: TourListingSchemaType) => {
     : Boolean(teens)
     ? 13
     : 18;
-  const duration = Math.ceil(
-    (new Date(endDate).getTime() - new Date(startDate).getTime()) /
-      (1000 * 60 * 60 * 24)
-  );
+  const duration = getDuration(startDate, endDate)
 
   const destinationResult = await Destination.aggregate(
     tourAggregations.destinationQuery(destinationId)
@@ -271,6 +269,27 @@ export const getReservedDetails = async (reserveId: string, email: string) => {
   return { ...reservedDetails, tourDetails: tour };
 };
 
+export const getBooking = async (bookingId: string) => {
+  const booking = await Booking.findOne({bookingId}).lean()
+  if(!booking)
+    throw new NotFoundError(`Booking for booking id ${bookingId} not found`)
+  const tour = await Tour.findOne({tourId: booking.tourId}).lean({name: 1, duration: 1})
+  if(!tour)
+    throw new NotFoundError(`Booked tour with id ${booking.tourId} not found for booking ${bookingId}`)
+  return {
+    bookDate: booking.createdAt,
+    paymentMethod: "Card",
+    name: booking.bookerInfo.name,
+    email: booking.bookerInfo.email, 
+    tourInfo: {
+    tourName: tour.name,
+    startDate: Date,
+    duration: getDuration(booking.startDate, booking.endDate),
+    passengers: booking.passengers,
+    amount: booking.transaction.amount
+  }
+}}
+
 export const bookReservedTour = async (
   tourData: BookingSchemaType,
   reserveId: string,
@@ -346,7 +365,8 @@ export const bookReservedTour = async (
           currency,
           amount,
           status: "pending",
-          attemptDate: new Date()
+          attemptDate: new Date(),
+          reciept: ""
         }]
     },
     bookerInfo: {
