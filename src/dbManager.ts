@@ -7,7 +7,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export const dbConnect = async () => {
   try {
     await mongoose.connect(envConfig.mongoUri as string);
-    console.log("Db is connected");
+    console.log("Database is connected");
   } catch (err) {
     console.log(err);
     shutdown(1);

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { Request, Response, NextFunction } from "express";
 import responseHandler from "./responseHandler";
-import { server, shutdown} from "../index" 
+import { shutdown} from "../index" 
 export class BadRequestError extends Error {
   constructor(message: string) {
     super(message);

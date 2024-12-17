@@ -9,7 +9,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import slowDown from "express-slow-down";
 import webhookRoutes from "./routes/webhookRoutes";
-import { dbDisconnect } from "./dbManager";
+import { dbConnect, dbDisconnect } from "./dbManager";
 
 const app = express();
 
@@ -49,6 +49,8 @@ app.use("*", (_, res: Response) => {
 });
 
 app.use(errorHandler);
+
+dbConnect()
 
 const PORT = envConfig.port || 8000;
 
