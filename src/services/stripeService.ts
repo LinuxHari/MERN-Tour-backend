@@ -138,3 +138,9 @@ export const stripeSuccess = async ({
   await reservation.save();
   await existingBooking.save();
 };
+
+export const stripeRefund = async (paymentIntent: string) => {
+  await stripe.refunds.create({
+    payment_intent: paymentIntent
+  });
+}

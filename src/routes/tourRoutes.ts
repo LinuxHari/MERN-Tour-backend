@@ -13,5 +13,6 @@ router.post('/reserve', verifyAuthToken, requestHandler(ReserveTourSchema), rese
 router.get('/reserve/:reserveId', verifyAuthToken, requestHandler(ReserveTourParamSchema, "params"), reservedDetails)
 router.get('/book/:bookingId', verifyAuthToken, requestHandler(BookingTourParamSchema, "params"), bookedTour)
 router.post('/book/:reserveId', verifyAuthToken, requestHandler(ReserveTourParamSchema, "params") ,requestHandler(BookingSchema), bookTour)
+router.post('/book/cancel/:bookingId', verifyAuthToken, requestHandler(BookingTourParamSchema, "params") )
 
 export default router;

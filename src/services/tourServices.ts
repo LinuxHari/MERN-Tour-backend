@@ -18,7 +18,7 @@ import tourAggregations from "../aggregations/tourAggegations";
 import Destination, { DestinationType } from "../models/destinationModel";
 import User from "../models/userModel";
 import Reserved from "../models/reserveModel";
-import { stripeCreate } from "./stripeService";
+import { stripeCreate, stripeRefund } from "./stripeService";
 import Booking, { BookingType } from "../models/bookingModel";
 import { MAX_BOOKING_RETRY } from "../config/tourConfig";
 import getDuration from "../utils/getDuration";
@@ -382,3 +382,16 @@ export const bookReservedTour = async (
   await booking.save()
   return {clientSecret, bookingId}
 };
+
+export const cancelBookedTour = async(bookingId: string) => {
+  const booking = await Booking.findOne({bookingId})
+  if(!booking)
+    throw new BadRequestError(`Cancellation request for booking id ${bookingId} failed, ${bookingId} does not exist`)
+  if(booking.bookingStatus === "success"){
+    const payment = booking.transaction.history[booking.transaction.history.length - 1]
+    await stripeRefund(payment.paymentId)
+    booking.transaction.paymentStatus = "refunded"
+  }
+  booking.bookingStatus = "canceled"
+  await booking.save()
+}

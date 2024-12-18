@@ -79,7 +79,7 @@ const transactionSchema = {
   },
   paymentStatus: {
     type: String,
-    enum: ["unpaid", "paid"] as const,
+    enum: ["unpaid", "paid", "refunded"] as const,
     default: "unpaid",
     required: true,
   },
@@ -124,7 +124,7 @@ const bookingSchema = new mongoose.Schema({
   },
   bookingStatus: {
     type: String,
-    enum: ["init", "failed", "success"],
+    enum: ["init", "failed", "success", "canceled"],
     default: "init",
     required: true,
   },
