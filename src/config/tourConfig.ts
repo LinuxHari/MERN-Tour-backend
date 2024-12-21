@@ -27,3 +27,5 @@ export const DESTINATION_TYPES = ["City", "State", "Country"] as const
 export const SPECIALS = ["Free Cancellation"] as const
 
 export const MAX_BOOKING_RETRY = 3
+
+export const NON_FREE_REFUND_CHARGE = 30

@@ -19,9 +19,10 @@ import Destination, { DestinationType } from "../models/destinationModel";
 import User from "../models/userModel";
 import Reserved from "../models/reserveModel";
 import { stripeCreate, stripeRefund } from "./stripeService";
-import Booking, { BookingType } from "../models/bookingModel";
-import { MAX_BOOKING_RETRY } from "../config/tourConfig";
+import Booking, { BookingType, PaymentType } from "../models/bookingModel";
+import { MAX_BOOKING_RETRY, NON_FREE_REFUND_CHARGE } from "../config/tourConfig";
 import getDuration from "../utils/getDuration";
+import calcPercentage from "../utils/calcPercentage";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
@@ -55,13 +56,7 @@ export const getTours = async (params: TourListingSchemaType) => {
     maxPrice,
   } = params;
 
-  const minAge = Boolean(infants)
-    ? 0
-    : Boolean(children)
-    ? 3
-    : Boolean(teens)
-    ? 13
-    : 18;
+  const minAge = Boolean(infants)? 0: Boolean(children)? 3: Boolean(teens)? 13: 18;
   const duration = getDuration(startDate, endDate)
 
   const destinationResult = await Destination.aggregate(
@@ -276,17 +271,21 @@ export const getBooking = async (bookingId: string) => {
   const tour = await Tour.findOne({tourId: booking.tourId}).lean({name: 1, duration: 1})
   if(!tour)
     throw new NotFoundError(`Booked tour with id ${booking.tourId} not found for booking ${bookingId}`)
+  const payment =  booking.transaction.history[booking.transaction.history.length - 1]
   return {
     bookDate: booking.createdAt,
     paymentMethod: "Card",
     name: booking.bookerInfo.name,
     email: booking.bookerInfo.email, 
+    freeCancellation: tour.freeCancellation,
+    isCancellable: new Date().getTime() < booking.startDate.getTime(),
+    amount: booking.transaction.amount,
+    refundableAmount: payment.refundableAmount,
     tourInfo: {
     tourName: tour.name,
     startDate: Date,
     duration: getDuration(booking.startDate, booking.endDate),
     passengers: booking.passengers,
-    amount: booking.transaction.amount
   }
 }}
 
@@ -337,9 +336,10 @@ export const bookReservedTour = async (
       paymentId,
       currency,
       amount,
+      refundableAmount: 0,
       status: "pending",
       attemptDate: new Date()
-    }
+    } as PaymentType
     existingBooking.transaction.history.push(newTransaction)
     await existingBooking.save()
     return {clientSecret, bookingId: existingBooking.bookingId}
@@ -389,7 +389,7 @@ export const cancelBookedTour = async(bookingId: string) => {
     throw new BadRequestError(`Cancellation request for booking id ${bookingId} failed, ${bookingId} does not exist`)
   if(booking.bookingStatus === "success"){
     const payment = booking.transaction.history[booking.transaction.history.length - 1]
-    await stripeRefund(payment.paymentId)
+    await stripeRefund(payment.paymentId, payment.refundableAmount)
     booking.transaction.paymentStatus = "refunded"
   }
   booking.bookingStatus = "canceled"

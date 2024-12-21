@@ -4,9 +4,12 @@ import {
   NotFoundError,
   ServerError,
 } from "../handlers/errorHandler";
-import Booking, { BookingType, PaymentType } from "../models/bookingModel";
+import Booking, { PaymentType } from "../models/bookingModel";
 import envConfig from "../config/envConfig";
 import Reserved from "../models/reserveModel";
+import calcPercentage from "../utils/calcPercentage";
+import { NON_FREE_REFUND_CHARGE } from "../config/tourConfig";
+import Tour from "../models/tourModel";
 
 type StripeCreateParam = {
   amount: number;
@@ -114,7 +117,7 @@ export const stripeSuccess = async ({
     );
   const reservation = await Reserved.findOne({
     reserveId: existingBooking.reserveId,
-  });
+  }, {expiresAt: 1});
   if (!reservation)
     throw new ServerError(
       `Reservation for ${existingBooking.bookingId} is not found in stripe success`
@@ -127,8 +130,15 @@ export const stripeSuccess = async ({
     await stripeFailed(bookingId, data);
     throw new BadRequestError(`Amount mismatch for booking ${bookingId}`);
   }
+
+  const tour = await Tour.findOne({tourId: existingBooking.tourId}, {freeCancellation: 1}).lean()
+  if (!tour)
+    throw new ServerError(
+      `Tour for ${existingBooking.tourId} is not found in stripe success`
+    );
   
   payment.reciept = data.receipt_url
+  payment.refundableAmount = tour.freeCancellation? payment.amount: calcPercentage(payment.amount, NON_FREE_REFUND_CHARGE)
   existingBooking.bookingStatus = "success";
   existingBooking.transaction.paymentStatus = "paid";
 
@@ -139,8 +149,9 @@ export const stripeSuccess = async ({
   await existingBooking.save();
 };
 
-export const stripeRefund = async (paymentIntent: string) => {
+export const stripeRefund = async (paymentIntent: string, amount: number) => {
   await stripe.refunds.create({
-    payment_intent: paymentIntent
+    payment_intent: paymentIntent,
+    amount
   });
 }

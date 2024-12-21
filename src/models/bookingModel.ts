@@ -59,6 +59,10 @@ const historySchema = {
       type: Number,
       required: true,
     },
+    refundableAmount: {
+      type: Number,
+      required: true
+    },
     status: {
       type: String,
       enum: ["pending", "failed", "success"] as const,
