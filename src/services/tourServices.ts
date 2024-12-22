@@ -218,10 +218,14 @@ export const reserveTour = async (
 ) => {
   const reserveId = generateId();
   const { startDate, endDate, tourId, pax } = reserveDetails;
+
   const userId = await User.findOne({ email }, { _id: 1 }).lean();
   if (!userId) throw new NotFoundError(`User with ${email} email not found`);
+
   const tour = await Tour.findOne({ tourId }, { price: 1 });
   if (!tour) throw new NotFoundError(`Tour with ${tourId} id not found`);
+
+  // Calculating total amount as we have different price for different age categories
   const totalAmount = (() => {
     const { price } = tour;
     let totalAmount = pax.adults * price.adult;
@@ -230,6 +234,7 @@ export const reserveTour = async (
     if (price?.infant) totalAmount += price.infant * (pax.infants || 0);
     return totalAmount;
   })();
+
   const now = new Date();
   const expiresAt = new Date(now.setMinutes(now.getMinutes() + 10)).getTime();
   await Reserved.create({
@@ -250,27 +255,38 @@ export const getReservedDetails = async (reserveId: string, email: string) => {
     { reserveId },
     { _id: 0, __v: 0 }
   ).lean();
+
   if (!reserved)
     throw new NotFoundError(`Reserve id ${reserveId} is not found`);
+  
   const user = await User.findById(reserved.userId).lean({ email: 1 }); // Prevent someone else other than reserved user intercepts with valid reserve id
   if (user?.email !== email)
     throw new BadRequestError(`Reserve id ${reserveId} is not valid`);
+  
   reserved.expiresAt = reserved.expiresAt - 60000; // We are sending expire time one minute less than stored time since submission backend process may go upto 1 minute
+  
   const tour = await Tour.findOne(
     { tourId: reserved.tourId },
     { duration: 1, price: 1, images: 1, name: 1, minAge: 1 }
   ).lean();
+  
   const { tourId, userId, ...reservedDetails } = reserved;
   return { ...reservedDetails, tourDetails: tour };
 };
 
-export const getBooking = async (bookingId: string) => {
+export const getBooking = async (bookingId: string, email: string) => {
   const booking = await Booking.findOne({bookingId}).lean()
   if(!booking)
     throw new NotFoundError(`Booking for booking id ${bookingId} not found`)
+  
   const tour = await Tour.findOne({tourId: booking.tourId}).lean({name: 1, duration: 1})
   if(!tour)
     throw new NotFoundError(`Booked tour with id ${booking.tourId} not found for booking ${bookingId}`)
+  
+  const user = await User.findOne({email}, {_id: 1}).lean()
+  if(String(user?._id) !== String(booking.userId))
+    throw new NotFoundError(`${email} tried to access booking ${booking.bookingId} which was done by ${user?.email}`) // We are sending 404 instead of bad request to confuse user that there is no booking with this id, so it will prevent someone who tries to enumerate booking details
+  
   const payment =  booking.transaction.history[booking.transaction.history.length - 1]
   return {
     bookDate: booking.createdAt,
@@ -279,7 +295,7 @@ export const getBooking = async (bookingId: string) => {
     email: booking.bookerInfo.email, 
     freeCancellation: tour.freeCancellation,
     isCancellable: new Date().getTime() < booking.startDate.getTime(),
-    amount: booking.transaction.amount,
+    amount: payment.amount,
     refundableAmount: payment.refundableAmount,
     tourInfo: {
     tourName: tour.name,
@@ -297,29 +313,34 @@ export const bookReservedTour = async (
   const reservedTour = await Reserved.findOne({ reserveId });
   if (!reservedTour)
     throw new BadRequestError(`Invalid booking for reserve id ${reserveId}`);
-  const user = await User.findById(reservedTour.userId);
+  
+  const user = await User.findById(reservedTour.userId, {_id: 1}).lean();
   if (!user)
     throw new BadRequestError(
       `Invalid user id ${reservedTour.userId} used for booking`
     );
+  
   if (String(reservedTour.userId) !== String(user._id) || user.email !== email)
     throw new BadRequestError(
-      `Invalid user id ${user.id} or reserve id ${reserveId} used for booking`
+      `Invalid user id ${String(user._id)} or reserve id ${reserveId} used for booking`
     );
+  
   const now = new Date();
   const currency = "USD"
   if (reservedTour.expiresAt < now.getTime())
     throw new GoneError(`Reservation ${reservedTour.id} is timed out`);
+  
   const existingBooking = await Booking.findOne({reserveId})
   if(existingBooking && existingBooking.attempts === MAX_BOOKING_RETRY)
    throw new ManyRequests("Maximum booking attempts reached")
+  
   const booking = existingBooking? existingBooking: new Booking();
   const amount = reservedTour.totalAmount * 100 
   const { clientSecret, paymentId } = await stripeCreate({
     amount,
     currency,
     bookingId: booking.id,
-    userId: user.id,
+    userId: String(user._id),
   });
 
   if(existingBooking){
@@ -340,6 +361,7 @@ export const bookReservedTour = async (
       status: "pending",
       attemptDate: new Date()
     } as PaymentType
+    
     existingBooking.transaction.history.push(newTransaction)
     await existingBooking.save()
     return {clientSecret, bookingId: existingBooking.bookingId}
@@ -363,7 +385,8 @@ export const bookReservedTour = async (
           clientSecret: clientSecret as string,
           paymentId,
           currency,
-          amount,
+          amount: 100,
+          refundableAmount: 0,
           status: "pending",
           attemptDate: new Date(),
           reciept: ""
@@ -383,10 +406,15 @@ export const bookReservedTour = async (
   return {clientSecret, bookingId}
 };
 
-export const cancelBookedTour = async(bookingId: string) => {
+export const cancelBookedTour = async(bookingId: string, email: string) => {
   const booking = await Booking.findOne({bookingId})
   if(!booking)
     throw new BadRequestError(`Cancellation request for booking id ${bookingId} failed, ${bookingId} does not exist`)
+
+  const user = await User.findOne({email}, {_id: 1}).lean();
+  if(String(user?._id) !== String(booking.userId))
+    throw new NotFoundError(`${email} tried to cancel booking ${booking.bookingId} which was done by ${user?.email}`) // We are sending 404 instead of bad request to confuse user that there is no booking with this id, so it will prevent someone who tries to enumerate booking details
+
   if(booking.bookingStatus === "success"){
     const payment = booking.transaction.history[booking.transaction.history.length - 1]
     await stripeRefund(payment.paymentId, payment.refundableAmount)

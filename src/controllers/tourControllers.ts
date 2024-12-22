@@ -37,7 +37,7 @@ export const allBookings = asyncWrapper(async(req: Request, res: Response) => {
 })
 
 export const bookedTour = asyncWrapper(async(req: Request, res: Response) => {
-  const booking = await getBooking(req.params.bookingId)
+  const booking = await getBooking(req.params.bookingId, res.locals.email)
   responseHandler.ok(res, booking)
 })
 
@@ -47,6 +47,6 @@ export const bookTour = asyncWrapper(async (req: Request, res: Response) => {
 })
 
 export const cancelBooking = asyncWrapper(async (req: Request, res: Response) => {
-  await cancelBookedTour(req.params.bookingId)
+  await cancelBookedTour(req.params.bookingId, res.locals.email)
   responseHandler.ok(res, {status: "canceled"})
 })
