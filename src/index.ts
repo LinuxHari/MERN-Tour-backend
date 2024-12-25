@@ -1,6 +1,5 @@
 import express, { Response } from "express";
 import cors from "cors";
-import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import { errorHandler } from "./handlers/errorHandler";
 import clientRoutes from "./routes/routes";

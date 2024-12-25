@@ -18,7 +18,7 @@ export const stripeWebhook = asyncWrapper(async(req: Request, res: Response) => 
       break;
     case "payment_intent.succeeded":
       await stripeSuccess({
-        amountCharged: event.data.object.amount_received,
+        amountCharged: event.data.object.amount_received/100,
         bookingId: event.data.object.metadata.bookingId,
         userId: event.data.object.metadata.userId,
         data

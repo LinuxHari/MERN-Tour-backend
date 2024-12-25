@@ -108,10 +108,11 @@ const bookingSchema = new mongoose.Schema({
   },
   passengers: {
     type: passengerSchema,
+    _id: false,
     required: true,
   },
   reserveId: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
     required: true,
   },
   bookerInfo: {

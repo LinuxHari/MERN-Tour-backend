@@ -22,7 +22,6 @@ import { stripeCreate, stripeRefund } from "./stripeService";
 import Booking, { BookingType, PaymentType } from "../models/bookingModel";
 import { MAX_BOOKING_RETRY, NON_FREE_REFUND_CHARGE } from "../config/tourConfig";
 import getDuration from "../utils/getDuration";
-import calcPercentage from "../utils/calcPercentage";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
@@ -293,13 +292,15 @@ export const getBooking = async (bookingId: string, email: string) => {
     paymentMethod: "Card",
     name: booking.bookerInfo.name,
     email: booking.bookerInfo.email, 
-    freeCancellation: tour.freeCancellation,
+    status: booking.bookingStatus,
+    freeCancellation: tour.freeCancellation && booking.bookingStatus !== "canceled" && booking.bookingStatus !== "failed",
     isCancellable: new Date().getTime() < booking.startDate.getTime(),
     amount: payment.amount,
+    amountPaid: payment.status === "success"? payment.amount: 0,
     refundableAmount: payment.refundableAmount,
     tourInfo: {
     tourName: tour.name,
-    startDate: Date,
+    startDate: booking.startDate,
     duration: getDuration(booking.startDate, booking.endDate),
     passengers: booking.passengers,
   }
@@ -314,12 +315,12 @@ export const bookReservedTour = async (
   if (!reservedTour)
     throw new BadRequestError(`Invalid booking for reserve id ${reserveId}`);
   
-  const user = await User.findById(reservedTour.userId, {_id: 1}).lean();
+  const user = await User.findById(reservedTour.userId, {_id: 1, email: 1}).lean();
   if (!user)
     throw new BadRequestError(
       `Invalid user id ${reservedTour.userId} used for booking`
     );
-  
+
   if (String(reservedTour.userId) !== String(user._id) || user.email !== email)
     throw new BadRequestError(
       `Invalid user id ${String(user._id)} or reserve id ${reserveId} used for booking`
@@ -329,15 +330,14 @@ export const bookReservedTour = async (
   const currency = "USD"
   if (reservedTour.expiresAt < now.getTime())
     throw new GoneError(`Reservation ${reservedTour.id} is timed out`);
-  
-  const existingBooking = await Booking.findOne({reserveId})
+
+  const existingBooking = await Booking.findOne({reserveId: reservedTour._id})
   if(existingBooking && existingBooking.attempts === MAX_BOOKING_RETRY)
    throw new ManyRequests("Maximum booking attempts reached")
-  
+
   const booking = existingBooking? existingBooking: new Booking();
-  const amount = reservedTour.totalAmount * 100 
   const { clientSecret, paymentId } = await stripeCreate({
-    amount,
+    amount:  reservedTour.totalAmount * 100,
     currency,
     bookingId: booking.id,
     userId: String(user._id),
@@ -356,7 +356,7 @@ export const bookReservedTour = async (
       clientSecret: clientSecret as string,
       paymentId,
       currency,
-      amount,
+      amount: reservedTour.totalAmount,
       refundableAmount: 0,
       status: "pending",
       attemptDate: new Date()
@@ -368,11 +368,13 @@ export const bookReservedTour = async (
   }
 
   const bookingId = generateId()
+
+  console.log(reservedTour._id, "reserved tour id")
   const bookingDetails = {
     bookingId,
     userId: user._id,
     tourId: reservedTour.tourId,
-    reserveId: reservedTour.id,
+    reserveId: reservedTour._id,
     passengers: reservedTour.passengers,
     startDate: reservedTour.startDate,
     endDate: reservedTour.endDate,
@@ -385,7 +387,7 @@ export const bookReservedTour = async (
           clientSecret: clientSecret as string,
           paymentId,
           currency,
-          amount: 100,
+          amount: reservedTour.totalAmount,
           refundableAmount: 0,
           status: "pending",
           attemptDate: new Date(),

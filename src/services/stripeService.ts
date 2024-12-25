@@ -115,9 +115,7 @@ export const stripeSuccess = async ({
     throw new NotFoundError(
       `Existing Booking with ${bookingId} is not found for stripe success`
     );
-  const reservation = await Reserved.findOne({
-    reserveId: existingBooking.reserveId,
-  }, {expiresAt: 1});
+  const reservation = await Reserved.findById(existingBooking.reserveId, {expiresAt: 1});
   if (!reservation)
     throw new ServerError(
       `Reservation for ${existingBooking.bookingId} is not found in stripe success`
@@ -126,6 +124,7 @@ export const stripeSuccess = async ({
     existingBooking.transaction.history[
       existingBooking.transaction.history.length - 1
     ];
+  console.log(amountCharged, payment.amount, "amount paid")
   if (amountCharged !== payment.amount) {
     await stripeFailed(bookingId, data);
     throw new BadRequestError(`Amount mismatch for booking ${bookingId}`);

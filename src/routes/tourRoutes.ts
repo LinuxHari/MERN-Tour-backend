@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { bookedTour, bookTour, reserve, reservedDetails, search, tour, tours } from "../controllers/tourControllers"
+import { bookedTour, bookTour, cancelBooking, reserve, reservedDetails, search, tour, tours } from "../controllers/tourControllers"
 import requestHandler from "../handlers/requestHandler"
 import BookingSchema, { BookingTourParamSchema, ReserveTourParamSchema, ReserveTourSchema, SearchSuggestionSchema, SingleTourParamSchema, TourListingSchema } from "../validators/tourValidators"
 import verifyAuthToken from "../middlewares/verifyAuthToken"
@@ -13,6 +13,6 @@ router.post('/reserve', verifyAuthToken, requestHandler(ReserveTourSchema), rese
 router.get('/reserve/:reserveId', verifyAuthToken, requestHandler(ReserveTourParamSchema, "params"), reservedDetails)
 router.get('/book/:bookingId', verifyAuthToken, requestHandler(BookingTourParamSchema, "params"), bookedTour)
 router.post('/book/:reserveId', verifyAuthToken, requestHandler(ReserveTourParamSchema, "params") ,requestHandler(BookingSchema), bookTour)
-router.post('/book/cancel/:bookingId', verifyAuthToken, requestHandler(BookingTourParamSchema, "params") )
+router.post('/book/cancel/:bookingId', verifyAuthToken, requestHandler(BookingTourParamSchema, "params"), cancelBooking )
 
 export default router;
