@@ -21,11 +21,11 @@ export const stripeWebhook = asyncWrapper(async(req: Request, res: Response) => 
         amountCharged: event.data.object.amount_received/100,
         bookingId: event.data.object.metadata.bookingId,
         userId: event.data.object.metadata.userId,
-        data
+        data: event.data.object
       });
       break;
     case "payment_intent.payment_failed":
-      await stripeFailed(event.data.object.metadata.bookingId, data);
+      await stripeFailed(event.data.object.metadata.bookingId, event.data.object);
       break;
     default:
       return responseHandler.ok(res, { message: "success" });

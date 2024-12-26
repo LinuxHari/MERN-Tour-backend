@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import util from "util";
 import {
   BadRequestError,
   NotFoundError,
@@ -27,7 +28,7 @@ type StripeWebhookSuccessparam = {
   amountCharged: number;
   userId: string;
   bookingId: string;
-  data: Stripe.Charge;
+  data: Stripe.PaymentIntent;
 };
 
 const stripe = new Stripe(envConfig.stripeSecret as string);
@@ -63,12 +64,17 @@ export const stripeValidate = ({ data, signature }: StripeValidateParam) => {
   }
 };
 
-const updatePayment = (payment: PaymentType, card: Stripe.Charge.PaymentMethodDetails.Card) => {
+const stripeChargeDetails = async (latestChargeId: string) => await stripe.charges.retrieve(latestChargeId)
+
+const updatePayment = async(payment: PaymentType, latestChargeId: string) => {
+  const chargeDetails = await stripeChargeDetails(latestChargeId)
+  payment.reciept = chargeDetails.receipt_url
+  const card = chargeDetails.payment_method_details?.card
   payment.card = {
-    number: card.last4,
-    brand: card.brand,
-    expMonth: card.exp_month,
-    expYear: card.exp_year,
+    number: card?.last4,
+    brand: card?.brand,
+    expMonth: card?.exp_month,
+    expYear: card?.exp_year,
   };
 };
 
@@ -86,7 +92,7 @@ export const stripeAuthorized = async (
 
 export const stripeFailed = async (
   bookingId: string,
-  data: Stripe.Charge
+  data: Stripe.PaymentIntent
 ) => {
   const existingBooking = await Booking.findById(bookingId);
   if (!existingBooking)
@@ -98,8 +104,8 @@ export const stripeFailed = async (
     existingBooking.transaction.history[
       existingBooking.transaction.history.length - 1
     ];
-  if(data.payment_method_details?.card)
-        updatePayment(payment, data.payment_method_details.card)
+  
+  await updatePayment(payment, data.latest_charge as string) 
   existingBooking.bookingStatus = "failed";
   await existingBooking.save();
 };
@@ -124,7 +130,7 @@ export const stripeSuccess = async ({
     existingBooking.transaction.history[
       existingBooking.transaction.history.length - 1
     ];
-  console.log(amountCharged, payment.amount, "amount paid")
+
   if (amountCharged !== payment.amount) {
     await stripeFailed(bookingId, data);
     throw new BadRequestError(`Amount mismatch for booking ${bookingId}`);
@@ -136,15 +142,17 @@ export const stripeSuccess = async ({
       `Tour for ${existingBooking.tourId} is not found in stripe success`
     );
   
-  payment.reciept = data.receipt_url
   payment.refundableAmount = tour.freeCancellation? payment.amount: calcPercentage(payment.amount, NON_FREE_REFUND_CHARGE)
+  payment.status = "success";
+  
   existingBooking.bookingStatus = "success";
   existingBooking.transaction.paymentStatus = "paid";
 
   reservation.expiresAt = new Date().getTime();
-  if(data.payment_method_details?.card)
-    updatePayment(payment, data.payment_method_details.card)
+  
+  await updatePayment(payment, data.latest_charge as string) // Latest charge is null until PaymentIntent confirmation is attempted.
   await reservation.save();
+  await payment.save()
   await existingBooking.save();
 };
 

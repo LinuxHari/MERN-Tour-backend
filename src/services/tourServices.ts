@@ -302,8 +302,14 @@ export const getBooking = async (bookingId: string, email: string) => {
     tourName: tour.name,
     startDate: booking.startDate,
     duration: getDuration(booking.startDate, booking.endDate),
-    passengers: booking.passengers,
-  }
+    passengers: booking.passengers
+  },
+  ...(payment.status === "success" && payment.card && {paymentInfo: {
+    cardNumber: payment.card.number,
+    cardBrand:  payment.card.brand,
+    paymentDate: payment.attemptDate,
+    recipetUrl: payment.reciept
+  }})
 }}
 
 export const bookReservedTour = async (
@@ -368,8 +374,6 @@ export const bookReservedTour = async (
   }
 
   const bookingId = generateId()
-
-  console.log(reservedTour._id, "reserved tour id")
   const bookingDetails = {
     bookingId,
     userId: user._id,
@@ -390,8 +394,7 @@ export const bookReservedTour = async (
           amount: reservedTour.totalAmount,
           refundableAmount: 0,
           status: "pending",
-          attemptDate: new Date(),
-          reciept: ""
+          attemptDate: new Date()
         }]
     },
     bookerInfo: {
@@ -419,7 +422,7 @@ export const cancelBookedTour = async(bookingId: string, email: string) => {
 
   if(booking.bookingStatus === "success"){
     const payment = booking.transaction.history[booking.transaction.history.length - 1]
-    await stripeRefund(payment.paymentId, payment.refundableAmount)
+    await stripeRefund(payment.paymentId, payment.refundableAmount * 100)
     booking.transaction.paymentStatus = "refunded"
   }
   booking.bookingStatus = "canceled"
