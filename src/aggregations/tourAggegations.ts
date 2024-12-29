@@ -1,3 +1,5 @@
+import mongoose, { PipelineStage } from 'mongoose'
+
 const destinationPipe = [
   {
     $lookup: {
@@ -219,7 +221,88 @@ const tourAggregations = {
         },
       },
     ];
-  }
+  },
+  getReviews: (tourId: string) => [
+    {
+      $match: { tourId: new mongoose.Types.ObjectId(tourId) },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "userId",
+        foreignField: "_id",
+        as: "userInfo",
+      },
+    },
+    {
+      $unwind: {
+        path: "$userInfo",
+      },
+    },
+    {
+      $addFields: {
+        userName: { $concat: ["$userInfo.firstName", " ", "$userInfo.lastName"] },
+        individualRating: {
+          $avg: [
+            "$ratings.Location",
+            "$ratings.Amenities",
+            "$ratings.Food",
+            "$ratings.Room",
+            "$ratings.Price",
+          ],
+        },
+      },
+    },
+    {
+      $sort: { createdAt: -1 },
+    },
+    {
+      $limit: 10,
+    },
+    {
+      $group: {
+        _id: null,
+        overallRating: {
+          $avg: {
+            $avg: [
+              "$ratings.Location",
+              "$ratings.Amenities",
+              "$ratings.Food",
+              "$ratings.Room",
+              "$ratings.Price",
+            ],
+          },
+        },
+        location: { $avg: "$ratings.Location" },
+        food: { $avg: "$ratings.Food" },
+        price: { $avg: "$ratings.Price" },
+        rooms: { $avg: "$ratings.Room" },
+        amenities: { $avg: "$ratings.Amenities" },
+        totalCount: { $sum: 1 },
+        userReviews: {
+          $push: {
+            userName: "$userName",
+            rating: "$individualRating",
+            title: "$title",
+            comment: "$comment",
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        overallRating: 1,
+        location: 1,
+        food: 1,
+        price: 1,
+        rooms: 1,
+        amenities: 1,
+        totalCount: 1,
+        userReviews: 1,
+      },
+    },
+  ] as PipelineStage[]
 };
 
 export default tourAggregations;

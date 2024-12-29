@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { bookReservedTour, cancelBookedTour, getBooking, getReservedDetails, getTour, getTours, reserveTour, searchSuggestions } from "../services/tourServices";
+import { bookReservedTour, cancelBookedTour, getBooking, getReservedDetails, getTour, getTourReview, getTours, reserveTour, searchSuggestions, tourReview } from "../services/tourServices";
 import responseHandler from "../handlers/responseHandler";
 import asyncWrapper from "../asyncWrapper";
 import { TourListingSchemaType } from "../validators/tourValidators";
@@ -32,14 +32,12 @@ export const reservedDetails = asyncWrapper(async (req: Request, res: Response) 
   responseHandler.ok(res, reserved)
 })
 
-export const allBookings = asyncWrapper(async(req: Request, res: Response) => {
-  responseHandler.ok(res, {})
-})
+// export const allBookings = asyncWrapper(async(req: Request, res: Response) => {
+//   responseHandler.ok(res, {})
+// })
 
 export const bookedTour = asyncWrapper(async(req: Request, res: Response) => {
   const booking = await getBooking(req.params.bookingId, res.locals.email)
-  console.log(booking);
-  
   responseHandler.ok(res, booking)
 })
 
@@ -51,4 +49,14 @@ export const bookTour = asyncWrapper(async (req: Request, res: Response) => {
 export const cancelBooking = asyncWrapper(async (req: Request, res: Response) => {
   await cancelBookedTour(req.params.bookingId, res.locals.email)
   responseHandler.ok(res, {status: "canceled"})
+})
+
+export const reviewTour = asyncWrapper(async(req: Request, res: Response) => {
+  await tourReview(req.body, req.params.tourId, res.locals.email)
+  responseHandler.ok(res, {})
+})
+
+export const getReview = asyncWrapper(async(req: Request, res: Response) => {
+  const reviews = await getTourReview(req.params.tourId)
+  responseHandler.ok(res, reviews)
 })

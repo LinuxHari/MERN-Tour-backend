@@ -11,6 +11,7 @@ import { TourSchemaType } from "../validators/adminValidators";
 import { ObjectId } from "mongodb";
 import {
   BookingSchemaType,
+  RatingType,
   ReserveTourType,
   TourListingSchemaType,
 } from "../validators/tourValidators";
@@ -22,6 +23,7 @@ import { stripeCreate, stripeRefund } from "./stripeService";
 import Booking, { BookingType, PaymentType } from "../models/bookingModel";
 import { MAX_BOOKING_RETRY, NON_FREE_REFUND_CHARGE } from "../config/tourConfig";
 import getDuration from "../utils/getDuration";
+import Review from "../models/reviewModel";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
@@ -427,4 +429,23 @@ export const cancelBookedTour = async(bookingId: string, email: string) => {
   }
   booking.bookingStatus = "canceled"
   await booking.save()
+}
+
+export const tourReview = async(review: RatingType, tourId: string, email: string) => {
+  const user = await User.findOne({email}, {_id: 1}).lean()
+  const tour = await Tour.findOne({tourId}, {_id: 1}).lean()
+  if(!user)
+    throw new BadRequestError(`User with ${email} does not exist and tried to put review`)
+  if(!tour)
+    throw new BadRequestError(`Tour with ${tourId} does not exist and happened to put review`)
+  await Review.create({
+    userId: user._id,
+    tourId: tour._id,
+    ...review
+  })
+}
+
+export const getTourReview = async(tourId: string) => {
+  const reviews = await Review.aggregate(tourAggregations.getReviews(tourId))
+  return reviews[0]
 }
