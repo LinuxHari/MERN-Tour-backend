@@ -251,6 +251,7 @@ const tourAggregations = {
             "$ratings.Price",
           ],
         },
+        profile: "$userInfo.profile", // Add profile from userModel
       },
     },
     {
@@ -281,8 +282,10 @@ const tourAggregations = {
         totalCount: { $sum: 1 },
         userReviews: {
           $push: {
-            userName: "$userName",
-            rating: "$individualRating",
+            name: "$userName",
+            profile: "$profile",
+            postedAt: "$createdAt",
+            overallRating: "$individualRating",
             title: "$title",
             comment: "$comment",
           },
