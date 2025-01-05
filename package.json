@@ -5,22 +5,41 @@
   "scripts": {
     "dev": "export NODE_ENV=development && nodemon",
     "build": "npx tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "prepare": "husky",
+    "eslint": "eslint . --ext .js, .ts",
+    "format": "prettier --write ."
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css,scss,md}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   },
   "author": "Linux Hari",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.19.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-security": "^3.0.1",
     "express": "^4.19.2",
     "express-rate-limit": "^7.4.1",
     "express-slow-down": "^2.0.3",
     "helmet": "^8.0.0",
+    "husky": "^9.1.7",
     "jsonwebtoken": "^9.0.2",
+    "lint-staged": "^15.3.0",
     "mongodb": "^6.8.0",
     "mongoose": "^8.5.3",
     "stripe": "^16.8.0",
