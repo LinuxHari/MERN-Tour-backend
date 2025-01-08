@@ -1,4 +1,4 @@
-import mongoose, { PipelineStage } from 'mongoose'
+import { PipelineStage, Types } from "mongoose";
 
 const destinationPipe = [
   {
@@ -6,47 +6,46 @@ const destinationPipe = [
       from: "destinations",
       localField: "destinationId",
       foreignField: "destinationId",
-      as: "cityDetails",
-    },
+      as: "cityDetails"
+    }
   },
   {
     $lookup: {
       from: "destinations",
       localField: "cityDetails.parentDestinationId",
       foreignField: "destinationId",
-      as: "stateDetails",
-    },
+      as: "stateDetails"
+    }
   },
   {
     $lookup: {
       from: "destinations",
       localField: "stateDetails.parentDestinationId",
       foreignField: "destinationId",
-      as: "countryDetails",
-    },
+      as: "countryDetails"
+    }
   },
   {
     $addFields: {
       destination: {
         $concat: [
-          { $arrayElemAt: ["$cityDetails.destination", 0] }, ", ",
-          { $arrayElemAt: ["$stateDetails.destination", 0] }, ", ",
+          { $arrayElemAt: ["$cityDetails.destination", 0] },
+          ", ",
+          { $arrayElemAt: ["$stateDetails.destination", 0] },
+          ", ",
           { $arrayElemAt: ["$countryDetails.destination", 0] }
         ]
       }
     }
   }
-]
+];
 
 const tourAggregations = {
-  destinationQuery:(destinationId: string) => [
+  destinationQuery: (destinationId: string) => [
     {
       $match: {
-        $or: [
-          { destinationId: destinationId },
-          { parentDestinationId: destinationId },
-        ],
-      },
+        $or: [{ destinationId: destinationId }, { parentDestinationId: destinationId }]
+      }
     },
     {
       $graphLookup: {
@@ -54,8 +53,8 @@ const tourAggregations = {
         startWith: "$destinationId",
         connectFromField: "destinationId",
         connectToField: "parentDestinationId",
-        as: "descendantDestinations",
-      },
+        as: "descendantDestinations"
+      }
     },
     {
       $project: {
@@ -67,13 +66,13 @@ const tourAggregations = {
               $map: {
                 input: "$descendantDestinations",
                 as: "city",
-                in: "$$city.destinationId",
-              },
-            },
-          ],
-        },
-      },
-    },
+                in: "$$city.destinationId"
+              }
+            }
+          ]
+        }
+      }
+    }
   ],
   getTours: (
     cityDestinationIds: string[],
@@ -89,14 +88,14 @@ const tourAggregations = {
     maxPrice?: number,
     tourTypes?: string[],
     specials?: string[],
-    languages?: string[],
+    languages?: string[]
   ) => {
     // Step 1: Match basic filters
     const matchStage: Record<string, any> = {
       destinationId: { $in: cityDestinationIds },
-      minAge: { $lte: minAge },
+      minAge: { $lte: minAge }
     };
-  
+
     if (rating) matchStage.rating = { $gte: rating };
     if (languages && languages.length > 0) matchStage.languages = { $in: languages };
     if (specials && specials.includes("Free Cancellation")) matchStage.freeCancellation = true;
@@ -110,13 +109,13 @@ const tourAggregations = {
           $add: [
             { $multiply: ["$price.adult", adults] },
             { $multiply: [{ $ifNull: ["$price.teens", 0] }, teens || 0] },
-            { $multiply: [{ $ifNull: ["$price.children", 0] }, children || 0] }, 
-            { $multiply: [{ $ifNull: ["$price.infants", 0] }, infants || 0] }, 
-          ],
-        },
-      },
+            { $multiply: [{ $ifNull: ["$price.children", 0] }, children || 0] },
+            { $multiply: [{ $ifNull: ["$price.infants", 0] }, infants || 0] }
+          ]
+        }
+      }
     };
-  
+
     const priceFilterStage: Record<string, any> = {};
     if (minPrice) priceFilterStage.calculatedPrice = { $gte: minPrice };
     if (maxPrice) {
@@ -124,7 +123,7 @@ const tourAggregations = {
         ? { ...priceFilterStage.calculatedPrice, $lte: maxPrice }
         : { $lte: maxPrice };
     }
-  
+
     const facetStage: {
       paginatedResults: any[];
       totalCount: any[];
@@ -145,15 +144,20 @@ const tourAggregations = {
             duration: 1,
             freeCancellation: 1,
             images: { $slice: ["$images", 1] },
-            tourId: 1,
-          },
+            tourId: 1
+          }
         },
         { $skip: (page - 1) * 10 },
-        { $limit: 10 },
+        { $limit: 10 }
       ],
-      totalCount: [{ $match: matchStage }, addFieldsStage, { $match: priceFilterStage }, { $count: "total" }],
+      totalCount: [
+        { $match: matchStage },
+        addFieldsStage,
+        { $match: priceFilterStage },
+        { $count: "total" }
+      ]
     };
-  
+
     if (filters) {
       facetStage.filters = [
         {
@@ -162,11 +166,11 @@ const tourAggregations = {
             tourTypes: { $addToSet: "$category" },
             specials: {
               $addToSet: {
-                $cond: [{ $eq: ["$freeCancellation", true] }, "Free Cancellation", null],
-              },
+                $cond: [{ $eq: ["$freeCancellation", true] }, "Free Cancellation", null]
+              }
             },
-            languages: { $addToSet: "$languages" },
-          },
+            languages: { $addToSet: "$languages" }
+          }
         },
         {
           $project: {
@@ -177,27 +181,27 @@ const tourAggregations = {
               $reduce: {
                 input: "$languages",
                 initialValue: [],
-                in: { $setUnion: ["$$value", "$$this"] },
-              },
-            },
-          },
-        },
+                in: { $setUnion: ["$$value", "$$this"] }
+              }
+            }
+          }
+        }
       ];
     }
-  
+
     const aggregationPipeline = [
       { $facet: facetStage },
       {
         $project: {
           tours: "$paginatedResults",
           totalCount: { $arrayElemAt: ["$totalCount.total", 0] },
-          filters: filters ? "$filters" : undefined,
-        },
-      },
+          filters: filters ? "$filters" : undefined
+        }
+      }
     ];
-  
+
     return aggregationPipeline;
-  },  
+  },
   getTour: (tourId: string) => {
     return [
       { $match: { tourId } },
@@ -218,94 +222,95 @@ const tourAggregations = {
           faq: 1,
           included: 1,
           price: 1
-        },
-      },
+        }
+      }
     ];
   },
-  getReviews: (tourId: string) => [
-    {
-      $match: { tourId: new mongoose.Types.ObjectId(tourId) },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "userId",
-        foreignField: "_id",
-        as: "userInfo",
+  getReviews: (tourId: Types.ObjectId) =>
+    [
+      {
+        $match: { tourId }
       },
-    },
-    {
-      $unwind: {
-        path: "$userInfo",
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userInfo"
+        }
       },
-    },
-    {
-      $addFields: {
-        userName: { $concat: ["$userInfo.firstName", " ", "$userInfo.lastName"] },
-        individualRating: {
-          $avg: [
-            "$ratings.Location",
-            "$ratings.Amenities",
-            "$ratings.Food",
-            "$ratings.Room",
-            "$ratings.Price",
-          ],
-        },
-        profile: "$userInfo.profile", // Add profile from userModel
+      {
+        $unwind: {
+          path: "$userInfo"
+        }
       },
-    },
-    {
-      $sort: { createdAt: -1 },
-    },
-    {
-      $limit: 10,
-    },
-    {
-      $group: {
-        _id: null,
-        overallRating: {
-          $avg: {
+      {
+        $addFields: {
+          userName: { $concat: ["$userInfo.firstName", " ", "$userInfo.lastName"] },
+          individualRating: {
             $avg: [
               "$ratings.Location",
               "$ratings.Amenities",
               "$ratings.Food",
               "$ratings.Room",
-              "$ratings.Price",
-            ],
+              "$ratings.Price"
+            ]
           },
-        },
-        location: { $avg: "$ratings.Location" },
-        food: { $avg: "$ratings.Food" },
-        price: { $avg: "$ratings.Price" },
-        rooms: { $avg: "$ratings.Room" },
-        amenities: { $avg: "$ratings.Amenities" },
-        totalCount: { $sum: 1 },
-        userReviews: {
-          $push: {
-            name: "$userName",
-            profile: "$profile",
-            postedAt: "$createdAt",
-            overallRating: "$individualRating",
-            title: "$title",
-            comment: "$comment",
+          profile: "$userInfo.profile" // Add profile from userModel
+        }
+      },
+      {
+        $sort: { createdAt: -1 }
+      },
+      {
+        $limit: 10
+      },
+      {
+        $group: {
+          _id: null,
+          overallRating: {
+            $avg: {
+              $avg: [
+                "$ratings.Location",
+                "$ratings.Amenities",
+                "$ratings.Food",
+                "$ratings.Room",
+                "$ratings.Price"
+              ]
+            }
           },
-        },
+          location: { $avg: "$ratings.Location" },
+          food: { $avg: "$ratings.Food" },
+          price: { $avg: "$ratings.Price" },
+          rooms: { $avg: "$ratings.Room" },
+          amenities: { $avg: "$ratings.Amenities" },
+          totalCount: { $sum: 1 },
+          userReviews: {
+            $push: {
+              name: "$userName",
+              profile: "$profile",
+              postedAt: "$createdAt",
+              overallRating: "$individualRating",
+              title: "$title",
+              comment: "$comment"
+            }
+          }
+        }
       },
-    },
-    {
-      $project: {
-        _id: 0,
-        overallRating: 1,
-        location: 1,
-        food: 1,
-        price: 1,
-        rooms: 1,
-        amenities: 1,
-        totalCount: 1,
-        userReviews: 1,
-      },
-    },
-  ] as PipelineStage[]
+      {
+        $project: {
+          _id: 0,
+          overallRating: 1,
+          location: 1,
+          food: 1,
+          price: 1,
+          rooms: 1,
+          amenities: 1,
+          totalCount: 1,
+          userReviews: 1
+        }
+      }
+    ] as PipelineStage[]
 };
 
 export default tourAggregations;

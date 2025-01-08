@@ -12,18 +12,18 @@ import { dbConnect, dbDisconnect } from "./dbManager";
 
 const app = express();
 
-app.use(helmet())
+app.use(helmet());
 
 const limiter = rateLimit({
   windowMs: 60 * 1000,
-  limit: 30,
+  limit: 30
 });
 app.use(limiter);
 
 const speedLimiter = slowDown({
   windowMs: 60 * 1000,
-  delayAfter: 20, 
-  delayMs: () => 1000,
+  delayAfter: 20,
+  delayMs: () => 1000
 });
 app.use(speedLimiter);
 
@@ -31,11 +31,11 @@ app.use(
   cors({
     origin: "http://localhost:4000",
     methods: "GET,PUT,POST,DELETE",
-    credentials: true,
+    credentials: true
   })
 );
 
-app.use("/webhook", webhookRoutes)
+app.use("/webhook", webhookRoutes);
 
 app.use(express.json());
 
@@ -49,20 +49,20 @@ app.use("*", (_, res: Response) => {
 
 app.use(errorHandler);
 
-dbConnect()
+dbConnect();
 
 const PORT = envConfig.port || 8000;
 
-export const server = app.listen(PORT, () => console.log(`Server is running in port ${PORT}`))
+export const server = app.listen(PORT, () => console.log(`Server is running in port ${PORT}`));
 
-export const shutdown = async(type: number) => {
+export const shutdown = async (type: number) => {
   console.log("Shutting down...");
   try {
-   await dbDisconnect()
-  } catch(err) {
-    console.log(err); 
+    await dbDisconnect();
+  } catch (err) {
+    console.log(err);
   }
-  if(server){
+  if (server) {
     server.close(() => {
       server.close(() => {
         console.log("Server closed");
@@ -70,12 +70,12 @@ export const shutdown = async(type: number) => {
       });
     });
   } else {
-      console.log("Server closed before server initialization");
-      process.exit(1);
-    };
+    console.log("Server closed before server initialization");
+    process.exit(1);
+  }
 
   setTimeout(() => {
-    console.error('Forced shutdown due to lingering connections.');
+    console.error("Forced shutdown due to lingering connections.");
     process.exit(1);
   }, 10000);
 };

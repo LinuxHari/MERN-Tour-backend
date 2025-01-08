@@ -24,7 +24,7 @@ export const dbDisconnect = async (count = 0) => {
       await delay(10000);
       await dbDisconnect(count);
     } else {
-        throw new Error("Failed to disconnect database")
+      throw new Error("Failed to disconnect database");
     }
   }
 };
