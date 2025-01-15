@@ -1,14 +1,7 @@
-import {
-  BadRequestError,
-  GoneError,
-  ManyRequests,
-  NotFoundError,
-  ServerError
-} from "../handlers/errorHandler";
+import { BadRequestError, GoneError, ManyRequests, NotFoundError } from "../handlers/errorHandler";
 import Tour from "../models/tourModel";
 import generateId from "../utils/generateId";
 import { TourSchemaType } from "../validators/adminValidators";
-import { ObjectId } from "mongodb";
 import {
   BookingSchemaType,
   RatingType,
@@ -16,7 +9,7 @@ import {
   TourListingSchemaType
 } from "../validators/tourValidators";
 import tourAggregations from "../aggregations/tourAggegations";
-import Destination, { DestinationType } from "../models/destinationModel";
+import Destination from "../models/destinationModel";
 import User from "../models/userModel";
 import Reserved from "../models/reserveModel";
 import { stripeCreate, stripeRefund } from "./stripeService";
@@ -96,88 +89,6 @@ export const getTour = async (tourId: string) => {
 
   if (!tour.length) throw new NotFoundError("Tour not found");
   return tour[0];
-};
-
-export const createTour = async (tourData: TourSchemaType) => {
-  const createDestination = async (
-    destinationType: DestinationType["destinationType"],
-    destination: string,
-    parentDestinationId?: string
-  ) => {
-    if (
-      (destinationType === "Country" && parentDestinationId) ||
-      (destinationType !== "Country" && !parentDestinationId)
-    )
-      throw new ServerError("Something went wrong");
-
-    const destinationDetails: DestinationType = {
-      destinationType,
-      destination,
-      parentDestinationId,
-      destinationId: generateId()
-    };
-    await Destination.create(destinationDetails);
-    return destinationDetails;
-  };
-
-  const createMissingDestinations = async (city: string, state: string, country: string) => {
-    const countryDestinationDetails = await Destination.findOne({
-      destination: country
-    });
-    if (!countryDestinationDetails) {
-      const destinationCountry = await createDestination("Country", country);
-      const destinationState = await createDestination(
-        "State",
-        state,
-        destinationCountry.destinationId
-      );
-      const destinationCity = await createDestination("City", city, destinationState.destinationId);
-      return destinationCity.destinationId;
-    }
-
-    const stateDestinationDetails = await Destination.findOne({
-      destination: state,
-      parentDestinationId: countryDestinationDetails.destinationId
-    });
-    if (!stateDestinationDetails) {
-      const destinationState = await createDestination(
-        "State",
-        state,
-        countryDestinationDetails?.destinationId
-      );
-      const destinationCity = await createDestination("City", city, destinationState.destinationId);
-      return destinationCity.destinationId;
-    }
-
-    const cityDestinationDetails = await Destination.findOne({
-      destination: city,
-      parentDestinationId: stateDestinationDetails.destinationId
-    });
-    if (!cityDestinationDetails) {
-      const destinationCity = await createDestination(
-        "City",
-        city,
-        stateDestinationDetails?.destinationId
-      );
-      return destinationCity.destinationId;
-    }
-    return cityDestinationDetails.destinationId;
-  };
-
-  const { city, state, country, ...extractedTourData } = tourData;
-  const cityDestinationId = await createMissingDestinations(city, state, country);
-
-  const newTour = {
-    ...extractedTourData,
-    markAsDeleted: false,
-    tourId: generateId(),
-    destinationId: cityDestinationId,
-    duration: tourData.itinerary.length,
-    submissionStatus: "Approved",
-    recurringEndDate: new Date(),
-    publisher: new ObjectId()
-  };
-  await Tour.create(newTour);
 };
 
 export const updateTour = async (tourId: string, tourData: TourSchemaType) => {
@@ -433,9 +344,39 @@ export const tourReview = async (review: RatingType, tourId: string, email: stri
 export const getTourReview = async (tourId: string) => {
   const tourDb = await Tour.findOne({ tourId }, { _id: 1 }).lean();
   if (!tourDb) {
-    throw new BadRequestError(`Tour with ${tourId} does not exist and happened to access review`);
+    throw new BadRequestError(
+      `Tour with ${tourId} id does not exist and happened to access review`
+    );
   }
 
   const reviews = await Review.aggregate(tourAggregations.getReviews(tourDb._id));
-  return reviews;
+  return reviews[0];
+};
+
+export const addTourToFavorites = async (tourId: string, email: string, ip?: string) => {
+  const user = await User.findOne({ email }, { favorites: 1 });
+  if (!user)
+    throw new BadRequestError(
+      `Unauthorized user with ip ${ip} tried to add a tour with id ${tourId} to favorite`
+    );
+  const tour = await Tour.findOne({ tourId }, { _id: 1 }).lean();
+  if (!tour) throw new BadRequestError(`Invalid tour id ${tourId}`);
+  user.favorites = [...user.favorites, tour._id];
+  await user.save();
+};
+
+export const getFavoriteTours = async (email: string, page: number, ip?: string) => {
+  const limit = 10;
+  const user = await User.findOne({ email }, { favorites: 1 }).lean();
+  if (!user)
+    throw new BadRequestError(
+      `Unauthorized user with ip ${ip} tried to get favorite tours with email ${email}`
+    );
+  const result = await Tour.aggregate(
+    tourAggregations.getFavoriteTours(user.favorites, page, limit)
+  );
+  const favoriteTours = result[0].tours;
+  const totalCount = result[0].totalCount[0]?.count || 0;
+  const totalPages = Math.ceil(totalCount / limit);
+  return { favoriteTours, totalPages, totalCount };
 };

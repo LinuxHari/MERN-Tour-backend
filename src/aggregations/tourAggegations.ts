@@ -1,4 +1,4 @@
-import { PipelineStage, Types } from "mongoose";
+import mongoose, { PipelineStage, Types } from "mongoose";
 
 const destinationPipe = [
   {
@@ -36,6 +36,30 @@ const destinationPipe = [
           { $arrayElemAt: ["$countryDetails.destination", 0] }
         ]
       }
+    }
+  }
+];
+
+const minTourInfoPipe = (page: number, limit: number): PipelineStage[] => [
+  { $sort: { createdAt: -1 } },
+  {
+    $facet: {
+      tours: [
+        { $skip: (page - 1) * limit },
+        { $limit: limit },
+        {
+          $project: {
+            location: 1,
+            title: 1,
+            rating: 1,
+            reviewCount: 1,
+            price: 1,
+            duration: 1,
+            imgUrl: 1
+          }
+        }
+      ],
+      totalCount: [{ $count: "count" }]
     }
   }
 ];
@@ -310,7 +334,24 @@ const tourAggregations = {
           userReviews: 1
         }
       }
-    ] as PipelineStage[]
+    ] as PipelineStage[],
+  getPublishedTours: (page: number, limit: number): PipelineStage[] => [
+    { $match: { markAsDeleted: false } },
+    ...minTourInfoPipe(page, limit)
+  ],
+  getFavoriteTours: (
+    tourIds: mongoose.Types.ObjectId[],
+    page: number,
+    limit: number
+  ): PipelineStage[] => [
+    {
+      $match: {
+        _id: { $in: tourIds },
+        markAsDeleted: false
+      }
+    },
+    ...minTourInfoPipe(page, limit)
+  ]
 };
 
 export default tourAggregations;

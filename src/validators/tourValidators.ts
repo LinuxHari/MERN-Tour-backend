@@ -1,15 +1,10 @@
 import { z } from "zod";
 import removeSpaces from "../utils/removeSpaces";
-import {
-  CATEGORIES,
-  LANGUAGES,
-  SPECIALS
-} from "../config/tourConfig";
+import { CATEGORIES, LANGUAGES, SPECIALS } from "../config/tourConfig";
 import { EmailSchema } from "./authValidators";
 import { LocationSchema } from "./adminValidators";
 
-const isValidDate = (date: string) =>
-  date === new Date(date).toISOString().split("T")[0];
+const isValidDate = (date: string) => date === new Date(date).toISOString().split("T")[0];
 const parseToInt = (value: string) => parseInt(value);
 
 const strToArr = (values: string) => {
@@ -19,16 +14,11 @@ const strToArr = (values: string) => {
 };
 
 export const SearchSuggestionSchema = z.object({
-  searchText: z
-    .string()
-    .transform(removeSpaces)
-    .pipe(z.string().min(1).max(50)),
+  searchText: z.string().transform(removeSpaces).pipe(z.string().min(1).max(50))
 });
 
 export const TourListingSchema = z.object({
-  destinationId: z
-    .string()
-    .length(8, { message: "Invalid destination id" }),
+  destinationId: z.string().length(8, { message: "Invalid destination id" }),
   startDate: z.string().refine(isValidDate),
   endDate: z.string().refine(isValidDate),
   adults: z
@@ -44,39 +34,19 @@ export const TourListingSchema = z.object({
   children: z
     .string()
     .transform(parseToInt)
-    .pipe(
-      z
-        .number()
-        .int()
-        .min(0)
-        .max(10, { message: "Number of children should not exceed 9" })
-    ),
+    .pipe(z.number().int().min(0).max(10, { message: "Number of children should not exceed 9" })),
   infants: z
     .string()
     .transform(parseToInt)
-    .pipe(
-      z
-        .number()
-        .int()
-        .min(0)
-        .max(9, { message: "Number of infant should not exceed 9" })
-    ),
-    teens: z
+    .pipe(z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" })),
+  teens: z
     .string()
     .transform(parseToInt)
-    .pipe(
-      z
-        .number()
-        .int()
-        .min(0)
-        .max(9, { message: "Number of infant should not exceed 9" })
-    ),
+    .pipe(z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" })),
   page: z
     .string()
     .transform(parseToInt)
-    .pipe(
-      z.number().int().min(0).max(100, { message: "Page number is not valid" })
-    ),
+    .pipe(z.number().int().min(0).max(100, { message: "Page number is not valid" })),
   filters: z.string().transform((value) => Boolean(parseInt(value))),
   sortType: z.string().min(11).max(25),
   tourTypes: z
@@ -105,78 +75,113 @@ export const TourListingSchema = z.object({
     .transform(strToArr)
     .pipe(z.array(z.enum(SPECIALS)))
     .optional(),
-  minPrice: z
-    .string()
-    .transform(parseToInt)
-    .pipe(z.number().int().min(1).max(1000000))
-    .optional(),
-  maxPrice: z
-    .string()
-    .transform(parseToInt)
-    .pipe(z.number().int().min(2).max(1000000))
-    .optional(),
+  minPrice: z.string().transform(parseToInt).pipe(z.number().int().min(1).max(1000000)).optional(),
+  maxPrice: z.string().transform(parseToInt).pipe(z.number().int().min(2).max(1000000)).optional()
 });
 
 export const SingleTourParamSchema = z.object({
-  tourId: z.string().length(8, {message: "Invalid tour id"})
-})
-
-export const ReserveTourSchema = z.object({
-  startDate: z.string().transform((dateStr) => new Date(dateStr)).pipe(z.date({message: "Invalid start date"})),
-  endDate: z.string().transform((dateStr) => new Date(dateStr)).pipe(z.date({message: "Invalid end date"})),
-  pax: z.object({
-    adults: z.number().int().min(1, { message: "Atleast 1 adult required" }).max(10, "Number of adults should not exceed 9"),
-  children: z
-        .number()
-        .int()
-        .min(0)
-        .max(10, { message: "Number of children should not exceed 9" }).optional(),
-  infants: 
-      z
-        .number()
-        .int()
-        .min(0)
-        .max(9, { message: "Number of infant should not exceed 9" }).optional(),
-    teens: z
-        .number()
-        .int()
-        .min(0)
-        .max(9, { message: "Number of infant should not exceed 9" }).optional(),
-  })
-}).merge(SingleTourParamSchema)
-
-export const ReserveTourParamSchema = z.object({
-  reserveId: z
-.string()
-.length(8, { message: "Invalid reserve id" }
-)})
-
-export const BookingSchema = z.object({
-  fullName: z.string().min(2, {message: "Full name must contain atleast 2 characters"}).max(64, {message: "Full name must not exceed 64 characters"}),
-  countryCode: z.number({message: "Country code must be a number"}).min(1, {message: "Invalid country code"}).max(999, {message: "Country code is invalid"}),
-  phone: z.number({message: "Phone number must be number"}).min(1000,{message: "Invalid phone number"}).max(99999999999, {message: "Invalid phone number"})
-}).merge(EmailSchema).merge(LocationSchema.omit({city: true}))
-
-export const BookingTourParamSchema = z.object({
-  bookingId: z
-.string()
-.length(8, { message: "Invalid booking id" }
-)})
-
-export const RatingSchema = z.object({
-    ratings: z.object({
-      Location: z.number().min(1, {message: "Invalid location rating"}).max(5, {message: "Invalid location rating"}),
-      Amenities: z.number().min(1, {message: "Invalid amenities rating"}).max(5, {message: "Invalid amenities rating"}),
-      Food: z.number().min(1, {message: "Invalid food rating"}).max(5, {message: "Invalid food rating"}),
-      Room: z.number().min(1, {message: "Invalid room rating"}).max(5, {message: "Invalid room rating"}),
-      Price: z.number().min(1, {message: "Invalid price rating"}).max(5, {message: "Invalid price rating"}),
-    }),
-    title: z.string().min(2, {message: "Title should have atleast two characters"}).max(100, {message: "Title should not exceed more than 100 characters"}),
-    comment: z.string().min(2, {message: "Comment should have atleast two characters"}).max(500, {message: "Comment should not exceed more than 500 characters"})
+  tourId: z.string().length(8, { message: "Invalid tour id" })
 });
 
-export type RatingType = z.infer<typeof RatingSchema>
-export type BookingSchemaType = z.infer<typeof BookingSchema>
+export const ReserveTourSchema = z
+  .object({
+    startDate: z
+      .string()
+      .transform((dateStr) => new Date(dateStr))
+      .pipe(z.date({ message: "Invalid start date" })),
+    endDate: z
+      .string()
+      .transform((dateStr) => new Date(dateStr))
+      .pipe(z.date({ message: "Invalid end date" })),
+    pax: z.object({
+      adults: z
+        .number()
+        .int()
+        .min(1, { message: "Atleast 1 adult required" })
+        .max(10, "Number of adults should not exceed 9"),
+      children: z
+        .number()
+        .int()
+        .min(0)
+        .max(10, { message: "Number of children should not exceed 9" })
+        .optional(),
+      infants: z
+        .number()
+        .int()
+        .min(0)
+        .max(9, { message: "Number of infant should not exceed 9" })
+        .optional(),
+      teens: z
+        .number()
+        .int()
+        .min(0)
+        .max(9, { message: "Number of infant should not exceed 9" })
+        .optional()
+    })
+  })
+  .merge(SingleTourParamSchema);
+
+export const ReserveTourParamSchema = z.object({
+  reserveId: z.string().length(8, { message: "Invalid reserve id" })
+});
+
+export const BookingSchema = z
+  .object({
+    fullName: z
+      .string()
+      .min(2, { message: "Full name must contain atleast 2 characters" })
+      .max(64, { message: "Full name must not exceed 64 characters" }),
+    countryCode: z
+      .number({ message: "Country code must be a number" })
+      .min(1, { message: "Invalid country code" })
+      .max(999, { message: "Country code is invalid" }),
+    phone: z
+      .number({ message: "Phone number must be number" })
+      .min(1000, { message: "Invalid phone number" })
+      .max(99999999999, { message: "Invalid phone number" })
+  })
+  .merge(EmailSchema)
+  .merge(LocationSchema.omit({ city: true }));
+
+export const BookingTourParamSchema = z.object({
+  bookingId: z.string().length(8, { message: "Invalid booking id" })
+});
+
+export const RatingSchema = z.object({
+  ratings: z.object({
+    Location: z
+      .number()
+      .min(1, { message: "Invalid location rating" })
+      .max(5, { message: "Invalid location rating" }),
+    Amenities: z
+      .number()
+      .min(1, { message: "Invalid amenities rating" })
+      .max(5, { message: "Invalid amenities rating" }),
+    Food: z
+      .number()
+      .min(1, { message: "Invalid food rating" })
+      .max(5, { message: "Invalid food rating" }),
+    Room: z
+      .number()
+      .min(1, { message: "Invalid room rating" })
+      .max(5, { message: "Invalid room rating" }),
+    Price: z
+      .number()
+      .min(1, { message: "Invalid price rating" })
+      .max(5, { message: "Invalid price rating" })
+  }),
+  title: z
+    .string()
+    .min(2, { message: "Title should have atleast two characters" })
+    .max(100, { message: "Title should not exceed more than 100 characters" }),
+  comment: z
+    .string()
+    .min(2, { message: "Comment should have atleast two characters" })
+    .max(500, { message: "Comment should not exceed more than 500 characters" })
+});
+
+export type RatingType = z.infer<typeof RatingSchema>;
+export type BookingSchemaType = z.infer<typeof BookingSchema>;
 export type TourListingSchemaType = z.infer<typeof TourListingSchema>;
-export type ReserveTourType = z.infer<typeof ReserveTourSchema>
-export type BookingTourType = z.infer<typeof BookingSchema>
+export type ReserveTourType = z.infer<typeof ReserveTourSchema>;
+export type BookingTourType = z.infer<typeof BookingSchema>;
