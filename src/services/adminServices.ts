@@ -98,3 +98,5 @@ export const getPublishedTours = async (page: number) => {
 
   return { tours, totalPages, totalCount };
 };
+
+export const getTotalRevenue = async () => {};

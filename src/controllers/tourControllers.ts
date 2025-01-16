@@ -1,10 +1,8 @@
 import { Request, Response } from "express";
 import {
-  addTourToFavorites,
   bookReservedTour,
   cancelBookedTour,
   getBooking,
-  getFavoriteTours,
   getReservedDetails,
   getTour,
   getTourReview,
@@ -15,7 +13,6 @@ import {
 } from "../services/tourServices";
 import responseHandler from "../handlers/responseHandler";
 import asyncWrapper from "../asyncWrapper";
-import { TourListingSchemaType } from "../validators/tourValidators";
 
 export const search = asyncWrapper(async (req: Request, res: Response) => {
   const searchText = req.query.searchText as string;
@@ -74,15 +71,4 @@ export const reviewTour = asyncWrapper(async (req: Request, res: Response) => {
 export const getReview = asyncWrapper(async (req: Request, res: Response) => {
   const reviews = await getTourReview(req.params.tourId);
   responseHandler.ok(res, reviews);
-});
-
-export const addToFavorite = asyncWrapper(async (req: Request, res: Response) => {
-  await addTourToFavorites(req.body.tourId, res.locals.email, req.ip);
-  responseHandler.ok(res, { message: "Added to favoirites" });
-});
-
-export const getUserFavoriteTours = asyncWrapper(async (req: Request, res: Response) => {
-  const page = typeof req.query.page === "number" ? req.query.page : 1;
-  const favoriteTours = await getFavoriteTours(res.locals.email, page, req.ip);
-  responseHandler.ok(res, favoriteTours);
 });

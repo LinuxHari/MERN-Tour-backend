@@ -1,6 +1,5 @@
 import { Router } from "express";
 import {
-  addToFavorite,
   bookedTour,
   bookTour,
   cancelBooking,
@@ -62,7 +61,6 @@ router.post(
   requestHandler(RatingSchema),
   reviewTour
 );
-router.post("/review/:tourId", requestHandler(SingleTourParamSchema), addToFavorite);
 
 router.get("/", requestHandler(TourListingSchema, "query"), tours);
 router.get("/:tourId", requestHandler(SingleTourParamSchema, "params"), tour);

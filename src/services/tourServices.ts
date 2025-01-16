@@ -352,31 +352,3 @@ export const getTourReview = async (tourId: string) => {
   const reviews = await Review.aggregate(tourAggregations.getReviews(tourDb._id));
   return reviews[0];
 };
-
-export const addTourToFavorites = async (tourId: string, email: string, ip?: string) => {
-  const user = await User.findOne({ email }, { favorites: 1 });
-  if (!user)
-    throw new BadRequestError(
-      `Unauthorized user with ip ${ip} tried to add a tour with id ${tourId} to favorite`
-    );
-  const tour = await Tour.findOne({ tourId }, { _id: 1 }).lean();
-  if (!tour) throw new BadRequestError(`Invalid tour id ${tourId}`);
-  user.favorites = [...user.favorites, tour._id];
-  await user.save();
-};
-
-export const getFavoriteTours = async (email: string, page: number, ip?: string) => {
-  const limit = 10;
-  const user = await User.findOne({ email }, { favorites: 1 }).lean();
-  if (!user)
-    throw new BadRequestError(
-      `Unauthorized user with ip ${ip} tried to get favorite tours with email ${email}`
-    );
-  const result = await Tour.aggregate(
-    tourAggregations.getFavoriteTours(user.favorites, page, limit)
-  );
-  const favoriteTours = result[0].tours;
-  const totalCount = result[0].totalCount[0]?.count || 0;
-  const totalPages = Math.ceil(totalCount / limit);
-  return { favoriteTours, totalPages, totalCount };
-};
