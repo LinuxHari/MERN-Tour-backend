@@ -35,6 +35,8 @@ app.use(
   })
 );
 
+console.log(envConfig.frontend);
+
 app.use("/webhook", webhookRoutes);
 
 app.use(express.json());
