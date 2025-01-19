@@ -114,13 +114,12 @@ const tourAggregations = {
     specials?: string[],
     languages?: string[]
   ) => {
-    // Step 1: Match basic filters
     const matchStage: Record<string, any> = {
       destinationId: { $in: cityDestinationIds },
       minAge: { $lte: minAge }
     };
 
-    if (rating) matchStage.rating = { $gte: rating };
+    if (rating) matchStage.averageRating = { $gte: rating };
     if (languages && languages.length > 0) matchStage.languages = { $in: languages };
     if (specials && specials.includes("Free Cancellation")) matchStage.freeCancellation = true;
     if (tourTypes && tourTypes.length > 0) {
@@ -168,7 +167,9 @@ const tourAggregations = {
             duration: 1,
             freeCancellation: 1,
             images: { $slice: ["$images", 1] },
-            tourId: 1
+            tourId: 1,
+            totalRatings: 1,
+            averageRating: 1
           }
         },
         { $skip: (page - 1) * 10 },
@@ -245,7 +246,9 @@ const tourAggregations = {
           highlights: 1,
           faq: 1,
           included: 1,
-          price: 1
+          price: 1,
+          totalRatings: 1,
+          averageRating: 1
         }
       }
     ];
@@ -351,6 +354,31 @@ const tourAggregations = {
       }
     },
     ...minTourInfoPipe(page, limit)
+  ],
+  getTourReviews: (tourId: Types.ObjectId): PipelineStage[] => [
+    { $match: { tourId: tourId } },
+    {
+      $group: {
+        _id: "$tourId",
+        totalRatings: { $sum: 1 },
+        averageRating: {
+          $avg: {
+            $divide: [
+              {
+                $sum: [
+                  "$ratings.Location",
+                  "$ratings.Amenities",
+                  "$ratings.Food",
+                  "$ratings.Room",
+                  "$ratings.Price"
+                ]
+              },
+              5
+            ]
+          }
+        }
+      }
+    }
   ]
 };
 

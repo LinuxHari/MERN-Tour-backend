@@ -1,57 +1,52 @@
 import mongoose, { InferSchemaType } from "mongoose";
-import {
-  CATEGORIES,
-  LANGUAGES,
-  MIN_AGE,
-  SUBMISSION_STATUS,
-} from "../config/tourConfig";
+import { CATEGORIES, LANGUAGES, MIN_AGE, SUBMISSION_STATUS } from "../config/tourConfig";
 import { modelOptions } from "./modelConfig";
 
 const itineraryType = {
   activity: {
     type: String,
-    required: true,
+    required: true
   },
   details: {
     type: String,
-    required: true,
+    required: true
   },
   lat: {
     type: Number,
-    required: true,
+    required: true
   },
   lon: {
     type: Number,
-    required: true,
-  },
+    required: true
+  }
 };
 
 const faqType = {
   question: {
     type: String,
-    required: true,
+    required: true
   },
   answer: {
     type: String,
-    required: true,
-  },
+    required: true
+  }
 };
 
 const priceType = {
   adult: {
     type: Number,
-    required: true,
-  }, 
+    required: true
+  },
   teen: {
-    type: Number,
+    type: Number
   },
   child: {
-    type: Number,
+    type: Number
   },
   infant: {
-    type: Number,
+    type: Number
   }
-}
+};
 
 const includedType = {
   beveragesAndFood: Boolean,
@@ -62,100 +57,108 @@ const includedType = {
   tourGuide: Boolean,
   towel: Boolean,
   tips: Boolean,
-  alcoholicBeverages: Boolean,
+  alcoholicBeverages: Boolean
 };
 
 const tourSchema = new mongoose.Schema(
   {
     tourId: {
       type: String,
-      required: true,
+      required: true
     },
     name: {
       type: String,
-      required: true,
+      required: true
     },
     description: {
       type: String,
-      required: true,
+      required: true
     },
     category: {
       type: String,
       required: true,
-      enum: CATEGORIES,
+      enum: CATEGORIES
     },
     highlights: {
       type: [String],
-      required: true,
+      required: true
     },
     images: {
       type: [String],
-      required: true,
+      required: true
     },
     price: {
       type: priceType,
       _id: false,
-      required: true,
+      required: true
     },
     duration: {
       type: Number,
-      required: true,
+      required: true
     },
     capacity: {
       type: Number,
-      requried: true,
+      requried: true
     },
     included: {
       type: includedType,
       required: true,
-      _id: false,
+      _id: false
     },
     itinerary: {
       type: [itineraryType],
       required: true,
-      _id: false,
+      _id: false
     },
     languages: {
       type: [String],
       required: true,
-      enum: LANGUAGES,
+      enum: LANGUAGES
     },
     faq: {
       type: [faqType],
       required: true,
-      _id: false,
+      _id: false
     },
     minAge: {
       type: Number,
       enum: MIN_AGE,
-      required: true,
+      required: true
     },
     destinationId: {
       type: String,
-      required: true,
+      required: true
     },
     publisher: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Users",
-      required: true,
+      required: true
     },
     recurringEndDate: {
       type: Date,
-      required: true,
+      required: true
     },
     submissionStatus: {
       type: String,
       required: true,
-      enum: SUBMISSION_STATUS,
+      enum: SUBMISSION_STATUS
     },
     freeCancellation: {
       type: Boolean,
-      default: false,
+      default: false
+    },
+    totalRatings: {
+      type: Number,
+      default: 0
+    },
+    averageRating: {
+      type: Number,
+      default: 0
     },
     markAsDeleted: {
       type: Boolean,
-      default: false,
-    },
+      default: false
+    }
   },
   modelOptions
 );

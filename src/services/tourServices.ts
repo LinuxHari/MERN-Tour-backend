@@ -339,6 +339,18 @@ export const tourReview = async (review: RatingType, tourId: string, email: stri
     tourId: tour._id,
     ...review
   });
+
+  const result = await Review.aggregate(tourAggregations.getTourReviews(tour._id));
+
+  if (result.length > 0) {
+    const { totalRatings, averageRating } = result[0];
+
+    await Tour.findByIdAndUpdate(
+      tour._id,
+      { totalRatings, averageRating },
+      { new: true, runValidators: true }
+    );
+  }
 };
 
 export const getTourReview = async (tourId: string) => {

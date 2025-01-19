@@ -40,10 +40,6 @@ export const reservedDetails = asyncWrapper(async (req: Request, res: Response) 
   responseHandler.ok(res, reserved);
 });
 
-// export const allBookings = asyncWrapper(async(req: Request, res: Response) => {
-//   responseHandler.ok(res, {})
-// })
-
 export const bookedTour = asyncWrapper(async (req: Request, res: Response) => {
   const booking = await getBooking(req.params.bookingId, res.locals.email);
   responseHandler.ok(res, booking);

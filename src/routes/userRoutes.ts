@@ -27,18 +27,18 @@ router.get(
   requestHandler(TourListingSchema.shape.page, "query"),
   getBookings
 );
-router.post(
-  "/favorite/:tourId",
-  verifyAuthToken,
-  requestHandler(SingleTourParamSchema),
-  addTourToFavorite
-);
 router.get(
   "/favorite",
   verifyAuthToken,
   requestHandler(TourListingSchema.shape.page, "query"),
   getUserFavoriteTours
 );
-router.delete("/favorite", verifyAuthToken, removeTourFromFavorite);
+router.post(
+  "/favorite/:tourId",
+  verifyAuthToken,
+  requestHandler(SingleTourParamSchema),
+  addTourToFavorite
+);
+router.delete("/favorite/:tourId", verifyAuthToken, removeTourFromFavorite);
 
 export default router;

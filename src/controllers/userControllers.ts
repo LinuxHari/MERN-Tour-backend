@@ -41,7 +41,7 @@ export const userInfo = asyncWrapper(async (_: Request, res: Response) => {
 });
 
 export const addTourToFavorite = asyncWrapper(async (req: Request, res: Response) => {
-  await addTourToFavorites(req.body.tourId, res.locals.email, req.ip);
+  await addTourToFavorites(req.params.tourId, res.locals.email, req.ip);
   responseHandler.ok(res, { message: "Added to favoirites" });
 });
 
