@@ -29,7 +29,7 @@ app.use(speedLimiter);
 
 app.use(
   cors({
-    origin: "http://localhost:4000",
+    origin: envConfig.frontend,
     methods: "GET,PUT,POST,DELETE",
     credentials: true
   })
