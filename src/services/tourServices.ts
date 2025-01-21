@@ -41,7 +41,7 @@ export const getTours = async (params: TourListingSchemaType) => {
     // startDate,
     // endDate,
     filters,
-    // sortType,
+    sortType,
     specials,
     languages,
     rating,
@@ -75,7 +75,8 @@ export const getTours = async (params: TourListingSchemaType) => {
       maxPrice,
       tourTypes,
       specials,
-      languages
+      languages,
+      sortType
     )
   );
 

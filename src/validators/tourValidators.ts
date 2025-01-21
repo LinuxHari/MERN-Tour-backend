@@ -1,6 +1,6 @@
 import { z } from "zod";
 import removeSpaces from "../utils/removeSpaces";
-import { CATEGORIES, LANGUAGES, SPECIALS } from "../config/tourConfig";
+import { CATEGORIES, LANGUAGES, SORTTYPES, SPECIALS } from "../config/tourConfig";
 import { EmailSchema } from "./authValidators";
 import { LocationSchema } from "./adminValidators";
 
@@ -48,7 +48,7 @@ export const TourListingSchema = z.object({
     .transform(parseToInt)
     .pipe(z.number().int().min(0).max(100, { message: "Page number is not valid" })),
   filters: z.string().transform((value) => Boolean(parseInt(value))),
-  sortType: z.string().min(11).max(25),
+  sortType: z.enum(SORTTYPES).optional(),
   tourTypes: z
     .string()
     .min(4)

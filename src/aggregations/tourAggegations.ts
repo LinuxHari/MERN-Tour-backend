@@ -1,4 +1,5 @@
 import mongoose, { PipelineStage, Types } from "mongoose";
+import { SORTTYPES } from "../config/tourConfig";
 
 const destinationPipe = [
   {
@@ -112,7 +113,8 @@ const tourAggregations = {
     maxPrice?: number,
     tourTypes?: string[],
     specials?: string[],
-    languages?: string[]
+    languages?: string[],
+    sortType?: (typeof SORTTYPES)[number]
   ) => {
     const matchStage: Record<string, any> = {
       destinationId: { $in: cityDestinationIds },
@@ -182,6 +184,30 @@ const tourAggregations = {
         { $count: "total" }
       ]
     };
+
+    if (sortType) {
+      let sortStage: Record<string, any> = {};
+      switch (sortType) {
+        case "PLH": // Price Low to High
+          sortStage = { calculatedPrice: 1 };
+          break;
+        case "PHL": // Price High to Low
+          sortStage = { calculatedPrice: -1 };
+          break;
+        case "RLH": // Rating Low to High
+          sortStage = { averageRating: 1 };
+          break;
+        case "RHL": // Rating High to Low
+          sortStage = { averageRating: -1 };
+          break;
+        default:
+          break;
+      }
+
+      if (Object.keys(sortStage).length > 0) {
+        facetStage.paginatedResults.splice(2, 0, { $sort: sortStage });
+      }
+    }
 
     if (filters) {
       facetStage.filters = [
@@ -338,10 +364,7 @@ const tourAggregations = {
         }
       }
     ] as PipelineStage[],
-  getPublishedTours: (page: number, limit: number): PipelineStage[] => [
-    { $match: { markAsDeleted: false } },
-    ...minTourInfoPipe(page, limit)
-  ],
+
   getFavoriteTours: (
     tourIds: mongoose.Types.ObjectId[],
     page: number,
@@ -353,7 +376,27 @@ const tourAggregations = {
         markAsDeleted: false
       }
     },
-    ...minTourInfoPipe(page, limit)
+    { $sort: { createdAt: -1 } },
+    {
+      $facet: {
+        tours: [
+          { $skip: (page - 1) * limit },
+          { $limit: limit },
+          {
+            $project: {
+              location: 1,
+              title: 1,
+              rating: 1,
+              reviewCount: 1,
+              price: 1,
+              duration: 1,
+              imgUrl: 1
+            }
+          }
+        ],
+        totalCount: [{ $count: "count" }]
+      }
+    }
   ],
   getTourReviews: (tourId: Types.ObjectId): PipelineStage[] => [
     { $match: { tourId: tourId } },
@@ -378,6 +421,85 @@ const tourAggregations = {
           }
         }
       }
+    }
+  ],
+  getPublishedTours: (limit: number, page: number): PipelineStage[] => [
+    {
+      $match: {
+        markAsDeleted: { $ne: true }
+      }
+    },
+    {
+      $lookup: {
+        from: "destinations",
+        localField: "destinationId",
+        foreignField: "destinationId",
+        as: "cityDetails"
+      }
+    },
+    {
+      $unwind: {
+        path: "$cityDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "destinations",
+        localField: "cityDetails.parentDestinationId",
+        foreignField: "destinationId",
+        as: "stateDetails"
+      }
+    },
+    {
+      $unwind: {
+        path: "$stateDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "destinations",
+        localField: "stateDetails.parentDestinationId",
+        foreignField: "destinationId",
+        as: "countryDetails"
+      }
+    },
+    {
+      $unwind: {
+        path: "$countryDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        markAsDeleted: 0,
+        recurringEndDate: 0,
+        submissionStatus: 0,
+        destinationId: 0,
+        "cityDetails._id": 0,
+        "stateDetails._id": 0,
+        "countryDetails._id": 0,
+        "cityDetails.parentDestinationId": 0,
+        "stateDetails.parentDestinationId": 0
+      }
+    },
+    {
+      $addFields: {
+        country: "$countryDetails.destination",
+        state: "$stateDetails.destination",
+        city: "$cityDetails.destination"
+      }
+    },
+    {
+      $sort: { createdAt: -1 }
+    },
+    {
+      $skip: (page - 1) * limit
+    },
+    {
+      $limit: limit
     }
   ]
 };
