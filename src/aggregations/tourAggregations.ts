@@ -41,30 +41,6 @@ const destinationPipe = [
   }
 ];
 
-const minTourInfoPipe = (page: number, limit: number): PipelineStage[] => [
-  { $sort: { createdAt: -1 } },
-  {
-    $facet: {
-      tours: [
-        { $skip: (page - 1) * limit },
-        { $limit: limit },
-        {
-          $project: {
-            location: 1,
-            title: 1,
-            rating: 1,
-            reviewCount: 1,
-            price: 1,
-            duration: 1,
-            imgUrl: 1
-          }
-        }
-      ],
-      totalCount: [{ $count: "count" }]
-    }
-  }
-];
-
 const tourAggregations = {
   destinationQuery: (destinationId: string) => [
     {
@@ -114,7 +90,8 @@ const tourAggregations = {
     tourTypes?: string[],
     specials?: string[],
     languages?: string[],
-    sortType?: (typeof SORTTYPES)[number]
+    sortType?: (typeof SORTTYPES)[number],
+    email?: string
   ) => {
     const matchStage: Record<string, any> = {
       destinationId: { $in: cityDestinationIds },
@@ -149,11 +126,7 @@ const tourAggregations = {
         : { $lte: maxPrice };
     }
 
-    const facetStage: {
-      paginatedResults: any[];
-      totalCount: any[];
-      filters?: any[];
-    } = {
+    const facetStage: { paginatedResults: any[]; totalCount: any[]; filters?: any[] } = {
       paginatedResults: [
         { $match: matchStage },
         addFieldsStage,
@@ -188,22 +161,21 @@ const tourAggregations = {
     if (sortType) {
       let sortStage: Record<string, any> = {};
       switch (sortType) {
-        case "PLH": // Price Low to High
+        case "PLH":
           sortStage = { calculatedPrice: 1 };
           break;
-        case "PHL": // Price High to Low
+        case "PHL":
           sortStage = { calculatedPrice: -1 };
           break;
-        case "RLH": // Rating Low to High
+        case "RLH":
           sortStage = { averageRating: 1 };
           break;
-        case "RHL": // Rating High to Low
+        case "RHL":
           sortStage = { averageRating: -1 };
           break;
         default:
           break;
       }
-
       if (Object.keys(sortStage).length > 0) {
         facetStage.paginatedResults.splice(2, 0, { $sort: sortStage });
       }
@@ -238,6 +210,26 @@ const tourAggregations = {
           }
         }
       ];
+    }
+
+    if (email) {
+      facetStage.paginatedResults.unshift(
+        {
+          $lookup: {
+            from: "users",
+            localField: "tourId",
+            foreignField: "favorites",
+            as: "favorited"
+          }
+        },
+        {
+          $addFields: {
+            isFavorite: {
+              $cond: [{ $gt: [{ $size: { $ifNull: ["$favorited", []] } }, 0] }, true, false]
+            }
+          }
+        }
+      );
     }
 
     const aggregationPipeline = [
@@ -378,19 +370,36 @@ const tourAggregations = {
     },
     { $sort: { createdAt: -1 } },
     {
+      $lookup: {
+        from: "destinations",
+        localField: "destinationId",
+        foreignField: "destinationId",
+        as: "destination"
+      }
+    },
+    {
+      $unwind: {
+        path: "$destination",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
       $facet: {
         tours: [
           { $skip: (page - 1) * limit },
           { $limit: limit },
           {
             $project: {
-              location: 1,
-              title: 1,
-              rating: 1,
-              reviewCount: 1,
-              price: 1,
+              _id: 0,
+              location: "$destination.destination",
+              title: "$name",
+              rating: "$averageRating",
+              reviewCount: "$totalRatings",
+              price: "$price.adult",
               duration: 1,
-              imgUrl: 1
+              imgUrl: { $arrayElemAt: ["$images", 0] },
+              tourId: 1,
+              destinationId: 1
             }
           }
         ],
@@ -477,7 +486,7 @@ const tourAggregations = {
         markAsDeleted: 0,
         recurringEndDate: 0,
         submissionStatus: 0,
-        destinationId: 0,
+        // destinationId: 0,
         "cityDetails._id": 0,
         "stateDetails._id": 0,
         "countryDetails._id": 0,

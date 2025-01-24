@@ -1,19 +1,19 @@
 import { Router } from "express";
-import { addTour, getRevenue } from "../controllers/adminControllers";
+import { addTour, getTours, getRevenue, deleteTour } from "../controllers/adminControllers";
 import { TourSchema } from "../validators/adminValidators";
 import requestHandler from "../handlers/requestHandler";
-import { TourListingSchema } from "../validators/tourValidators";
-import { getPublishedTours } from "../services/adminServices";
-import { verifyToken } from "../utils/authTokenManager";
+import { PageSchema, SingleTourParamSchema } from "../validators/tourValidators";
+import verifyAuthToken from "../middlewares/verifyAuthToken";
 
 const router = Router();
 
-router.post("/tour", verifyToken, requestHandler(TourSchema), addTour);
-router.get(
-  "/tours",
-  verifyToken,
-  requestHandler(TourListingSchema.shape.page, "query"),
-  getPublishedTours
+router.post("/tour", verifyAuthToken, requestHandler(TourSchema), addTour);
+router.get("/tour", verifyAuthToken, requestHandler(PageSchema, "query"), getTours);
+router.delete(
+  "/tour/:tourId",
+  verifyAuthToken,
+  requestHandler(SingleTourParamSchema, "params"),
+  deleteTour
 );
-router.get("/revenue", verifyToken, getRevenue);
+router.get("/revenue", verifyAuthToken, getRevenue);
 export default router;

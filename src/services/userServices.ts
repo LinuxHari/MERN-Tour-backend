@@ -1,5 +1,5 @@
 import bookingAggregations from "../aggregations/bookingAggregations";
-import tourAggregations from "../aggregations/tourAggegations";
+import tourAggregations from "../aggregations/tourAggregations";
 import { ROLE } from "../config/userConfig";
 import { BadRequestError, ConflictError, NotFoundError } from "../handlers/errorHandler";
 import Booking from "../models/bookingModel";
@@ -71,6 +71,8 @@ export const removeFavoriteTour = async (email: string, tourId: string, ip?: str
     );
   const tour = await Tour.findOne({ tourId }, { _id: 1 }).lean();
   if (!tour) throw new BadRequestError(`Invalid tour id ${tourId} while removing from favorite`);
+  if (!user.favorites.includes(tour._id))
+    throw new ConflictError("Tour was already removed from favorite");
   user.favorites = user.favorites.filter(
     (favoriteTourId) => String(favoriteTourId) !== String(tour._id)
   );

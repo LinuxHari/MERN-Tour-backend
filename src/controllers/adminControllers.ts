@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import responseHandler from "../handlers/responseHandler";
-import { createTour, getPublishedTours, getTotalRevenue } from "../services/adminServices";
+import { createTour, deletePublishedTour, getPublishedTours } from "../services/adminServices";
 import asyncWrapper from "../asyncWrapper";
 
 export const addTour = asyncWrapper(async (req: Request, res: Response) => {
@@ -14,7 +14,12 @@ export const getTours = asyncWrapper(async (req: Request, res: Response) => {
   responseHandler.ok(res, response);
 });
 
+export const deleteTour = asyncWrapper(async (req: Request, res: Response) => {
+  await deletePublishedTour(req.params.tourId);
+  responseHandler.ok(res, { message: "Success" });
+});
+
 export const getRevenue = asyncWrapper(async (req: Request, res: Response) => {
-  const revenue = getTotalRevenue();
+  // const revenue = getTotalRevenue();
   responseHandler.ok(res, []);
 });

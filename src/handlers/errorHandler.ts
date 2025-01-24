@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { Request, Response, NextFunction } from "express";
 import responseHandler from "./responseHandler";
-import { shutdown} from "../index" 
+import { shutdown } from "../index";
 export class BadRequestError extends Error {
   constructor(message: string) {
     super(message);
@@ -91,22 +91,22 @@ export const errorHandler = (err: any, _: Request, res: Response, __: NextFuncti
   return responseHandler.error(res, err.stack || "An unexpected error occurred");
 };
 
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
   shutdown(1);
 });
 
-process.on("unhandledRejection", (err: any, ) => {
-  console.error("Promise got rejected unhandled", err.name, err.message, err?.stack)
-  shutdown(1)
-})
+process.on("unhandledRejection", (err: any) => {
+  console.error("Promise got rejected unhandled", err.name, err.message, err?.stack);
+  shutdown(1);
+});
 
-process.on('SIGTERM', () => {
-  console.log('Received SIGTERM');
+process.on("SIGTERM", () => {
+  console.log("Received SIGTERM");
   shutdown(0);
 });
 
-process.on('SIGINT', () => {
-  console.log('Received SIGINT');
+process.on("SIGINT", () => {
+  console.log("Received SIGINT");
   shutdown(0);
 });

@@ -17,67 +17,76 @@ export const SearchSuggestionSchema = z.object({
   searchText: z.string().transform(removeSpaces).pipe(z.string().min(1).max(50))
 });
 
-export const TourListingSchema = z.object({
-  destinationId: z.string().length(8, { message: "Invalid destination id" }),
-  startDate: z.string().refine(isValidDate),
-  endDate: z.string().refine(isValidDate),
-  adults: z
-    .string()
-    .transform(parseToInt)
-    .pipe(
-      z
-        .number()
-        .int()
-        .min(1, { message: "Atleast 1 adult required" })
-        .max(10, "Number of adults should not exceed 9")
-    ),
-  children: z
-    .string()
-    .transform(parseToInt)
-    .pipe(z.number().int().min(0).max(10, { message: "Number of children should not exceed 9" })),
-  infants: z
-    .string()
-    .transform(parseToInt)
-    .pipe(z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" })),
-  teens: z
-    .string()
-    .transform(parseToInt)
-    .pipe(z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" })),
+export const PageSchema = z.object({
   page: z
     .string()
     .transform(parseToInt)
-    .pipe(z.number().int().min(0).max(100, { message: "Page number is not valid" })),
-  filters: z.string().transform((value) => Boolean(parseInt(value))),
-  sortType: z.enum(SORTTYPES).optional(),
-  tourTypes: z
-    .string()
-    .min(4)
-    .max(50)
-    .transform(strToArr)
-    .pipe(z.array(z.enum(CATEGORIES)))
-    .optional(),
-  rating: z
-    .string()
-    .transform((rating) => parseInt(rating))
-    .pipe(z.number().min(0).max(5))
-    .optional(),
-  languages: z
-    .string()
-    .min(3)
-    .max(100)
-    .transform(strToArr)
-    .pipe(z.array(z.enum(LANGUAGES)))
-    .optional(),
-  specials: z
-    .string()
-    .min(5)
-    .max(50)
-    .transform(strToArr)
-    .pipe(z.array(z.enum(SPECIALS)))
-    .optional(),
-  minPrice: z.string().transform(parseToInt).pipe(z.number().int().min(1).max(1000000)).optional(),
-  maxPrice: z.string().transform(parseToInt).pipe(z.number().int().min(2).max(1000000)).optional()
+    .pipe(z.number().int().min(0).max(100, { message: "Page number is not valid" }))
 });
+
+export const TourListingSchema = z
+  .object({
+    destinationId: z.string().length(8, { message: "Invalid destination id" }),
+    startDate: z.string().refine(isValidDate),
+    endDate: z.string().refine(isValidDate),
+    adults: z
+      .string()
+      .transform(parseToInt)
+      .pipe(
+        z
+          .number()
+          .int()
+          .min(1, { message: "Atleast 1 adult required" })
+          .max(10, "Number of adults should not exceed 9")
+      ),
+    children: z
+      .string()
+      .transform(parseToInt)
+      .pipe(z.number().int().min(0).max(10, { message: "Number of children should not exceed 9" })),
+    infants: z
+      .string()
+      .transform(parseToInt)
+      .pipe(z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" })),
+    teens: z
+      .string()
+      .transform(parseToInt)
+      .pipe(z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" })),
+    filters: z.string().transform((value) => Boolean(parseInt(value))),
+    sortType: z.enum(SORTTYPES).optional(),
+    tourTypes: z
+      .string()
+      .min(4)
+      .max(50)
+      .transform(strToArr)
+      .pipe(z.array(z.enum(CATEGORIES)))
+      .optional(),
+    rating: z
+      .string()
+      .transform((rating) => parseInt(rating))
+      .pipe(z.number().min(0).max(5))
+      .optional(),
+    languages: z
+      .string()
+      .min(3)
+      .max(100)
+      .transform(strToArr)
+      .pipe(z.array(z.enum(LANGUAGES)))
+      .optional(),
+    specials: z
+      .string()
+      .min(5)
+      .max(50)
+      .transform(strToArr)
+      .pipe(z.array(z.enum(SPECIALS)))
+      .optional(),
+    minPrice: z
+      .string()
+      .transform(parseToInt)
+      .pipe(z.number().int().min(1).max(1000000))
+      .optional(),
+    maxPrice: z.string().transform(parseToInt).pipe(z.number().int().min(2).max(1000000)).optional()
+  })
+  .merge(PageSchema);
 
 export const SingleTourParamSchema = z.object({
   tourId: z.string().length(8, { message: "Invalid tour id" })

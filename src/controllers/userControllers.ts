@@ -42,7 +42,7 @@ export const userInfo = asyncWrapper(async (_: Request, res: Response) => {
 
 export const addTourToFavorite = asyncWrapper(async (req: Request, res: Response) => {
   await addTourToFavorites(req.params.tourId, res.locals.email, req.ip);
-  responseHandler.ok(res, { message: "Added to favoirites" });
+  responseHandler.ok(res, { message: "Success" });
 });
 
 export const getUserFavoriteTours = asyncWrapper(async (req: Request, res: Response) => {
@@ -53,6 +53,7 @@ export const getUserFavoriteTours = asyncWrapper(async (req: Request, res: Respo
 
 export const removeTourFromFavorite = asyncWrapper(async (req: Request, res: Response) => {
   await removeFavoriteTour(res.locals.email, req.params.tourId, req.ip);
+  responseHandler.ok(res, { message: "Success" });
 });
 
 export const getBookings = asyncWrapper(async (req: Request, res: Response) => {

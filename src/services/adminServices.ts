@@ -4,7 +4,7 @@ import Destination, { DestinationType } from "../models/destinationModel";
 import { ServerError } from "../handlers/errorHandler";
 import generateId from "../utils/generateId";
 import Tour from "../models/tourModel";
-import tourAggregations from "../aggregations/tourAggegations";
+import tourAggregations from "../aggregations/tourAggregations";
 
 export const createTour = async (tourData: TourSchemaType) => {
   const createDestination = async (
@@ -97,6 +97,10 @@ export const getPublishedTours = async (page: number) => {
   const totalPages = Math.ceil(totalCount / limit);
 
   return { tours, totalPages, totalCount };
+};
+
+export const deletePublishedTour = async (tourId: string) => {
+  await Tour.findOneAndUpdate({ tourId }, { markAsDeleted: true });
 };
 
 export const getTotalRevenue = async () => {};

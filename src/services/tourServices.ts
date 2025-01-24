@@ -8,7 +8,7 @@ import {
   ReserveTourType,
   TourListingSchemaType
 } from "../validators/tourValidators";
-import tourAggregations from "../aggregations/tourAggegations";
+import tourAggregations from "../aggregations/tourAggregations";
 import Destination from "../models/destinationModel";
 import User from "../models/userModel";
 import Reserved from "../models/reserveModel";
@@ -30,7 +30,7 @@ export const searchSuggestions = async (searchText: string) => {
   return result;
 };
 
-export const getTours = async (params: TourListingSchemaType) => {
+export const getTours = async (params: TourListingSchemaType, email?: string) => {
   const {
     destinationId,
     adults,
@@ -76,7 +76,8 @@ export const getTours = async (params: TourListingSchemaType) => {
       tourTypes,
       specials,
       languages,
-      sortType
+      sortType,
+      email
     )
   );
 

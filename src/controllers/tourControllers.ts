@@ -21,7 +21,7 @@ export const search = asyncWrapper(async (req: Request, res: Response) => {
 });
 
 export const tours = asyncWrapper(async (req: Request, res: Response) => {
-  const tours = await getTours(Object(req.query));
+  const tours = await getTours(Object(req.query), res.locals.email);
   responseHandler.ok(res, tours);
 });
 
@@ -56,7 +56,7 @@ export const bookTour = asyncWrapper(async (req: Request, res: Response) => {
 
 export const cancelBooking = asyncWrapper(async (req: Request, res: Response) => {
   await cancelBookedTour(req.params.bookingId, res.locals.email);
-  responseHandler.ok(res, { status: "canceled" });
+  responseHandler.ok(res, { status: "Canceled" });
 });
 
 export const reviewTour = asyncWrapper(async (req: Request, res: Response) => {

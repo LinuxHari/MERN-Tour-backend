@@ -48,7 +48,11 @@ export default [
       indent: ["error", 2],
       quotes: ["error", "double"],
       "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": ["error", { "varsIgnorePattern": "^_*" }],
+      "@typescript-eslint/no-unused-vars": ["error", {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }],
       "no-console": "off",
       "no-alert": "error",
       "no-eval": "error",
