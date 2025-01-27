@@ -1,5 +1,4 @@
-import bookingAggregations from "../aggregations/bookingAggregations";
-import tourAggregations from "../aggregations/tourAggregations";
+import bookingAggregations from "../aggregations/userAggregations";
 import { ROLE } from "../config/userConfig";
 import { BadRequestError, ConflictError, NotFoundError } from "../handlers/errorHandler";
 import Booking from "../models/bookingModel";
@@ -8,6 +7,7 @@ import User from "../models/userModel";
 import { generateToken } from "../utils/authTokenManager";
 import { LoginSchemaType, SignupSchemaType } from "../validators/authValidators";
 import bcrypt from "bcrypt";
+import { BookingStatusSchemaType } from "../validators/userValidators";
 
 export const createUser = async (userData: Omit<SignupSchemaType, "confirmPassword">) => {
   const existingUser = await User.findOne({ email: userData.email });
@@ -55,7 +55,7 @@ export const getFavoriteTours = async (email: string, page: number, ip?: string)
       `Unauthorized user with ip ${ip} tried to get favorite tours with email ${email}`
     );
   const result = await Tour.aggregate(
-    tourAggregations.getFavoriteTours(user.favorites, page, limit)
+    bookingAggregations.getFavoriteTours(user.favorites, page, limit)
   );
   const favoriteTours = result[0].tours;
   const totalCount = result[0].totalCount[0]?.count || 0;
@@ -79,14 +79,21 @@ export const removeFavoriteTour = async (email: string, tourId: string, ip?: str
   await user.save();
 };
 
-export const getUserBookings = async (email: string, page: number, ip?: string) => {
+export const getUserBookings = async (
+  email: string,
+  page: number,
+  status: BookingStatusSchemaType["status"],
+  ip?: string
+) => {
   const limit = 10;
   const user = await User.findOne({ email }, { _id: 1 }).lean();
   if (!user)
     throw new BadRequestError(
       `User with ip ${ip} tried to access all bookings with email ${email}`
     );
-  const bookings = await Booking.aggregate(bookingAggregations.userBookings(user._id, page, limit));
+  const bookings = await Booking.aggregate(
+    bookingAggregations.userBookings(user._id, page, status, limit)
+  );
 
-  return { bookings, totalPages: bookings.length / limit };
+  return { bookings, totalPages: Math.ceil(bookings.length / limit) };
 };

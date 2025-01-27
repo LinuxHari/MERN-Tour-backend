@@ -4,56 +4,59 @@ import { modelOptions } from "./modelConfig";
 export const passengerSchema = {
   adults: {
     type: Number,
-    required: true,
+    required: true
   },
   teens: {
-    type: Number,
+    type: Number
   },
   children: {
-    type: Number,
+    type: Number
   },
   infants: {
-    type: Number,
-  },
+    type: Number
+  }
 };
 
-export const reservedSchema = new mongoose.Schema({
-  userId: {
+export const reservedSchema = new mongoose.Schema(
+  {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true
+    },
+    tourId: {
+      type: String,
+      required: true
+    },
+    passengers: {
+      type: passengerSchema,
+      required: true
+    },
+    reserveId: {
+      type: String,
+      required: true
+    },
+    startDate: {
+      type: Date,
+      requried: true
+    },
+    endDate: {
+      type: Date,
+      required: true
+    },
+    totalAmount: {
+      type: Number,
+      required: true
+    },
+    expiresAt: {
+      type: Number, //It will be Epoach time in milliseconds
+      required: true
+    }
   },
-  tourId: {
-    type: String,
-    required: true,
-  },
-  passengers: {
-    type: passengerSchema,
-    required: true,
-  },
-  reserveId: {
-    type: String,
-    required: true,
-  },
-  startDate: {
-    type: Date,
-    requried: true
-  },
-  endDate: {
-    type: Date,
-    required: true
-  },
-  totalAmount: {
-    type: Number,
-    required: true
-  },
-  expiresAt: {
-    type: Number, //It will be Epoach time in milliseconds
-    required: true
-  }
-}, modelOptions);
+  modelOptions
+);
 
-const Reserved = mongoose.model("reserved", reservedSchema)
+const Reserved = mongoose.model("reserved", reservedSchema);
 
-export type ReservedType = InferSchemaType<typeof reservedSchema> 
+export type ReservedType = InferSchemaType<typeof reservedSchema>;
 
-export default Reserved
+export default Reserved;

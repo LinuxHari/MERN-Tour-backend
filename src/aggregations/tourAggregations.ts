@@ -1,4 +1,4 @@
-import mongoose, { PipelineStage, Types } from "mongoose";
+import { PipelineStage, Types } from "mongoose";
 import { SORTTYPES } from "../config/tourConfig";
 
 const destinationPipe = [
@@ -357,56 +357,6 @@ const tourAggregations = {
       }
     ] as PipelineStage[],
 
-  getFavoriteTours: (
-    tourIds: mongoose.Types.ObjectId[],
-    page: number,
-    limit: number
-  ): PipelineStage[] => [
-    {
-      $match: {
-        _id: { $in: tourIds },
-        markAsDeleted: false
-      }
-    },
-    { $sort: { createdAt: -1 } },
-    {
-      $lookup: {
-        from: "destinations",
-        localField: "destinationId",
-        foreignField: "destinationId",
-        as: "destination"
-      }
-    },
-    {
-      $unwind: {
-        path: "$destination",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $facet: {
-        tours: [
-          { $skip: (page - 1) * limit },
-          { $limit: limit },
-          {
-            $project: {
-              _id: 0,
-              location: "$destination.destination",
-              title: "$name",
-              rating: "$averageRating",
-              reviewCount: "$totalRatings",
-              price: "$price.adult",
-              duration: 1,
-              imgUrl: { $arrayElemAt: ["$images", 0] },
-              tourId: 1,
-              destinationId: 1
-            }
-          }
-        ],
-        totalCount: [{ $count: "count" }]
-      }
-    }
-  ],
   getTourReviews: (tourId: Types.ObjectId): PipelineStage[] => [
     { $match: { tourId: tourId } },
     {

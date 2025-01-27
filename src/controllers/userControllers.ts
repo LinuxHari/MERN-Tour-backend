@@ -11,6 +11,7 @@ import {
 } from "../services/userServices";
 import responseHandler from "../handlers/responseHandler";
 import envConfig from "../config/envConfig";
+import { BookingStatusSchemaType } from "../validators/userValidators";
 
 export const signup = asyncWrapper(async (req: Request, res: Response) => {
   const { firstName, lastName, password, email } = req.body;
@@ -58,6 +59,8 @@ export const removeTourFromFavorite = asyncWrapper(async (req: Request, res: Res
 
 export const getBookings = asyncWrapper(async (req: Request, res: Response) => {
   const page = typeof req.query.page === "number" ? req.query.page : 1;
-  const bookings = getUserBookings(res.locals.email, page, req.ip);
+  const status = req.query.status as BookingStatusSchemaType["status"];
+
+  const bookings = await getUserBookings(res.locals.email, page, status, req.ip);
   responseHandler.ok(res, bookings);
 });
