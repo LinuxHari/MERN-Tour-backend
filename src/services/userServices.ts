@@ -7,7 +7,7 @@ import User from "../models/userModel";
 import { generateToken } from "../utils/authTokenManager";
 import { LoginSchemaType, SignupSchemaType } from "../validators/authValidators";
 import bcrypt from "bcrypt";
-import { BookingStatusSchemaType } from "../validators/userValidators";
+import { BookingStatusSchemaType, UserSchemaType } from "../validators/userValidators";
 
 export const createUser = async (userData: Omit<SignupSchemaType, "confirmPassword">) => {
   const existingUser = await User.findOne({ email: userData.email });
@@ -33,6 +33,10 @@ export const getUserInfo = async (email: string) => {
   ).lean();
   if (!userInfo) throw new NotFoundError("User not found");
   return userInfo;
+};
+
+export const updateUserProfile = async (updatedData: UserSchemaType, email: string) => {
+  await User.updateOne({ email }, { $set: updatedData }, { runValidators: true });
 };
 
 export const addTourToFavorites = async (tourId: string, email: string, ip?: string) => {

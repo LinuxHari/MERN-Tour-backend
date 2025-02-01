@@ -7,7 +7,8 @@ import {
   getFavoriteTours,
   getUserBookings,
   getUserInfo,
-  removeFavoriteTour
+  removeFavoriteTour,
+  updateUserProfile
 } from "../services/userServices";
 import responseHandler from "../handlers/responseHandler";
 import envConfig from "../config/envConfig";
@@ -39,6 +40,11 @@ export const logout = asyncWrapper(async (_: Request, res: Response) =>
 export const userInfo = asyncWrapper(async (_: Request, res: Response) => {
   const userInfo = await getUserInfo(res.locals.email);
   responseHandler.ok(res, userInfo);
+});
+
+export const updateProfile = asyncWrapper(async (req: Request, res: Response) => {
+  await updateUserProfile(req.body, res.locals.email);
+  responseHandler.ok(res, { message: "Success" });
 });
 
 export const addTourToFavorite = asyncWrapper(async (req: Request, res: Response) => {

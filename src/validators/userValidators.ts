@@ -11,17 +11,17 @@ export const TokenSchema = z.object({
 
 export const UserSchema = z
   .object({
-    phone: z.number().min(4).max(11),
-    profile: z.object({
-      file: z
-        .custom<File>()
-        .refine((file) => file.size <= 1 * 1024 * 1024, {
-          message: "The profile image must be a maximum of 1MB."
-        })
-        .refine((file) => file.type.startsWith("image"), {
-          message: "Only images are allowed to be sent."
-        })
-    }),
+    phone: z.number().min(1111).max(99999999999),
+    // profile: z.object({
+    //   file: z
+    //     .custom<File>()
+    //     .refine((file) => file.size <= 1 * 1024 * 1024, {
+    //       message: "The profile image must be a maximum of 1MB."
+    //     })
+    //     .refine((file) => file.type.startsWith("image"), {
+    //       message: "Only images are allowed to be sent."
+    //     })
+    // }),
     address: z
       .string({ message: "Invalid address" })
       .transform(removeSpaces)
