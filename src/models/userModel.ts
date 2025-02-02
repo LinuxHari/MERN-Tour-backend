@@ -59,10 +59,15 @@ userSchema.method("hashPassword", async function (password: string) {
   this.password = await bcrypt.hash(password, saltCount);
 });
 
+userSchema.method("validatePassword", async function (oldPassword: string): Promise<boolean> {
+  return bcrypt.compare(oldPassword, this.password);
+});
+
 export type UserModel = InferSchemaType<typeof userSchema>;
 
 type Methods = {
   hashPassword: (password: string) => void;
+  validatePassword: (oldPassword: string) => Promise<boolean>;
 };
 
 const User = mongoose.model<UserModel & Methods>("Users", userSchema);

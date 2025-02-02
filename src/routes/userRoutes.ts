@@ -7,12 +7,18 @@ import {
   logout,
   removeTourFromFavorite,
   signup,
+  updatePassword,
   updateProfile,
   userInfo
 } from "../controllers/userControllers";
 import requestHandler from "../handlers/requestHandler";
 import { LoginSchema, SignupSchema } from "../validators/authValidators";
-import { TokenSchema, UserBookings, UserSchema } from "../validators/userValidators";
+import {
+  PasswordSchema,
+  TokenSchema,
+  UserBookings,
+  UserSchema
+} from "../validators/userValidators";
 import verifyAuthToken from "../middlewares/verifyAuthToken";
 import { PageSchema, SingleTourParamSchema } from "../validators/tourValidators";
 
@@ -43,6 +49,14 @@ router.put(
   requestHandler(TokenSchema, "signedCookies"),
   requestHandler(UserSchema, "body"),
   updateProfile
+);
+
+router.put(
+  "/password",
+  verifyAuthToken,
+  requestHandler(TokenSchema, "signedCookies"),
+  requestHandler(PasswordSchema, "body"),
+  updatePassword
 );
 
 export default router;

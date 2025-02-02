@@ -8,6 +8,7 @@ import {
   getUserBookings,
   getUserInfo,
   removeFavoriteTour,
+  updateUserPassword,
   updateUserProfile
 } from "../services/userServices";
 import responseHandler from "../handlers/responseHandler";
@@ -44,6 +45,11 @@ export const userInfo = asyncWrapper(async (_: Request, res: Response) => {
 
 export const updateProfile = asyncWrapper(async (req: Request, res: Response) => {
   await updateUserProfile(req.body, res.locals.email);
+  responseHandler.ok(res, { message: "Success" });
+});
+
+export const updatePassword = asyncWrapper(async (req: Request, res: Response) => {
+  await updateUserPassword(req.body, res.locals.email);
   responseHandler.ok(res, { message: "Success" });
 });
 

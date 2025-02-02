@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { LocationSchema } from "./adminValidators";
-import { EmailSchema, NameSchema } from "./authValidators";
+import { EmailSchema, LoginSchema, NameSchema } from "./authValidators";
 import removeSpaces from "../utils/removeSpaces";
 import { BOOKING_STATUS } from "../config/userConfig";
 import { PageSchema } from "./tourValidators";
@@ -35,7 +35,18 @@ export const BookingStatusSchema = z.object({
   status: z.enum(BOOKING_STATUS)
 });
 
+export const PasswordSchema = z
+  .object({
+    oldPassword: LoginSchema.shape.password,
+    newPassword: LoginSchema.shape.password,
+    confirmPassword: LoginSchema.shape.password
+  })
+  .refine(({ newPassword, confirmPassword }) => newPassword === confirmPassword, {
+    message: "Password did not match"
+  });
+
 export const UserBookings = BookingStatusSchema.merge(PageSchema);
 
 export type UserSchemaType = z.infer<typeof UserSchema>;
 export type BookingStatusSchemaType = z.infer<typeof BookingStatusSchema>;
+export type PasswordSchemaType = z.infer<typeof PasswordSchema>;

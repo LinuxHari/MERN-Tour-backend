@@ -7,7 +7,11 @@ import User from "../models/userModel";
 import { generateToken } from "../utils/authTokenManager";
 import { LoginSchemaType, SignupSchemaType } from "../validators/authValidators";
 import bcrypt from "bcrypt";
-import { BookingStatusSchemaType, UserSchemaType } from "../validators/userValidators";
+import {
+  BookingStatusSchemaType,
+  PasswordSchemaType,
+  UserSchemaType
+} from "../validators/userValidators";
 
 export const createUser = async (userData: Omit<SignupSchemaType, "confirmPassword">) => {
   const existingUser = await User.findOne({ email: userData.email });
@@ -37,6 +41,18 @@ export const getUserInfo = async (email: string) => {
 
 export const updateUserProfile = async (updatedData: UserSchemaType, email: string) => {
   await User.updateOne({ email }, { $set: updatedData }, { runValidators: true });
+};
+
+export const updateUserPassword = async (
+  { newPassword, oldPassword }: PasswordSchemaType,
+  email: string
+) => {
+  const user = await User.findOne({ email });
+  if (!user) throw new BadRequestError(`User with ${email} does not exist`);
+  const isValidPassword = await user.validatePassword(oldPassword);
+  if (!isValidPassword) throw new BadRequestError("Invalid password");
+  user.hashPassword(newPassword);
+  await user.save();
 };
 
 export const addTourToFavorites = async (tourId: string, email: string, ip?: string) => {
