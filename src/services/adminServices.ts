@@ -5,6 +5,8 @@ import { ServerError } from "../handlers/errorHandler";
 import generateId from "../utils/generateId";
 import Tour from "../models/tourModel";
 import tourAggregations from "../aggregations/tourAggregations";
+import Booking from "../models/bookingModel";
+import adminAggregations from "../aggregations/adminAggregations";
 
 export const createTour = async (tourData: TourSchemaType) => {
   const createDestination = async (
@@ -103,4 +105,14 @@ export const deletePublishedTour = async (tourId: string) => {
   await Tour.findOneAndUpdate({ tourId }, { markAsDeleted: true });
 };
 
-export const getTotalRevenue = async () => {};
+export const getTotalRevenue = async () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const revenueStats = await Booking.aggregate(adminAggregations.getRevenue(today));
+  const revenueWithDuration = await Booking.aggregate(
+    adminAggregations.getRevenueWithDuration(today)
+  );
+
+  return [revenueStats, revenueWithDuration];
+};

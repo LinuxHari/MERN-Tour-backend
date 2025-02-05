@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { addTour, getTours, getRevenue, deleteTour } from "../controllers/adminControllers";
-import { TourSchema } from "../validators/adminValidators";
+import { RevenueDurationSchema, TourSchema } from "../validators/adminValidators";
 import requestHandler from "../handlers/requestHandler";
 import { PageSchema, SingleTourParamSchema } from "../validators/tourValidators";
 import verifyAuthToken from "../middlewares/verifyAuthToken";
@@ -15,5 +15,6 @@ router.delete(
   requestHandler(SingleTourParamSchema, "params"),
   deleteTour
 );
-router.get("/revenue", verifyAuthToken, getRevenue);
+router.get("/revenue", verifyAuthToken, requestHandler(RevenueDurationSchema), getRevenue);
+
 export default router;

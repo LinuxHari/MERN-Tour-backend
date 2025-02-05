@@ -1,4 +1,4 @@
 export type JwtData = {
-    email: string,
-    role: string
-}
+  email: string;
+  role: string;
+};

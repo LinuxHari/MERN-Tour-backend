@@ -222,4 +222,9 @@ export const TourSchema = z
   })
   .extend(LocationSchema.shape);
 
+export const RevenueDurationSchema = z.object({
+  duration: z.enum(["day", "week", "month"])
+});
+
 export type TourSchemaType = z.infer<typeof TourSchema>;
+export type RevenueDurationType = z.infer<typeof RevenueDurationSchema>["duration"];

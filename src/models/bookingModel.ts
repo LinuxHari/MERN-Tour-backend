@@ -77,10 +77,6 @@ const historySchema = {
 };
 
 const transactionSchema = {
-  // amount: {
-  //   type: Number,
-  //   required: true
-  // },
   paymentStatus: {
     type: String,
     enum: ["unpaid", "paid", "refunded"] as const,
