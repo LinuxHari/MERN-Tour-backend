@@ -4,7 +4,7 @@ import {
   createTour,
   deletePublishedTour,
   getPublishedTours,
-  getTotalRevenue
+  getAllStats
 } from "../services/adminServices";
 import asyncWrapper from "../asyncWrapper";
 
@@ -24,7 +24,7 @@ export const deleteTour = asyncWrapper(async (req: Request, res: Response) => {
   responseHandler.ok(res, { message: "Success" });
 });
 
-export const getRevenue = asyncWrapper(async (req: Request, res: Response) => {
-  const revenue = await getTotalRevenue();
+export const getStats = asyncWrapper(async (req: Request, res: Response) => {
+  const revenue = await getAllStats();
   responseHandler.ok(res, revenue);
 });

@@ -105,14 +105,8 @@ export const deletePublishedTour = async (tourId: string) => {
   await Tour.findOneAndUpdate({ tourId }, { markAsDeleted: true });
 };
 
-export const getTotalRevenue = async () => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+export const getAllStats = async () => {
+  const revenueStats = await Booking.aggregate(adminAggregations.getEarnings());
 
-  const revenueStats = await Booking.aggregate(adminAggregations.getRevenue(today));
-  const revenueWithDuration = await Booking.aggregate(
-    adminAggregations.getRevenueWithDuration(today)
-  );
-
-  return [revenueStats, revenueWithDuration];
+  return revenueStats[0];
 };
