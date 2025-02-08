@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { TourSchemaType } from "../validators/adminValidators";
 import Destination, { DestinationType } from "../models/destinationModel";
-import { ServerError } from "../handlers/errorHandler";
+import { BadRequestError, ServerError } from "../handlers/errorHandler";
 import generateId from "../utils/generateId";
 import Tour from "../models/tourModel";
 import tourAggregations from "../aggregations/tourAggregations";
@@ -101,8 +101,21 @@ export const getPublishedTours = async (page: number) => {
   return { tours, totalPages, totalCount };
 };
 
+export const updatePublishedTour = async (tourData: TourSchemaType, tourId: string) => {
+  const updatedTour = await Tour.findOneAndUpdate({ tourId }, tourData, {
+    runValidators: true,
+    new: true
+  });
+  if (!updatedTour) throw new BadRequestError(`Invalid tour id ${tourId} is sent for updation`);
+};
+
 export const deletePublishedTour = async (tourId: string) => {
-  await Tour.findOneAndUpdate({ tourId }, { markAsDeleted: true });
+  const deletedTour = await Tour.findOneAndUpdate(
+    { tourId },
+    { markAsDeleted: true },
+    { new: true }
+  );
+  if (!deletedTour) throw new BadRequestError(`Invalid tour id ${tourId} is sent for deletion`);
 };
 
 export const getAllStats = async () => {
