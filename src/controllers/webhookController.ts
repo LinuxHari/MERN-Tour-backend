@@ -4,11 +4,11 @@ import {
   stripeAuthorized,
   stripeFailed,
   stripeSuccess,
-  stripeValidate,
+  stripeValidate
 } from "../services/stripeService";
 import responseHandler from "../handlers/responseHandler";
 
-export const stripeWebhook = asyncWrapper(async(req: Request, res: Response) => {
+export const stripeWebhook = asyncWrapper(async (req: Request, res: Response) => {
   const signature = req.headers["stripe-signature"] as string;
   const data = req.body;
   const event = stripeValidate({ data, signature });
@@ -18,7 +18,7 @@ export const stripeWebhook = asyncWrapper(async(req: Request, res: Response) => 
       break;
     case "payment_intent.succeeded":
       await stripeSuccess({
-        amountCharged: event.data.object.amount_received/100,
+        amountCharged: event.data.object.amount_received / 100,
         bookingId: event.data.object.metadata.bookingId,
         userId: event.data.object.metadata.userId,
         data: event.data.object
@@ -30,4 +30,5 @@ export const stripeWebhook = asyncWrapper(async(req: Request, res: Response) => 
     default:
       return responseHandler.ok(res, { message: "success" });
   }
+  return responseHandler.ok(res, { message: "success" });
 });

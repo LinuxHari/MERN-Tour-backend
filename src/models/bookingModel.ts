@@ -138,6 +138,10 @@ const bookingSchema = new mongoose.Schema(
       type: transactionSchema,
       _id: false,
       required: true
+    },
+    emailStatus: {
+      type: String,
+      enum: ["sent", "failed"]
     }
   },
   { timestamps: true }

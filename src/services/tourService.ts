@@ -17,6 +17,7 @@ import Booking, { BookingType, PaymentType } from "../models/bookingModel";
 import { MAX_BOOKING_RETRY } from "../config/tourConfig";
 import getDuration from "../utils/getDuration";
 import Review from "../models/reviewModel";
+import { sendBookingMail } from "./emailService";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
@@ -202,13 +203,13 @@ export const getBooking = async (bookingId: string, email: string) => {
     },
     ...(payment.status === "success" &&
       payment.card && {
-        paymentInfo: {
-          cardNumber: payment.card.number,
-          cardBrand: payment.card.brand,
-          paymentDate: payment.attemptDate,
-          recipetUrl: payment.reciept
-        }
-      })
+      paymentInfo: {
+        cardNumber: payment.card.number,
+        cardBrand: payment.card.brand,
+        paymentDate: payment.attemptDate,
+        recipetUrl: payment.reciept
+      }
+    })
   };
 };
 
@@ -316,10 +317,16 @@ export const cancelBookedTour = async (bookingId: string, email: string) => {
     );
 
   const user = await User.findOne({ email }, { _id: 1 }).lean();
+  const tour = await Tour.findOne({ tourId: booking.tourId }, { name: 1 }).lean();
   if (String(user?._id) !== String(booking.userId))
     throw new NotFoundError(
-      `${email} tried to cancel booking ${booking.bookingId} which was done by ${user?.email}`
+      `Invalid email ${email} tried to cancel booking ${booking.bookingId} which was done by ${user?.email}`
     ); // We are sending 404 instead of bad request to confuse user that there is no booking with this id, so it will prevent someone who tries to enumerate booking details
+
+  if (!tour)
+    throw new NotFoundError(
+      `Invalid tour id ${booking.tourId} is stored for booking ${booking.bookingId}`
+    );
 
   if (booking.bookingStatus === "success") {
     const payment = booking.transaction.history[booking.transaction.history.length - 1];
@@ -327,6 +334,8 @@ export const cancelBookedTour = async (bookingId: string, email: string) => {
     booking.transaction.paymentStatus = "refunded";
   }
   booking.bookingStatus = "canceled";
+  const { error } = await sendBookingMail({ ...booking.toObject(), tourName: tour.name });
+  booking.emailStatus = error ? "failed" : "sent";
   await booking.save();
 };
 

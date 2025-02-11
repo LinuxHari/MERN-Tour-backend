@@ -6,7 +6,7 @@ import {
   getPublishedTours,
   getAllStats,
   updatePublishedTour
-} from "../services/adminServices";
+} from "../services/adminService";
 import asyncWrapper from "../asyncWrapper";
 
 export const addTour = asyncWrapper(async (req: Request, res: Response) => {

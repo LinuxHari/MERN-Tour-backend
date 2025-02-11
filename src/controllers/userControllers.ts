@@ -10,7 +10,7 @@ import {
   removeFavoriteTour,
   updateUserPassword,
   updateUserProfile
-} from "../services/userServices";
+} from "../services/userService";
 import responseHandler from "../handlers/responseHandler";
 import envConfig from "../config/envConfig";
 import { BookingStatusSchemaType } from "../validators/userValidators";

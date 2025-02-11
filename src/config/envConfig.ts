@@ -9,7 +9,9 @@ const envConfig = {
   mongoUri: process.env.MONGO_URI,
   environment: process.env.NODE_ENV,
   port: process.env.PORT,
-  frontend: process.env.FRONTEND_URL
+  frontend: process.env.FRONTEND_URL,
+  emailUser: process.env.EMAIL_USER,
+  emailPass: process.env.EMAIL_PASS
 } as const;
 
 export default envConfig;

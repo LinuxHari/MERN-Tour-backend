@@ -10,7 +10,7 @@ import {
   reserveTour,
   searchSuggestions,
   tourReview
-} from "../services/tourServices";
+} from "../services/tourService";
 import responseHandler from "../handlers/responseHandler";
 import asyncWrapper from "../asyncWrapper";
 
