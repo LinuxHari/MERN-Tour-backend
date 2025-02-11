@@ -21,7 +21,7 @@ const bookingTemplate = (booking: EmailBooking) => {
                     <table align="center">
                         <tr>
                             <td>
-                               <img src="https://firebasestorage.googleapis.com/v0/b/mern-tours-e23a8.appspot.com/o/assets%2Fsuccess.png?alt=media&token=6952e61b-0fbb-4539-94fa-2b2ba40f9e37" style="height:60px;width:60px;"/>
+                               <img src="https://firebasestorage.googleapis.com/v0/b/mern-tours-e23a8.appspot.com/o/assets%2Fsuccess.png?alt=media&token=6952e61b-0fbb-4539-94fa-2b2ba40f9e37" alt="mern-tours" style="height:60px;width:60px;"/>
                             </td>
                         </tr>
                     </table>
@@ -117,7 +117,7 @@ const bookingTemplate = (booking: EmailBooking) => {
 
                 <div style="text-align: right;"> 
                     <a href="${envConfig.frontend}/booking/${booking.bookingId}" style="display: inline-block; padding: 10px 20px; border: 1px solid #F26B3C; color: #F26B3C; text-decoration: none; border-radius: 4px; margin-right: 10px;">View details</a> 
-                    <a href="${envConfig.frontend}/tours/${booking.bookingId}/${booking.tourId}" style="display: inline-block; padding: 10px 20px; background-color: #F26B3C; color: white; text-decoration: none; border-radius: 4px;">Book again</a> 
+                    <a href="${envConfig.frontend}/tours/${booking.destinationId}/${booking.tourId}" style="display: inline-block; padding: 10px 20px; background-color: #F26B3C; color: white; text-decoration: none; border-radius: 4px;">Book again</a> 
                 </div> 
             </td> 
         </tr> 

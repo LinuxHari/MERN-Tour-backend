@@ -113,7 +113,7 @@ export const stripeSuccess = async ({
 
   const tour = await Tour.findOne(
     { tourId: existingBooking.tourId },
-    { freeCancellation: 1, name: 1 }
+    { freeCancellation: 1, name: 1, destinationId: 1 }
   ).lean();
   if (!tour)
     throw new ServerError(`Tour for ${existingBooking.tourId} is not found in stripe success`);
@@ -131,7 +131,11 @@ export const stripeSuccess = async ({
   await updatePayment(payment, data.latest_charge as string); // Latest charge is null until PaymentIntent confirmation is attempted.
   await reservation.save();
   await payment.save();
-  const { error } = await sendBookingMail({ ...existingBooking.toObject(), tourName: tour.name });
+  const { error } = await sendBookingMail({
+    ...existingBooking.toObject(),
+    tourName: tour.name,
+    destinationId: tour.destinationId
+  });
   existingBooking.emailStatus = error ? "failed" : "sent";
   await existingBooking.save();
 };

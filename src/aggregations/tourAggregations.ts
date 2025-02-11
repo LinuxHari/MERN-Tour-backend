@@ -141,7 +141,7 @@ const tourAggregations = {
             price: 1,
             duration: 1,
             freeCancellation: 1,
-            images: { $slice: ["$images", 1] },
+            images: 1,
             tourId: 1,
             totalRatings: 1,
             averageRating: 1

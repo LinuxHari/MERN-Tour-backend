@@ -1,7 +1,7 @@
 import mongoose, { PipelineStage } from "mongoose";
 import { BookingStatusSchemaType } from "../validators/userValidators";
 
-const bookingAggregations = {
+const userAggregations = {
   userBookings: (
     userId: mongoose.Types.ObjectId,
     page: number,
@@ -106,7 +106,7 @@ const bookingAggregations = {
               reviewCount: "$totalRatings",
               price: "$price.adult",
               duration: 1,
-              imgUrl: { $arrayElemAt: ["$images", 0] },
+              imgUrl: "$images",
               tourId: 1,
               destinationId: 1
             }
@@ -118,4 +118,4 @@ const bookingAggregations = {
   ]
 };
 
-export default bookingAggregations;
+export default userAggregations;

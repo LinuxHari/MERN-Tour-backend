@@ -203,13 +203,13 @@ export const getBooking = async (bookingId: string, email: string) => {
     },
     ...(payment.status === "success" &&
       payment.card && {
-      paymentInfo: {
-        cardNumber: payment.card.number,
-        cardBrand: payment.card.brand,
-        paymentDate: payment.attemptDate,
-        recipetUrl: payment.reciept
-      }
-    })
+        paymentInfo: {
+          cardNumber: payment.card.number,
+          cardBrand: payment.card.brand,
+          paymentDate: payment.attemptDate,
+          recipetUrl: payment.reciept
+        }
+      })
   };
 };
 
@@ -317,7 +317,7 @@ export const cancelBookedTour = async (bookingId: string, email: string) => {
     );
 
   const user = await User.findOne({ email }, { _id: 1 }).lean();
-  const tour = await Tour.findOne({ tourId: booking.tourId }, { name: 1 }).lean();
+  const tour = await Tour.findOne({ tourId: booking.tourId }, { name: 1, destinationId: 1 }).lean();
   if (String(user?._id) !== String(booking.userId))
     throw new NotFoundError(
       `Invalid email ${email} tried to cancel booking ${booking.bookingId} which was done by ${user?.email}`
@@ -334,7 +334,11 @@ export const cancelBookedTour = async (bookingId: string, email: string) => {
     booking.transaction.paymentStatus = "refunded";
   }
   booking.bookingStatus = "canceled";
-  const { error } = await sendBookingMail({ ...booking.toObject(), tourName: tour.name });
+  const { error } = await sendBookingMail({
+    ...booking.toObject(),
+    tourName: tour.name,
+    destinationId: tour.destinationId
+  });
   booking.emailStatus = error ? "failed" : "sent";
   await booking.save();
 };

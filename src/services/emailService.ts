@@ -3,7 +3,7 @@ import envConfig from "../config/envConfig";
 import bookingTemplate from "../templates/bookingTemplate";
 import { BookingType } from "../models/bookingModel";
 
-export type EmailBooking = BookingType & { tourName: string };
+export type EmailBooking = BookingType & { tourName: string; destinationId: string };
 
 const transporter = nodeMailer.createTransport({
   host: "smtp.gmail.com",
