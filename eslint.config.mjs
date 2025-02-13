@@ -44,7 +44,10 @@ export default [
       }
     },
 
-
+    extends: [     
+      "prettier"
+    ],
+    
     rules: {
       indent: ["error", 2],
       quotes: ["error", "double"],
