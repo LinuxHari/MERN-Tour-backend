@@ -6,6 +6,8 @@ const bookingTemplate = (booking: EmailBooking) => {
   const isSuccess = booking.bookingStatus === "success";
   const payment = booking.transaction.history[booking.transaction.history.length - 1];
   const isFreeCancelation = isSuccess && payment.refundableAmount !== payment.amount;
+  const transformedDestination = booking.destination.split("-").join("_").split(" ").join("-");
+  const transformedTourName = booking.tourName.split("-").join("_").split(" ").join("-");
 
   return `<!DOCTYPE html> 
 <html> 
@@ -117,7 +119,7 @@ const bookingTemplate = (booking: EmailBooking) => {
 
                 <div style="text-align: right;"> 
                     <a href="${envConfig.frontend}/booking/${booking.bookingId}" style="display: inline-block; padding: 10px 20px; border: 1px solid #F26B3C; color: #F26B3C; text-decoration: none; border-radius: 4px; margin-right: 10px;">View details</a> 
-                    <a href="${envConfig.frontend}/tours/${booking.destinationId}/${booking.tourId}" style="display: inline-block; padding: 10px 20px; background-color: #F26B3C; color: white; text-decoration: none; border-radius: 4px;">Book again</a> 
+                    <a href="${envConfig.frontend}/tours/${transformedDestination}/${transformedTourName}/${booking.tourId}" style="display: inline-block; padding: 10px 20px; background-color: #F26B3C; color: white; text-decoration: none; border-radius: 4px;">Book again</a> 
                 </div> 
             </td> 
         </tr> 

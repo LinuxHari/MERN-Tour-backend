@@ -106,7 +106,7 @@ const userAggregations = {
               reviewCount: "$totalRatings",
               price: "$price.adult",
               duration: 1,
-              imgUrl: "$images",
+              images: "$images",
               tourId: 1,
               destinationId: 1
             }

@@ -1,4 +1,10 @@
-import { BadRequestError, GoneError, ManyRequests, NotFoundError } from "../handlers/errorHandler";
+import {
+  BadRequestError,
+  GoneError,
+  ManyRequests,
+  NotFoundError,
+  ServerError
+} from "../handlers/errorHandler";
 import Tour from "../models/tourModel";
 import generateId from "../utils/generateId";
 import { TourSchemaType } from "../validators/adminValidators";
@@ -333,11 +339,22 @@ export const cancelBookedTour = async (bookingId: string, email: string) => {
     await stripeRefund(payment.paymentId, payment.refundableAmount * 100);
     booking.transaction.paymentStatus = "refunded";
   }
+
+  const destination = await Destination.findOne(
+    { destinationId: tour.destinationId },
+    { destination: 1 }
+  ).lean();
+
+  if (!destination)
+    throw new ServerError(
+      `Invalid destination id ${tour.destinationId} from tour with id ${booking.tourId}`
+    );
+
   booking.bookingStatus = "canceled";
   const { error } = await sendBookingMail({
     ...booking.toObject(),
     tourName: tour.name,
-    destinationId: tour.destinationId
+    destination: destination.destination
   });
   booking.emailStatus = error ? "failed" : "sent";
   await booking.save();

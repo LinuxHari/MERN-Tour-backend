@@ -7,6 +7,7 @@ import calcPercentage from "../utils/calcPercentage";
 import { NON_FREE_REFUND_CHARGE } from "../config/tourConfig";
 import Tour from "../models/tourModel";
 import { sendBookingMail } from "./emailService";
+import Destination from "../models/destinationModel";
 
 type StripeCreateParam = {
   amount: number;
@@ -115,8 +116,19 @@ export const stripeSuccess = async ({
     { tourId: existingBooking.tourId },
     { freeCancellation: 1, name: 1, destinationId: 1 }
   ).lean();
+
   if (!tour)
     throw new ServerError(`Tour for ${existingBooking.tourId} is not found in stripe success`);
+
+  const destination = await Destination.findOne(
+    { destinationId: tour.destinationId },
+    { destination: 1 }
+  ).lean();
+
+  if (!destination)
+    throw new ServerError(
+      `Invalid destination id ${tour.destinationId} from tour with id ${existingBooking.tourId}`
+    );
 
   payment.refundableAmount = tour.freeCancellation
     ? payment.amount
@@ -134,7 +146,7 @@ export const stripeSuccess = async ({
   const { error } = await sendBookingMail({
     ...existingBooking.toObject(),
     tourName: tour.name,
-    destinationId: tour.destinationId
+    destination: destination.destination
   });
   existingBooking.emailStatus = error ? "failed" : "sent";
   await existingBooking.save();
