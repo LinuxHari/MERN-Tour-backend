@@ -6,7 +6,7 @@
     "dev": "concurrently \"nodemon\" \"npm run stripe\"",
     "stripe": "stripe listen --forward-to localhost:8000/webhook/stripe",
     "build": "npx tsc",
-    "start": "node api/index.js",
+    "start": "node dist/index.js",
     "prepare": "husky",
     "eslint": "npx eslint **/*.ts",
     "format": "prettier --write ."

@@ -100,7 +100,7 @@ export default [
       "@typescript-eslint/no-explicit-any": "off"
     },
     ignores: [
-      "api",
+      "dist",
       "esm/*",
       "public/*",
       "tests/*",

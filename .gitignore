@@ -91,7 +91,7 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-api
+dist
 
 # Gatsby files
 .cache/
@@ -100,7 +100,7 @@ api
 # public
 
 # vuepress build output
-.vuepress/api
+.vuepress/dist
 
 # vuepress v2.x temp and cache directory
 .temp
