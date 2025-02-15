@@ -1,4 +1,4 @@
-import express, { Response } from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { errorHandler } from "./handlers/errorHandler";
@@ -34,6 +34,10 @@ app.use(
     credentials: true
   })
 );
+
+app.get("/", (req: Request, res: Response) => {
+  res.send("Hello");
+});
 
 app.use("/webhook", webhookRoutes);
 
