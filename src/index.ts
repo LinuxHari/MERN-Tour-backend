@@ -79,3 +79,5 @@ export const shutdown = async (type: number) => {
     process.exit(1);
   }, 10000);
 };
+
+export default app;
