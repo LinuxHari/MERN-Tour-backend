@@ -436,7 +436,8 @@ const tourAggregations = {
         markAsDeleted: 0,
         recurringEndDate: 0,
         submissionStatus: 0,
-        // destinationId: 0,
+        publisherId: 0,
+        destinationId: 0,
         "cityDetails._id": 0,
         "stateDetails._id": 0,
         "countryDetails._id": 0,
@@ -446,9 +447,25 @@ const tourAggregations = {
     },
     {
       $addFields: {
-        country: "$countryDetails.destination",
-        state: "$stateDetails.destination",
-        city: "$cityDetails.destination"
+        country: {
+          name: "$countryDetails.destination",
+          id: "$countryDetails.destinationId"
+        },
+        state: {
+          name: "$stateDetails.destination",
+          id: "$stateDetails.destinationId"
+        },
+        city: {
+          name: "$cityDetails.destination",
+          id: "$cityDetails.destinationId"
+        }
+      }
+    },
+    {
+      $project: {
+        cityDetails: 0,
+        stateDetails: 0,
+        countryDetails: 0
       }
     },
     {

@@ -1,6 +1,6 @@
 import mongoose, { InferSchemaType } from "mongoose";
 import { CATEGORIES, LANGUAGES, MIN_AGE, SUBMISSION_STATUS } from "../config/tourConfig";
-import { modelOptions } from "./modelConfig";
+import { modelOptions } from "../config/modelConfig";
 
 const itineraryType = {
   activity: {

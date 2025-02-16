@@ -1,5 +1,5 @@
 import mongoose, { InferSchemaType } from "mongoose";
-import { modelOptions } from "./modelConfig";
+import { modelOptions } from "../config/modelConfig";
 
 export const passengerSchema = {
   adults: {

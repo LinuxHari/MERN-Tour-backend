@@ -83,12 +83,40 @@ const userAggregations = {
         from: "destinations",
         localField: "destinationId",
         foreignField: "destinationId",
-        as: "destination"
+        as: "cityDetails"
       }
     },
     {
       $unwind: {
-        path: "$destination",
+        path: "$cityDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "destinations",
+        localField: "cityDetails.parentDestinationId",
+        foreignField: "destinationId",
+        as: "stateDetails"
+      }
+    },
+    {
+      $unwind: {
+        path: "$stateDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "destinations",
+        localField: "stateDetails.parentDestinationId",
+        foreignField: "destinationId",
+        as: "countryDetails"
+      }
+    },
+    {
+      $unwind: {
+        path: "$countryDetails",
         preserveNullAndEmptyArrays: true
       }
     },
@@ -100,7 +128,6 @@ const userAggregations = {
           {
             $project: {
               _id: 0,
-              location: "$destination.destination",
               title: "$name",
               rating: "$averageRating",
               reviewCount: "$totalRatings",
@@ -108,7 +135,18 @@ const userAggregations = {
               duration: 1,
               images: "$images",
               tourId: 1,
-              destinationId: 1
+              city: {
+                id: "$cityDetails.destinationId",
+                name: "$cityDetails.destination"
+              },
+              state: {
+                id: "$stateDetails.destinationId",
+                name: "$stateDetails.destination"
+              },
+              country: {
+                id: "$countryDetails.destinationId",
+                name: "$countryDetails.destination"
+              }
             }
           }
         ],
