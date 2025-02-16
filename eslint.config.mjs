@@ -26,6 +26,7 @@ export default [
     plugins: {
       security,
       node,
+      prettier,
       "@typescript-eslint": typescriptEslint
     },
 
@@ -43,10 +44,6 @@ export default [
         node: {}
       }
     },
-
-    extends: [     
-      "prettier"
-    ],
     
     rules: {
       indent: ["error", 2],
