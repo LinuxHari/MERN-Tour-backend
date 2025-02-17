@@ -26,7 +26,6 @@ export default [
     plugins: {
       security,
       node,
-      prettier,
       "@typescript-eslint": typescriptEslint
     },
 

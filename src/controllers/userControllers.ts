@@ -29,7 +29,8 @@ export const login = asyncWrapper(async (req: Request, res: Response) => {
       httpOnly: true,
       secure: envConfig.environment !== "development",
       sameSite: "none",
-      maxAge: 60 * 60 * 24 * 365 * 1000
+      maxAge: 60 * 60 * 24 * 365 * 1000,
+      expires: new Date(Date.now() + 60 * 60 * 24 * 365)
     })
     .send();
 });
