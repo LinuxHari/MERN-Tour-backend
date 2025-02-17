@@ -3,6 +3,6 @@ import { stripeWebhook } from "../controllers/webhookController";
 
 const router = Router();
 
-router.post("/stripe", raw({ type: "*/*" }), stripeWebhook);
+router.post("/stripe", raw({ type: "application/json" }), stripeWebhook);
 
 export default router;
