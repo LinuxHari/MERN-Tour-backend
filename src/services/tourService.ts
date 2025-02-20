@@ -5,7 +5,7 @@ import {
   NotFoundError,
   ServerError
 } from "../handlers/errorHandler";
-import Tour from "../models/tourModel";
+import Tour, { TourModel } from "../models/tourModel";
 import generateId from "../utils/generateId";
 import { TourSchemaType } from "../validators/adminValidators";
 import {
@@ -24,6 +24,7 @@ import { MAX_BOOKING_RETRY } from "../config/tourConfig";
 import getDuration from "../utils/getDuration";
 import Review from "../models/reviewModel";
 import { sendBookingMail } from "./emailService";
+import userAggregations from "../aggregations/userAggregations";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
@@ -83,18 +84,31 @@ export const getTours = async (params: TourListingSchemaType, email?: string) =>
       tourTypes,
       specials,
       languages,
-      sortType,
-      email
+      sortType
     )
   );
 
   const returnResult = result[0];
   if (result[0]?.filters?.[0]) returnResult.filters = result[0].filters[0];
+
+  if (email) {
+    const result = await User.aggregate(userAggregations.getFavoriteToursIds(email));
+    const favToursIds = result[0]?.tourIds || [];
+    if (favToursIds.length) {
+      const favToursSet = new Set(favToursIds);
+      const finalResult = returnResult.tours.map((tour: TourModel) =>
+        favToursSet.has(tour.tourId) ? { ...tour, isFavorite: true } : tour
+      );
+      return { ...returnResult, tours: finalResult };
+    }
+    return returnResult;
+  }
+
   return returnResult;
 };
 
-export const getTour = async (tourId: string) => {
-  const tour = await Tour.aggregate(tourAggregations.getTour(tourId)).exec();
+export const getTour = async (tourId: string, email?: string) => {
+  const tour = await Tour.aggregate(tourAggregations.getTour(tourId, email)).exec();
 
   if (!tour.length) throw new NotFoundError("Tour not found");
   return tour[0];

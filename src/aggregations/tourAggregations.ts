@@ -90,8 +90,7 @@ const tourAggregations = {
     tourTypes?: string[],
     specials?: string[],
     languages?: string[],
-    sortType?: (typeof SORTTYPES)[number],
-    email?: string
+    sortType?: (typeof SORTTYPES)[number]
   ) => {
     const matchStage: Record<string, any> = {
       destinationId: { $in: cityDestinationIds },
@@ -212,26 +211,6 @@ const tourAggregations = {
       ];
     }
 
-    if (email) {
-      facetStage.paginatedResults.unshift(
-        {
-          $lookup: {
-            from: "users",
-            localField: "tourId",
-            foreignField: "favorites",
-            as: "favorited"
-          }
-        },
-        {
-          $addFields: {
-            isFavorite: {
-              $cond: [{ $gt: [{ $size: { $ifNull: ["$favorited", []] } }, 0] }, true, false]
-            }
-          }
-        }
-      );
-    }
-
     const aggregationPipeline = [
       { $facet: facetStage },
       {
@@ -245,10 +224,66 @@ const tourAggregations = {
 
     return aggregationPipeline;
   },
-  getTour: (tourId: string) => {
+  getTour: (tourId: string, email?: string) => {
     return [
       { $match: { tourId } },
       ...destinationPipe,
+      ...(email
+        ? [
+            {
+              $lookup: {
+                from: "users",
+                let: { userEmail: email },
+                pipeline: [
+                  { $match: { $expr: { $eq: ["$email", "$$userEmail"] } } },
+                  { $project: { _id: 1 } }
+                ],
+                as: "userInfo"
+              }
+            },
+            {
+              $set: {
+                userId: { $arrayElemAt: ["$userInfo._id", 0] }
+              }
+            },
+            {
+              $lookup: {
+                from: "bookings",
+                let: { tourId: "$tourId", userId: "$userId" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ["$tourId", "$$tourId"] },
+                          { $eq: ["$userId", "$$userId"] },
+                          { $eq: ["$bookingStatus", "success"] }
+                        ]
+                      }
+                    }
+                  },
+                  { $limit: 1 }
+                ],
+                as: "userBooking"
+              }
+            },
+            {
+              $addFields: {
+                canReview: {
+                  $cond: {
+                    if: { $gt: [{ $size: { $ifNull: ["$userBooking", []] } }, 0] },
+                    then: true,
+                    else: "$$REMOVE"
+                  }
+                }
+              }
+            }
+          ]
+        : [
+            {
+              $addFields: { canReview: false }
+            }
+          ]),
       {
         $project: {
           destination: 1,
@@ -266,7 +301,8 @@ const tourAggregations = {
           included: 1,
           price: 1,
           totalRatings: 1,
-          averageRating: 1
+          averageRating: 1,
+          canReview: 1
         }
       }
     ];

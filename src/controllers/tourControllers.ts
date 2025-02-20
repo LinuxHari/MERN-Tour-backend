@@ -13,6 +13,7 @@ import {
 } from "../services/tourService";
 import responseHandler from "../handlers/responseHandler";
 import asyncWrapper from "../asyncWrapper";
+import { verifyToken } from "../utils/authTokenManager";
 
 export const search = asyncWrapper(async (req: Request, res: Response) => {
   const searchText = req.query.searchText as string;
@@ -21,12 +22,14 @@ export const search = asyncWrapper(async (req: Request, res: Response) => {
 });
 
 export const tours = asyncWrapper(async (req: Request, res: Response) => {
-  const tours = await getTours(Object(req.query), res.locals.email);
+  const { data } = verifyToken(req.signedCookies["authToken"]);
+  const tours = await getTours(Object(req.query), data?.email);
   responseHandler.ok(res, tours);
 });
 
 export const tour = asyncWrapper(async (req: Request, res: Response) => {
-  const tour = await getTour(req.params.tourId);
+  const { data } = verifyToken(req.signedCookies["authToken"]);
+  const tour = await getTour(req.params.tourId, data?.email);
   responseHandler.ok(res, tour);
 });
 

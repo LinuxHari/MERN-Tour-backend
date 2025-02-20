@@ -153,6 +153,46 @@ const userAggregations = {
         totalCount: [{ $count: "count" }]
       }
     }
+  ],
+  getFavoriteToursIds: (email: string) => [
+    {
+      $match: { email }
+    },
+    {
+      $lookup: {
+        from: "tours",
+        localField: "favorites",
+        foreignField: "_id",
+        as: "favoriteTours"
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        favoriteTourIds: {
+          $map: {
+            input: "$favoriteTours",
+            as: "fav",
+            in: "$$fav.tourId"
+          }
+        }
+      }
+    },
+    {
+      $unwind: "$favoriteTourIds"
+    },
+    {
+      $group: {
+        _id: null,
+        tourIds: { $push: "$favoriteTourIds" }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        tourIds: 1
+      }
+    }
   ]
 };
 

@@ -27,7 +27,6 @@ export default [
     plugins: {
       security,
       node,
-      prettier,
       "@typescript-eslint": typescriptEslint
     },
 
@@ -39,7 +38,9 @@ export default [
       ecmaVersion: "latest",
       sourceType: "module"
     },
-
+    // extends: {
+    //   prettier
+    // },
     settings: {
       "import/resolver": {
         node: {}
