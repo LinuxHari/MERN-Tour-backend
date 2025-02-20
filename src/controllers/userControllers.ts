@@ -28,7 +28,7 @@ export const login = asyncWrapper(async (req: Request, res: Response) => {
       signed: true,
       httpOnly: true,
       secure: envConfig.environment !== "development",
-      sameSite: "none",
+      sameSite: "lax",
       maxAge: 60 * 60 * 24 * 365 * 1000,
       expires: new Date(Date.now() + 60 * 60 * 24 * 365)
     })
