@@ -29,15 +29,22 @@ export const login = asyncWrapper(async (req: Request, res: Response) => {
       httpOnly: true,
       secure: envConfig.environment !== "development",
       sameSite: "none",
-      maxAge: 60 * 60 * 24 * 365 * 1000
-      // expires: new Date(Date.now() + 60 * 60 * 24 * 365)
+      maxAge: 60 * 60 * 24 * 365 * 1000,
+      expires: new Date(Date.now() + 60 * 60 * 24 * 365)
     })
     .send();
 });
 
-export const logout = asyncWrapper(async (_: Request, res: Response) =>
-  res.clearCookie("authToken").send()
-);
+export const logout = asyncWrapper(async (_: Request, res: Response) => {
+  res.clearCookie("authToken", {
+    signed: true,
+    httpOnly: true,
+    secure: envConfig.environment !== "development",
+    sameSite: "none"
+  });
+
+  res.send();
+});
 
 export const userInfo = asyncWrapper(async (_: Request, res: Response) => {
   const userInfo = await getUserInfo(res.locals.email);
