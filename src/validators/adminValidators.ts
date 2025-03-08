@@ -1,6 +1,8 @@
 import { z } from "zod";
-import { CATEGORIES, LANGUAGES } from "../config/tourConfig";
+import { CATEGORIES, LANGUAGES, MIN_AGE } from "../config/tourConfig";
 import removeSpaces from "../utils/removeSpaces";
+
+const allowedAges = Object.values(MIN_AGE);
 
 export const LocationSchema = z.object({
   city: z
@@ -189,10 +191,21 @@ export const BaseTourSchema = z.object({
   }),
 
   minAge: z
-    .number()
-    .int()
-    .min(0, { message: "Age must be at least 0" })
-    .max(18, { message: "Age must not be more than 18" }),
+    .string()
+    .transform((age) => parseInt(age, 10))
+    .pipe(
+      z.union(
+        [
+          z.literal(allowedAges[0]),
+          z.literal(allowedAges[1]),
+          z.literal(allowedAges[2]),
+          z.literal(allowedAges[3])
+        ],
+        {
+          message: "Invalid age is selected"
+        }
+      )
+    ),
 
   images: z
     .array(
