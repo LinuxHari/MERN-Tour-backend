@@ -125,7 +125,11 @@ const tourAggregations = {
         : { $lte: maxPrice };
     }
 
-    const facetStage: { paginatedResults: any[]; totalCount: any[]; filters?: any[] } = {
+    const facetStage: {
+      paginatedResults: any[];
+      totalCount: any[];
+      filters?: any[];
+    } = {
       paginatedResults: [
         { $match: matchStage },
         addFieldsStage,
@@ -182,6 +186,11 @@ const tourAggregations = {
 
     if (filters) {
       facetStage.filters = [
+        { $match: matchStage },
+        addFieldsStage,
+        { $match: priceFilterStage },
+        ...destinationPipe,
+        { $unwind: "$languages" },
         {
           $group: {
             _id: null,
@@ -199,13 +208,7 @@ const tourAggregations = {
             _id: 0,
             tourTypes: 1,
             specials: { $setDifference: ["$specials", [null]] },
-            languages: {
-              $reduce: {
-                input: "$languages",
-                initialValue: [],
-                in: { $setUnion: ["$$value", "$$this"] }
-              }
-            }
+            languages: 1
           }
         }
       ];
