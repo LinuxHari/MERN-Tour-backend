@@ -4,6 +4,8 @@ import {
   cancelBookedTour,
   getBooking,
   getReservedDetails,
+  getTopPopularTours,
+  getTopTrendingTours,
   getTour,
   getTourReview,
   getTours,
@@ -70,4 +72,14 @@ export const reviewTour = asyncWrapper(async (req: Request, res: Response) => {
 export const getReview = asyncWrapper(async (req: Request, res: Response) => {
   const reviews = await getTourReview(req.params.tourId);
   responseHandler.ok(res, reviews);
+});
+
+export const getPopularTours = asyncWrapper(async (_: Request, res: Response) => {
+  const tours = await getTopPopularTours();
+  responseHandler.ok(res, tours);
+});
+
+export const getTrendingTours = asyncWrapper(async (_: Request, res: Response) => {
+  const tours = await getTopTrendingTours();
+  responseHandler.ok(res, tours);
 });

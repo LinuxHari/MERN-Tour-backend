@@ -91,7 +91,7 @@ export const createTour = async (tourData: TourSchemaType) => {
 };
 
 export const getPublishedTours = async (page: number) => {
-  const limit = 10;
+  const limit = 12;
   const totalCount = await Tour.countDocuments({ markAsDeleted: { $ne: true } });
 
   const tours = await Tour.aggregate(tourAggregations.getPublishedTours(limit, page));

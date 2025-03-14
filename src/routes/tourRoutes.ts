@@ -3,6 +3,7 @@ import {
   bookedTour,
   bookTour,
   cancelBooking,
+  getPopularTours,
   getReview,
   reserve,
   reservedDetails,
@@ -61,6 +62,8 @@ router.post(
   requestHandler(RatingSchema),
   reviewTour
 );
+router.get("/popular", getPopularTours);
+router.get("/trending", getPopularTours);
 
 router.get("/", requestHandler(TourListingSchema, "query"), tours);
 router.get("/:tourId", requestHandler(SingleTourParamSchema, "params"), tour);

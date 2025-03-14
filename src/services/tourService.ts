@@ -410,3 +410,21 @@ export const getTourReview = async (tourId: string) => {
   const reviews = await Review.aggregate(tourAggregations.getReviews(tourDb._id));
   return reviews[0];
 };
+
+export const getTopPopularTours = async () => {
+  const tours = await Tour.aggregate(tourAggregations.getPopularTours());
+
+  if (!tours.length) throw new NotFoundError("No popular tours found");
+  console.log("success");
+
+  return tours;
+};
+
+export const getTopTrendingTours = async () => {
+  const tours = await Tour.aggregate(tourAggregations.getTrendingTours());
+
+  if (!tours.length) throw new NotFoundError("No popular tours found");
+  console.log("success");
+
+  return tours;
+};

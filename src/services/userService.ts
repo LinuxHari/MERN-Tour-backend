@@ -68,7 +68,7 @@ export const addTourToFavorites = async (tourId: string, email: string, ip?: str
 };
 
 export const getFavoriteTours = async (email: string, page: number, ip?: string) => {
-  const limit = 10;
+  const limit = 12;
   const user = await User.findOne({ email }, { favorites: 1 }).lean();
   if (!user)
     throw new BadRequestError(

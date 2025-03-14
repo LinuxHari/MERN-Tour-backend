@@ -21,7 +21,7 @@ export const PageSchema = z.object({
   page: z
     .string()
     .transform(parseToInt)
-    .pipe(z.number().int().min(0).max(100, { message: "Page number is not valid" }))
+    .pipe(z.number().int().min(0).max(1000000, { message: "Page number is not valid" }))
 });
 
 export const TourListingSchema = z
