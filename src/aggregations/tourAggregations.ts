@@ -153,12 +153,7 @@ const tourAggregations = {
         { $skip: (page - 1) * 10 },
         { $limit: 10 }
       ],
-      totalCount: [
-        { $match: matchStage },
-        addFieldsStage,
-        { $match: priceFilterStage },
-        { $count: "total" }
-      ]
+      totalCount: [{ $match: matchStage }, addFieldsStage, { $match: priceFilterStage }, { $count: "total" }]
     };
 
     if (sortType) {
@@ -361,12 +356,7 @@ const tourAggregations = {
         { $skip: (page - 1) * 10 },
         { $limit: 10 }
       ],
-      totalCount: [
-        { $match: matchStage },
-        addFieldsStage,
-        { $match: priceFilterStage },
-        { $count: "total" }
-      ]
+      totalCount: [{ $match: matchStage }, addFieldsStage, { $match: priceFilterStage }, { $count: "total" }]
     };
 
     const aggregationPipeline = [
@@ -392,10 +382,7 @@ const tourAggregations = {
               $lookup: {
                 from: "users",
                 let: { userEmail: email },
-                pipeline: [
-                  { $match: { $expr: { $eq: ["$email", "$$userEmail"] } } },
-                  { $project: { _id: 1 } }
-                ],
+                pipeline: [{ $match: { $expr: { $eq: ["$email", "$$userEmail"] } } }, { $project: { _id: 1 } }],
                 as: "userInfo"
               }
             },
@@ -487,13 +474,7 @@ const tourAggregations = {
         $addFields: {
           userName: { $concat: ["$userInfo.firstName", " ", "$userInfo.lastName"] },
           individualRating: {
-            $avg: [
-              "$ratings.Location",
-              "$ratings.Amenities",
-              "$ratings.Food",
-              "$ratings.Room",
-              "$ratings.Price"
-            ]
+            $avg: ["$ratings.Location", "$ratings.Amenities", "$ratings.Food", "$ratings.Room", "$ratings.Price"]
           },
           profile: "$userInfo.profile" // Add profile from userModel
         }
@@ -509,13 +490,7 @@ const tourAggregations = {
           _id: null,
           overallRating: {
             $avg: {
-              $avg: [
-                "$ratings.Location",
-                "$ratings.Amenities",
-                "$ratings.Food",
-                "$ratings.Room",
-                "$ratings.Price"
-              ]
+              $avg: ["$ratings.Location", "$ratings.Amenities", "$ratings.Food", "$ratings.Room", "$ratings.Price"]
             }
           },
           location: { $avg: "$ratings.Location" },
@@ -561,13 +536,7 @@ const tourAggregations = {
           $avg: {
             $divide: [
               {
-                $sum: [
-                  "$ratings.Location",
-                  "$ratings.Amenities",
-                  "$ratings.Food",
-                  "$ratings.Room",
-                  "$ratings.Price"
-                ]
+                $sum: ["$ratings.Location", "$ratings.Amenities", "$ratings.Food", "$ratings.Room", "$ratings.Price"]
               },
               5
             ]
@@ -865,7 +834,7 @@ const tourAggregations = {
       $sort: { bookingCount: -1 }
     },
     {
-      $limit: 10 // Adjust the limit as needed
+      $limit: 10
     }
   ]
 };

@@ -5,7 +5,10 @@ const adminAggregations = {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfThisYear = new Date(now.getFullYear(), 0, 1);
-    const startOfLast5Weeks = new Date(now.getTime() - 5 * 7 * 24 * 60 * 60 * 1000);
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const firstDayOfMonth = startOfThisMonth.getDay();
 
     return [
       { $unwind: "$transaction.history" },
@@ -18,8 +21,19 @@ const adminAggregations = {
           year: { $year: "$transaction.history.attemptDate" },
           month: { $month: "$transaction.history.attemptDate" },
           day: { $dayOfMonth: "$transaction.history.attemptDate" },
-          hour: { $hour: "$transaction.history.attemptDate" },
-          week: { $week: "$transaction.history.attemptDate" }
+          twoHourInterval: {
+            $floor: {
+              $divide: [{ $hour: "$transaction.history.attemptDate" }, 2]
+            }
+          },
+          weekOfMonth: {
+            $ceil: {
+              $divide: [
+                { $add: [{ $dayOfMonth: "$transaction.history.attemptDate" }, { $subtract: [firstDayOfMonth, 1] }] },
+                7
+              ]
+            }
+          }
         }
       },
       {
@@ -30,12 +44,7 @@ const adminAggregations = {
             { $project: { _id: 0, total: 1 } }
           ],
           todayEarnings: [
-            {
-              $match: {
-                bookingStatus: { $in: ["success", "canceled"] },
-                attemptDate: { $gte: startOfToday }
-              }
-            },
+            { $match: { bookingStatus: { $in: ["success", "canceled"] }, attemptDate: { $gte: startOfToday } } },
             { $group: { _id: null, total: { $sum: "$amount" } } },
             { $project: { _id: 0, total: 1 } }
           ],
@@ -49,12 +58,12 @@ const adminAggregations = {
             { $group: { _id: null, total: { $sum: "$amount" } } },
             { $project: { _id: 0, total: 1 } }
           ],
-          successfulEarnings: [
+          totalSuccessfulEarnings: [
             { $match: { status: "success" } },
             { $group: { _id: null, total: { $sum: "$amount" } } },
             { $project: { _id: 0, total: 1 } }
           ],
-          successfulEarningsToday: [
+          todaySuccessfulEarnings: [
             { $match: { status: "success", attemptDate: { $gte: startOfToday } } },
             { $group: { _id: null, total: { $sum: "$amount" } } },
             { $project: { _id: 0, total: 1 } }
@@ -68,28 +77,42 @@ const adminAggregations = {
             },
             {
               $group: {
-                _id: { $subtract: ["$hour", { $mod: ["$hour", 2] }] },
+                _id: "$twoHourInterval",
                 total: { $sum: "$amount" }
               }
-            }
+            },
+            { $sort: { _id: 1 } }
           ],
           earningsByWeek: [
             {
               $match: {
-                attemptDate: { $gte: startOfLast5Weeks },
+                attemptDate: { $gte: startOfThisMonth, $lte: endOfThisMonth },
                 bookingStatus: { $in: ["success", "canceled"] }
               }
             },
-            { $group: { _id: "$week", total: { $sum: "$amount" } } }
+            {
+              $group: {
+                _id: "$weekOfMonth",
+                total: { $sum: "$amount" }
+              }
+            },
+            { $sort: { _id: 1 } }
           ],
           earningsByMonth: [
             {
               $match: {
                 attemptDate: { $gte: startOfThisYear },
+                year: now.getFullYear(),
                 bookingStatus: { $in: ["success", "canceled"] }
               }
             },
-            { $group: { _id: "$month", total: { $sum: "$amount" } } }
+            {
+              $group: {
+                _id: "$month",
+                total: { $sum: "$amount" }
+              }
+            },
+            { $sort: { _id: 1 } }
           ]
         }
       },
@@ -97,103 +120,73 @@ const adminAggregations = {
         $project: {
           totalEarnings: { $ifNull: [{ $arrayElemAt: ["$totalEarnings.total", 0] }, 0] },
           todayEarnings: { $ifNull: [{ $arrayElemAt: ["$todayEarnings.total", 0] }, 0] },
-          totalPendingEarnings: {
-            $ifNull: [{ $arrayElemAt: ["$totalPendingEarnings.total", 0] }, 0]
-          },
-          todayPendingEarnings: {
-            $ifNull: [{ $arrayElemAt: ["$todayPendingEarnings.total", 0] }, 0]
-          },
-          successfulEarnings: { $ifNull: [{ $arrayElemAt: ["$successfulEarnings.total", 0] }, 0] },
-          successfulEarningsToday: {
-            $ifNull: [{ $arrayElemAt: ["$successfulEarningsToday.total", 0] }, 0]
-          },
-
+          totalPendingEarnings: { $ifNull: [{ $arrayElemAt: ["$totalPendingEarnings.total", 0] }, 0] },
+          todayPendingEarnings: { $ifNull: [{ $arrayElemAt: ["$todayPendingEarnings.total", 0] }, 0] },
+          successfulEarnings: { $ifNull: [{ $arrayElemAt: ["$totalSuccessfulEarnings.total", 0] }, 0] },
+          todaySuccessfulEarnings: { $ifNull: [{ $arrayElemAt: ["$todaySuccessfulEarnings.total", 0] }, 0] },
           earningsByTwoHours: {
             $map: {
-              input: Array.from({ length: 12 }, (_, i) => i * 2),
-              as: "hour",
+              input: Array.from({ length: 12 }, (_, i) => i),
+              as: "interval",
               in: {
-                $ifNull: [
-                  {
-                    $arrayElemAt: [
-                      {
-                        $map: {
-                          input: {
-                            $filter: {
-                              input: "$earningsByTwoHours",
-                              as: "e",
-                              cond: { $eq: ["$$e._id", "$$hour"] }
-                            }
-                          },
-                          as: "filtered",
-                          in: "$$filtered.total"
-                        }
-                      },
-                      0
-                    ]
+                $let: {
+                  vars: {
+                    matchedInterval: {
+                      $filter: {
+                        input: "$earningsByTwoHours",
+                        as: "earning",
+                        cond: { $eq: ["$$earning._id", "$$interval"] }
+                      }
+                    }
                   },
-                  0
-                ]
+                  in: {
+                    $ifNull: [{ $arrayElemAt: ["$$matchedInterval.total", 0] }, 0]
+                  }
+                }
               }
             }
           },
-
           earningsByWeek: {
             $map: {
-              input: Array.from({ length: 5 }, (_, i) => i + 1),
+              input: Array.from({ length: 6 }, (_, i) => i + 1),
               as: "week",
               in: {
-                $ifNull: [
-                  {
-                    $arrayElemAt: [
-                      {
-                        $map: {
-                          input: {
-                            $filter: {
-                              input: "$earningsByWeek",
-                              as: "w",
-                              cond: { $eq: ["$$w._id", "$$week"] }
-                            }
-                          },
-                          as: "filtered",
-                          in: "$$filtered.total"
-                        }
-                      },
-                      0
-                    ]
+                $let: {
+                  vars: {
+                    matchedWeek: {
+                      $filter: {
+                        input: "$earningsByWeek",
+                        as: "earning",
+                        cond: { $eq: ["$$earning._id", "$$week"] }
+                      }
+                    }
                   },
-                  0
-                ]
+                  in: {
+                    $ifNull: [{ $arrayElemAt: ["$$matchedWeek.total", 0] }, 0]
+                  }
+                }
               }
             }
           },
-
           earningsByMonth: {
             $map: {
               input: Array.from({ length: 12 }, (_, i) => i + 1),
               as: "month",
               in: {
-                $ifNull: [
-                  {
-                    $arrayElemAt: [
-                      {
-                        $map: {
-                          input: {
-                            $filter: {
-                              input: "$earningsByMonth",
-                              as: "m",
-                              cond: { $eq: ["$$m._id", "$$month"] }
-                            }
-                          },
-                          as: "filtered",
-                          in: "$$filtered.total"
-                        }
-                      },
-                      0
-                    ]
+                $let: {
+                  vars: {
+                    matchedMonth: {
+                      $filter: {
+                        input: "$earningsByMonth",
+                        as: "earning",
+                        cond: { $eq: ["$$earning._id", "$$month"] }
+                      }
+                    }
                   },
-                  0
-                ]
+                  in: {
+                    $ifNull: [{ $arrayElemAt: ["$$matchedMonth.total", 0] }, 0]
+                  }
+                }
               }
             }
           }
