@@ -24,33 +24,8 @@ export const PageSchema = z.object({
     .pipe(z.number().int().min(0).max(1000000, { message: "Page number is not valid" }))
 });
 
-export const TourListingSchema = z
+const FiltersSchema = z
   .object({
-    destinationId: z.string().length(8, { message: "Invalid destination id" }),
-    startDate: z.string().refine(isValidDate),
-    endDate: z.string().refine(isValidDate),
-    adults: z
-      .string()
-      .transform(parseToInt)
-      .pipe(
-        z
-          .number()
-          .int()
-          .min(1, { message: "Atleast 1 adult required" })
-          .max(10, "Number of adults should not exceed 9")
-      ),
-    children: z
-      .string()
-      .transform(parseToInt)
-      .pipe(z.number().int().min(0).max(10, { message: "Number of children should not exceed 9" })),
-    infants: z
-      .string()
-      .transform(parseToInt)
-      .pipe(z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" })),
-    teens: z
-      .string()
-      .transform(parseToInt)
-      .pipe(z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" })),
     filters: z.string().transform((value) => Boolean(parseInt(value))),
     sortType: z.enum(SORTTYPES).optional(),
     tourTypes: z
@@ -87,6 +62,36 @@ export const TourListingSchema = z
     maxPrice: z.string().transform(parseToInt).pipe(z.number().int().min(2).max(1000000)).optional()
   })
   .merge(PageSchema);
+
+export const TourListingSchema = z
+  .object({
+    destinationId: z.string().length(8, { message: "Invalid destination id" }),
+    startDate: z.string().refine(isValidDate),
+    endDate: z.string().refine(isValidDate),
+    adults: z
+      .string()
+      .transform(parseToInt)
+      .pipe(
+        z
+          .number()
+          .int()
+          .min(1, { message: "Atleast 1 adult required" })
+          .max(10, "Number of adults should not exceed 9")
+      ),
+    children: z
+      .string()
+      .transform(parseToInt)
+      .pipe(z.number().int().min(0).max(10, { message: "Number of children should not exceed 9" })),
+    infants: z
+      .string()
+      .transform(parseToInt)
+      .pipe(z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" })),
+    teens: z
+      .string()
+      .transform(parseToInt)
+      .pipe(z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" }))
+  })
+  .merge(FiltersSchema);
 
 export const SingleTourParamSchema = z.object({
   tourId: z.string().length(8, { message: "Invalid tour id" })
@@ -189,8 +194,17 @@ export const RatingSchema = z.object({
     .max(500, { message: "Comment should not exceed more than 500 characters" })
 });
 
+export const ToursByCategorySchema = FiltersSchema.omit({
+  tourTypes: true
+});
+
+export const CategorySchema = z.object({
+  category: z.enum(CATEGORIES, { message: "Invalid category" })
+});
+
 export type RatingType = z.infer<typeof RatingSchema>;
 export type BookingSchemaType = z.infer<typeof BookingSchema>;
 export type TourListingSchemaType = z.infer<typeof TourListingSchema>;
 export type ReserveTourType = z.infer<typeof ReserveTourSchema>;
 export type BookingTourType = z.infer<typeof BookingSchema>;
+export type ToursByCategoryType = z.infer<typeof ToursByCategorySchema>;

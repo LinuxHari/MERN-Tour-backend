@@ -9,6 +9,7 @@ import {
   getTour,
   getTourReview,
   getTours,
+  getToursByCategory,
   reserveTour,
   searchSuggestions,
   tourReview
@@ -26,6 +27,13 @@ export const search = asyncWrapper(async (req: Request, res: Response) => {
 export const tours = asyncWrapper(async (req: Request, res: Response) => {
   const { data } = verifyToken(req.signedCookies["authToken"]);
   const tours = await getTours(Object(req.query), data?.email);
+  responseHandler.ok(res, tours);
+});
+
+export const toursByCategory = asyncWrapper(async (req: Request, res: Response) => {
+  const { data } = verifyToken(req.signedCookies["authToken"]);
+  const category = req.params.category;
+  const tours = await getToursByCategory(Object(req.query), category, data?.email);
   responseHandler.ok(res, tours);
 });
 

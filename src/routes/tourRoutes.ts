@@ -5,12 +5,14 @@ import {
   cancelBooking,
   getPopularTours,
   getReview,
+  getTrendingTours,
   reserve,
   reservedDetails,
   reviewTour,
   search,
   tour,
-  tours
+  tours,
+  toursByCategory
 } from "../controllers/tourControllers";
 import requestHandler from "../handlers/requestHandler";
 import {
@@ -21,7 +23,9 @@ import {
   SingleTourParamSchema,
   TourListingSchema,
   BookingSchema,
-  RatingSchema
+  RatingSchema,
+  ToursByCategorySchema,
+  CategorySchema
 } from "../validators/tourValidators";
 import verifyAuthToken from "../middlewares/verifyAuthToken";
 
@@ -63,7 +67,14 @@ router.post(
   reviewTour
 );
 router.get("/popular", getPopularTours);
-router.get("/trending", getPopularTours);
+router.get("/trending", getTrendingTours);
+
+router.get(
+  "/category/:category",
+  requestHandler(CategorySchema, "params"),
+  requestHandler(ToursByCategorySchema, "query"),
+  toursByCategory
+);
 
 router.get("/", requestHandler(TourListingSchema, "query"), tours);
 router.get("/:tourId", requestHandler(SingleTourParamSchema, "params"), tour);

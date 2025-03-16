@@ -227,6 +227,161 @@ const tourAggregations = {
 
     return aggregationPipeline;
   },
+  getToursByCategory: (
+    category: string,
+    minAge: number,
+    page: number,
+    filters: boolean,
+    adults: number,
+    teens?: number,
+    children?: number,
+    infants?: number,
+    rating?: number,
+    minPrice?: number,
+    maxPrice?: number,
+    specials?: string[],
+    languages?: string[],
+    sortType?: (typeof SORTTYPES)[number]
+  ) => {
+    const matchStage: Record<string, any> = {
+      category,
+      minAge: { $lte: minAge }
+    };
+
+    if (rating) matchStage.averageRating = { $gte: rating };
+    if (languages?.length) matchStage.languages = { $in: languages };
+    if (specials?.includes("Free Cancellation")) matchStage.freeCancellation = true;
+
+    const addFieldsStage = {
+      $addFields: {
+        calculatedPrice: {
+          $add: [
+            { $multiply: ["$price.adult", adults] },
+            { $multiply: [{ $ifNull: ["$price.teens", 0] }, teens || 0] },
+            { $multiply: [{ $ifNull: ["$price.children", 0] }, children || 0] },
+            { $multiply: [{ $ifNull: ["$price.infants", 0] }, infants || 0] }
+          ]
+        }
+      }
+    };
+
+    const priceFilterStage: Record<string, any> = {};
+    if (minPrice) priceFilterStage.calculatedPrice = { $gte: minPrice };
+    if (maxPrice) {
+      priceFilterStage.calculatedPrice = priceFilterStage.calculatedPrice
+        ? { ...priceFilterStage.calculatedPrice, $lte: maxPrice }
+        : { $lte: maxPrice };
+    }
+
+    const facetStage: {
+      paginatedResults: any[];
+      totalCount: any[];
+      filters?: any[];
+    } = {
+      paginatedResults: [
+        { $match: matchStage },
+        addFieldsStage,
+        { $match: priceFilterStage },
+
+        // Lookup primary destination
+        {
+          $lookup: {
+            from: "destinations",
+            localField: "destinationId",
+            foreignField: "destinationId",
+            as: "destinationDetails"
+          }
+        },
+        {
+          $addFields: {
+            destinationData: { $arrayElemAt: ["$destinationDetails", 0] }
+          }
+        },
+
+        // Lookup state
+        {
+          $lookup: {
+            from: "destinations",
+            localField: "destinationData.parentDestinationId",
+            foreignField: "destinationId",
+            as: "stateDetails"
+          }
+        },
+        {
+          $addFields: {
+            stateData: { $arrayElemAt: ["$stateDetails", 0] }
+          }
+        },
+
+        // Lookup country
+        {
+          $lookup: {
+            from: "destinations",
+            localField: "stateData.parentDestinationId",
+            foreignField: "destinationId",
+            as: "countryDetails"
+          }
+        },
+        {
+          $addFields: {
+            countryData: { $arrayElemAt: ["$countryDetails", 0] }
+          }
+        },
+
+        // Create destination string
+        {
+          $addFields: {
+            destination: {
+              $concat: [
+                { $ifNull: ["$destinationData.destination", ""] },
+                ", ",
+                { $ifNull: ["$stateData.destination", ""] },
+                ", ",
+                { $ifNull: ["$countryData.destination", ""] }
+              ]
+            }
+          }
+        },
+
+        {
+          $project: {
+            _id: 0,
+            name: 1,
+            description: 1,
+            price: 1,
+            duration: 1,
+            freeCancellation: 1,
+            images: 1,
+            tourId: 1,
+            totalRatings: 1,
+            averageRating: 1,
+            destination: 1 // Single formatted string
+          }
+        },
+        { $skip: (page - 1) * 10 },
+        { $limit: 10 }
+      ],
+      totalCount: [
+        { $match: matchStage },
+        addFieldsStage,
+        { $match: priceFilterStage },
+        { $count: "total" }
+      ]
+    };
+
+    const aggregationPipeline = [
+      { $facet: facetStage },
+      {
+        $project: {
+          tours: "$paginatedResults",
+          totalCount: { $arrayElemAt: ["$totalCount.total", 0] },
+          filters: filters ? "$filters" : undefined
+        }
+      }
+    ];
+
+    return aggregationPipeline;
+  },
   getTour: (tourId: string, email?: string) => {
     return [
       { $match: { tourId } },
@@ -540,7 +695,7 @@ const tourAggregations = {
     },
     {
       $lookup: {
-        from: "destinations", // Lookup parent destination (e.g., state or country)
+        from: "destinations",
         localField: "destinationInfo.parentDestinationId",
         foreignField: "destinationId",
         as: "parentDestination"
@@ -554,7 +709,7 @@ const tourAggregations = {
     },
     {
       $lookup: {
-        from: "destinations", // Lookup country if state exists
+        from: "destinations",
         localField: "parentDestination.parentDestinationId",
         foreignField: "destinationId",
         as: "countryDestination"
@@ -618,21 +773,10 @@ const tourAggregations = {
   ],
   getTrendingTours: (): PipelineStage[] => [
     {
-      $match: {
-        bookingStatus: "success"
-      }
-    },
-    {
       $group: {
         _id: "$tourId",
-        totalBookings: { $sum: 1 }
+        bookingCount: { $sum: 1 }
       }
-    },
-    {
-      $sort: { totalBookings: -1 }
-    },
-    {
-      $limit: 10
     },
     {
       $lookup: {
@@ -648,26 +792,8 @@ const tourAggregations = {
     {
       $lookup: {
         from: "destinations",
-        let: { destinationId: "$tourDetails.destinationId" },
-        pipeline: [
-          { $match: { $expr: { $eq: ["$destinationId", "$$destinationId"] } } },
-          {
-            $lookup: {
-              from: "destinations",
-              localField: "parentDestinationId",
-              foreignField: "destinationId",
-              as: "parentDestination"
-            }
-          },
-          {
-            $lookup: {
-              from: "destinations",
-              localField: "parentDestination.parentDestinationId",
-              foreignField: "destinationId",
-              as: "countryDestination"
-            }
-          }
-        ],
+        localField: "tourDetails.destinationId",
+        foreignField: "destinationId",
         as: "destinationInfo"
       }
     },
@@ -675,54 +801,71 @@ const tourAggregations = {
       $unwind: { path: "$destinationInfo", preserveNullAndEmptyArrays: true }
     },
     {
-      $unwind: { path: "$destinationInfo.parentDestination", preserveNullAndEmptyArrays: true }
-    },
-    {
-      $unwind: {
-        path: "$destinationInfo.parentDestination.parentDestination",
-        preserveNullAndEmptyArrays: true
+      $lookup: {
+        from: "destinations",
+        localField: "destinationInfo.parentDestinationId",
+        foreignField: "destinationId",
+        as: "parentDestination"
       }
     },
     {
+      $unwind: { path: "$parentDestination", preserveNullAndEmptyArrays: true }
+    },
+    {
+      $lookup: {
+        from: "destinations",
+        localField: "parentDestination.parentDestinationId",
+        foreignField: "destinationId",
+        as: "countryDestination"
+      }
+    },
+    {
+      $unwind: { path: "$countryDestination", preserveNullAndEmptyArrays: true }
+    },
+    {
       $project: {
-        _id: 0,
-        tourId: "$_id",
+        tourId: "$tourDetails.tourId",
         title: "$tourDetails.name",
         images: "$tourDetails.images",
         rating: { $ifNull: ["$tourDetails.averageRating", 0] },
         reviewCount: { $ifNull: ["$tourDetails.totalRatings", 0] },
         duration: "$tourDetails.duration",
         price: "$tourDetails.price.adult",
+        createdAt: "$tourDetails.createdAt",
         destination: "$tourDetails.destinationId",
         location: {
-          $concat: [
-            { $ifNull: ["$destinationInfo.destination", ""] },
-            {
-              $cond: {
-                if: { $gt: [{ $strLenCP: "$destinationInfo.parentDestination.destination" }, 0] },
-                then: ", ",
-                else: ""
-              }
-            },
-            { $ifNull: ["$destinationInfo.parentDestination.destination", ""] },
-            {
-              $cond: {
-                if: {
-                  $gt: [
-                    {
-                      $strLenCP: "$destinationInfo.parentDestination.parentDestination.destination"
-                    },
-                    0
-                  ]
+          $trim: {
+            input: {
+              $concat: [
+                { $ifNull: ["$destinationInfo.destination", ""] },
+                {
+                  $cond: {
+                    if: { $gt: [{ $strLenCP: "$parentDestination.destination" }, 0] },
+                    then: ", ",
+                    else: ""
+                  }
                 },
-                then: ", ",
-                else: ""
-              }
-            },
-            { $ifNull: ["$destinationInfo.parentDestination.parentDestination.destination", ""] }
-          ]
-        }
+                { $ifNull: ["$parentDestination.destination", ""] },
+                {
+                  $cond: {
+                    if: { $gt: [{ $strLenCP: "$countryDestination.destination" }, 0] },
+                    then: ", ",
+                    else: ""
+                  }
+                },
+                { $ifNull: ["$countryDestination.destination", ""] }
+              ]
+            }
+          }
+        },
+        bookingCount: 1
       }
+    },
+    {
+      $sort: { bookingCount: -1 }
+    },
+    {
+      $limit: 10 // Adjust the limit as needed
     }
   ]
 };

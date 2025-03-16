@@ -107,6 +107,69 @@ export const getTours = async (params: TourListingSchemaType, email?: string) =>
   return returnResult;
 };
 
+export const getToursByCategory = async (
+  params: TourListingSchemaType,
+  category: string,
+  email?: string
+) => {
+  const {
+    adults,
+    children,
+    infants,
+    teens,
+    page,
+    // startDate,
+    // endDate,
+    filters,
+    sortType,
+    specials,
+    languages,
+    rating,
+    minPrice,
+    maxPrice
+  } = params;
+
+  const minAge = infants ? 0 : children ? 3 : teens ? 13 : 18;
+  // const duration = getDuration(startDate, endDate);
+
+  const result = await Tour.aggregate(
+    tourAggregations.getToursByCategory(
+      category,
+      minAge,
+      page,
+      filters,
+      adults,
+      teens,
+      children,
+      infants,
+      rating,
+      minPrice,
+      maxPrice,
+      specials,
+      languages,
+      sortType
+    )
+  );
+
+  const returnResult = result[0];
+  if (result[0]?.filters?.[0]) returnResult.filters = result[0].filters[0];
+
+  if (email) {
+    const result = await User.aggregate(userAggregations.getFavoriteToursIds(email));
+    const favToursIds = result[0]?.tourIds || [];
+    if (favToursIds.length) {
+      const favToursSet = new Set(favToursIds);
+      const finalResult = returnResult.tours.map((tour: TourModel) =>
+        favToursSet.has(tour.tourId) ? { ...tour, isFavorite: true } : tour
+      );
+      return { ...returnResult, tours: finalResult };
+    }
+    return returnResult;
+  }
+
+  return returnResult;
+};
+
 export const getTour = async (tourId: string, email?: string) => {
   const tour = await Tour.aggregate(tourAggregations.getTour(tourId, email)).exec();
 
@@ -415,16 +478,14 @@ export const getTopPopularTours = async () => {
   const tours = await Tour.aggregate(tourAggregations.getPopularTours());
 
   if (!tours.length) throw new NotFoundError("No popular tours found");
-  console.log("success");
 
   return tours;
 };
 
 export const getTopTrendingTours = async () => {
-  const tours = await Tour.aggregate(tourAggregations.getTrendingTours());
+  const tours = await Booking.aggregate(tourAggregations.getTrendingTours());
 
   if (!tours.length) throw new NotFoundError("No popular tours found");
-  console.log("success");
 
   return tours;
 };

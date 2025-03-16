@@ -12,7 +12,6 @@ import {
   updateUserProfile
 } from "../services/userService";
 import responseHandler from "../handlers/responseHandler";
-import envConfig from "../config/envConfig";
 import { BookingStatusSchemaType } from "../validators/userValidators";
 
 export const signup = asyncWrapper(async (req: Request, res: Response) => {
@@ -27,7 +26,7 @@ export const login = asyncWrapper(async (req: Request, res: Response) => {
     .cookie("authToken", authToken, {
       signed: true,
       httpOnly: true,
-      secure: envConfig.environment !== "development",
+      secure: true,
       sameSite: "none",
       maxAge: 60 * 60 * 24 * 365 * 1000,
       expires: new Date(Date.now() + 60 * 60 * 24 * 365)
@@ -39,7 +38,7 @@ export const logout = asyncWrapper(async (_: Request, res: Response) => {
   res.clearCookie("authToken", {
     signed: true,
     httpOnly: true,
-    secure: envConfig.environment !== "development",
+    secure: true,
     sameSite: "none"
   });
 
