@@ -1,6 +1,6 @@
 import { z } from "zod";
 import removeSpaces from "../utils/removeSpaces";
-import { CATEGORIES, LANGUAGES, SORTTYPES, SPECIALS } from "../config/tourConfig";
+import { CATEGORIES, SORTTYPES, SPECIALS } from "../config/tourConfig";
 import { EmailSchema } from "./authValidators";
 import { LocationSchema } from "./adminValidators";
 
@@ -40,13 +40,7 @@ const FiltersSchema = z
       .transform((rating) => parseInt(rating))
       .pipe(z.number().min(0).max(5))
       .optional(),
-    languages: z
-      .string()
-      .min(3)
-      .max(100)
-      .transform(strToArr)
-      .pipe(z.array(z.enum(LANGUAGES)))
-      .optional(),
+    languages: z.string().min(3).max(100).transform(strToArr).pipe(z.array(z.string())).optional(),
     specials: z
       .string()
       .min(5)
@@ -54,11 +48,7 @@ const FiltersSchema = z
       .transform(strToArr)
       .pipe(z.array(z.enum(SPECIALS)))
       .optional(),
-    minPrice: z
-      .string()
-      .transform(parseToInt)
-      .pipe(z.number().int().min(1).max(1000000))
-      .optional(),
+    minPrice: z.string().transform(parseToInt).pipe(z.number().int().min(1).max(1000000)).optional(),
     maxPrice: z.string().transform(parseToInt).pipe(z.number().int().min(2).max(1000000)).optional()
   })
   .merge(PageSchema);
@@ -72,11 +62,7 @@ export const TourListingSchema = z
       .string()
       .transform(parseToInt)
       .pipe(
-        z
-          .number()
-          .int()
-          .min(1, { message: "Atleast 1 adult required" })
-          .max(10, "Number of adults should not exceed 9")
+        z.number().int().min(1, { message: "Atleast 1 adult required" }).max(10, "Number of adults should not exceed 9")
       ),
     children: z
       .string()
@@ -113,24 +99,9 @@ export const ReserveTourSchema = z
         .int()
         .min(1, { message: "Atleast 1 adult required" })
         .max(10, "Number of adults should not exceed 9"),
-      children: z
-        .number()
-        .int()
-        .min(0)
-        .max(10, { message: "Number of children should not exceed 9" })
-        .optional(),
-      infants: z
-        .number()
-        .int()
-        .min(0)
-        .max(9, { message: "Number of infant should not exceed 9" })
-        .optional(),
-      teens: z
-        .number()
-        .int()
-        .min(0)
-        .max(9, { message: "Number of infant should not exceed 9" })
-        .optional()
+      children: z.number().int().min(0).max(10, { message: "Number of children should not exceed 9" }).optional(),
+      infants: z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" }).optional(),
+      teens: z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" }).optional()
     })
   })
   .merge(SingleTourParamSchema);
@@ -163,26 +134,14 @@ export const BookingTourParamSchema = z.object({
 
 export const RatingSchema = z.object({
   ratings: z.object({
-    Location: z
-      .number()
-      .min(1, { message: "Invalid location rating" })
-      .max(5, { message: "Invalid location rating" }),
+    Location: z.number().min(1, { message: "Invalid location rating" }).max(5, { message: "Invalid location rating" }),
     Amenities: z
       .number()
       .min(1, { message: "Invalid amenities rating" })
       .max(5, { message: "Invalid amenities rating" }),
-    Food: z
-      .number()
-      .min(1, { message: "Invalid food rating" })
-      .max(5, { message: "Invalid food rating" }),
-    Room: z
-      .number()
-      .min(1, { message: "Invalid room rating" })
-      .max(5, { message: "Invalid room rating" }),
-    Price: z
-      .number()
-      .min(1, { message: "Invalid price rating" })
-      .max(5, { message: "Invalid price rating" })
+    Food: z.number().min(1, { message: "Invalid food rating" }).max(5, { message: "Invalid food rating" }),
+    Room: z.number().min(1, { message: "Invalid room rating" }).max(5, { message: "Invalid room rating" }),
+    Price: z.number().min(1, { message: "Invalid price rating" }).max(5, { message: "Invalid price rating" })
   }),
   title: z
     .string()
