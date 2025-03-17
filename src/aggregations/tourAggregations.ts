@@ -250,35 +250,48 @@ const tourAggregations = {
     const addFieldsStage = {
       $addFields: {
         calculatedPrice: {
-          $add: [
-            { $multiply: ["$price.adult", adults] },
-            { $multiply: [{ $ifNull: ["$price.teens", 0] }, teens || 0] },
-            { $multiply: [{ $ifNull: ["$price.children", 0] }, children || 0] },
-            { $multiply: [{ $ifNull: ["$price.infants", 0] }, infants || 0] }
-          ]
+          $toDouble: {
+            $add: [
+              { $multiply: ["$price.adult", adults] },
+              { $multiply: [{ $ifNull: ["$price.teens", 0] }, teens || 0] },
+              { $multiply: [{ $ifNull: ["$price.children", 0] }, children || 0] },
+              { $multiply: [{ $ifNull: ["$price.infants", 0] }, infants || 0] }
+            ]
+          }
         }
       }
     };
 
     const priceFilterStage: Record<string, any> = {};
-    if (minPrice) priceFilterStage.calculatedPrice = { $gte: minPrice };
-    if (maxPrice) {
+    if (minPrice !== undefined) priceFilterStage.calculatedPrice = { $gte: minPrice };
+    if (maxPrice !== undefined) {
       priceFilterStage.calculatedPrice = priceFilterStage.calculatedPrice
         ? { ...priceFilterStage.calculatedPrice, $lte: maxPrice }
         : { $lte: maxPrice };
     }
 
-    const facetStage: {
-      paginatedResults: any[];
-      totalCount: any[];
-      filters?: any[];
-    } = {
+    let sortStage: Record<string, number> = {};
+    switch (sortType) {
+      case "PLH":
+        sortStage = { "price.adult": 1 };
+        break;
+      case "PHL":
+        sortStage = { "price.adult": -1 };
+        break;
+      case "RLH":
+        sortStage = { averageRating: 1 };
+        break;
+      case "RHL":
+        sortStage = { averageRating: -1 };
+        break;
+    }
+
+    const facetStage: Record<string, any> = {
       paginatedResults: [
         { $match: matchStage },
         addFieldsStage,
         { $match: priceFilterStage },
-
-        // Lookup primary destination
+        ...(Object.keys(sortStage).length ? [{ $sort: sortStage }] : []),
         {
           $lookup: {
             from: "destinations",
@@ -287,13 +300,7 @@ const tourAggregations = {
             as: "destinationDetails"
           }
         },
-        {
-          $addFields: {
-            destinationData: { $arrayElemAt: ["$destinationDetails", 0] }
-          }
-        },
-
-        // Lookup state
+        { $addFields: { destinationData: { $arrayElemAt: ["$destinationDetails", 0] } } },
         {
           $lookup: {
             from: "destinations",
@@ -302,13 +309,7 @@ const tourAggregations = {
             as: "stateDetails"
           }
         },
-        {
-          $addFields: {
-            stateData: { $arrayElemAt: ["$stateDetails", 0] }
-          }
-        },
-
-        // Lookup country
+        { $addFields: { stateData: { $arrayElemAt: ["$stateDetails", 0] } } },
         {
           $lookup: {
             from: "destinations",
@@ -317,13 +318,7 @@ const tourAggregations = {
             as: "countryDetails"
           }
         },
-        {
-          $addFields: {
-            countryData: { $arrayElemAt: ["$countryDetails", 0] }
-          }
-        },
-
-        // Create destination string
+        { $addFields: { countryData: { $arrayElemAt: ["$countryDetails", 0] } } },
         {
           $addFields: {
             destination: {
@@ -337,7 +332,6 @@ const tourAggregations = {
             }
           }
         },
-
         {
           $project: {
             _id: 0,
@@ -350,7 +344,8 @@ const tourAggregations = {
             tourId: 1,
             totalRatings: 1,
             averageRating: 1,
-            destination: 1 // Single formatted string
+            destination: 1,
+            languages: 1
           }
         },
         { $skip: (page - 1) * 10 },
@@ -358,6 +353,73 @@ const tourAggregations = {
       ],
       totalCount: [{ $match: matchStage }, addFieldsStage, { $match: priceFilterStage }, { $count: "total" }]
     };
+
+    if (filters) {
+      facetStage.filters = [
+        { $match: matchStage },
+        addFieldsStage,
+        { $match: priceFilterStage },
+        {
+          $lookup: {
+            from: "destinations",
+            localField: "destinationId",
+            foreignField: "destinationId",
+            as: "destinationDetails"
+          }
+        },
+        { $addFields: { destinationData: { $arrayElemAt: ["$destinationDetails", 0] } } },
+        {
+          $lookup: {
+            from: "destinations",
+            localField: "destinationData.parentDestinationId",
+            foreignField: "destinationId",
+            as: "stateDetails"
+          }
+        },
+        { $addFields: { stateData: { $arrayElemAt: ["$stateDetails", 0] } } },
+        {
+          $lookup: {
+            from: "destinations",
+            localField: "stateData.parentDestinationId",
+            foreignField: "destinationId",
+            as: "countryDetails"
+          }
+        },
+        { $addFields: { countryData: { $arrayElemAt: ["$countryDetails", 0] } } },
+        {
+          $addFields: {
+            destination: {
+              $concat: [
+                { $ifNull: ["$destinationData.destination", ""] },
+                ", ",
+                { $ifNull: ["$stateData.destination", ""] },
+                ", ",
+                { $ifNull: ["$countryData.destination", ""] }
+              ]
+            }
+          }
+        },
+        { $unwind: { path: "$languages", preserveNullAndEmptyArrays: true } },
+        {
+          $group: {
+            _id: null,
+            specials: {
+              $addToSet: {
+                $cond: [{ $eq: ["$freeCancellation", true] }, "Free Cancellation", null]
+              }
+            },
+            languages: { $addToSet: "$languages" }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            specials: { $setDifference: ["$specials", [null]] },
+            languages: 1
+          }
+        }
+      ];
+    }
 
     const aggregationPipeline = [
       { $facet: facetStage },
