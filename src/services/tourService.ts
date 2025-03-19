@@ -1,19 +1,8 @@
-import {
-  BadRequestError,
-  GoneError,
-  ManyRequests,
-  NotFoundError,
-  ServerError
-} from "../handlers/errorHandler";
+import { BadRequestError, GoneError, ManyRequests, NotFoundError, ServerError } from "../handlers/errorHandler";
 import Tour, { TourModel } from "../models/tourModel";
 import generateId from "../utils/generateId";
 import { TourSchemaType } from "../validators/adminValidators";
-import {
-  BookingSchemaType,
-  RatingType,
-  ReserveTourType,
-  TourListingSchemaType
-} from "../validators/tourValidators";
+import { BookingSchemaType, RatingType, ReserveTourType, TourListingSchemaType } from "../validators/tourValidators";
 import tourAggregations from "../aggregations/tourAggregations";
 import Destination from "../models/destinationModel";
 import User from "../models/userModel";
@@ -28,10 +17,7 @@ import userAggregations from "../aggregations/userAggregations";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
-  const result = await Destination.find(
-    { destination: regex },
-    { _id: 0, parentDestinationId: 0, __v: 0 }
-  )
+  const result = await Destination.find({ destination: regex }, { _id: 0, parentDestinationId: 0, __v: 0 })
     .limit(5)
     .lean();
 
@@ -61,12 +47,8 @@ export const getTours = async (params: TourListingSchemaType, email?: string) =>
   const minAge = infants ? 0 : children ? 3 : teens ? 13 : 18;
   // const duration = getDuration(startDate, endDate);
 
-  const destinationResult = await Destination.aggregate(
-    tourAggregations.destinationQuery(destinationId)
-  );
-  const cityDestinationIds = destinationResult.length
-    ? destinationResult[0].destinationIds
-    : [destinationId];
+  const destinationResult = await Destination.aggregate(tourAggregations.destinationQuery(destinationId));
+  const cityDestinationIds = destinationResult.length ? destinationResult[0].destinationIds : [destinationId];
 
   const result = await Tour.aggregate(
     tourAggregations.getTours(
@@ -107,11 +89,7 @@ export const getTours = async (params: TourListingSchemaType, email?: string) =>
   return returnResult;
 };
 
-export const getToursByCategory = async (
-  params: TourListingSchemaType,
-  category: string,
-  email?: string
-) => {
+export const getToursByCategory = async (params: TourListingSchemaType, category: string, email?: string) => {
   const {
     adults,
     children,
@@ -229,7 +207,7 @@ export const reserveTour = async (reserveDetails: ReserveTourType, email: string
 };
 
 export const getReservedDetails = async (reserveId: string, email: string) => {
-  const reserved = await Reserved.findOne({ reserveId }, { _id: 0, __v: 0 }).lean();
+  const reserved = await Reserved.findOne({ reserveId }, { _id: 0, __v: 0, createdAt: 0, updatedAt: 0 }).lean();
 
   if (!reserved) throw new NotFoundError(`Reserve id ${reserveId} is not found`);
 
@@ -240,7 +218,7 @@ export const getReservedDetails = async (reserveId: string, email: string) => {
 
   const tour = await Tour.findOne(
     { tourId: reserved.tourId },
-    { duration: 1, price: 1, images: 1, name: 1, minAge: 1 }
+    { duration: 1, price: 1, images: 1, name: 1, minAge: 1, _id: 0 }
   ).lean();
 
   const { tourId: _, userId: __, ...reservedDetails } = reserved;
@@ -252,16 +230,11 @@ export const getBooking = async (bookingId: string, email: string) => {
   if (!booking) throw new NotFoundError(`Booking for booking id ${bookingId} not found`);
 
   const tour = await Tour.findOne({ tourId: booking.tourId }).lean({ name: 1, duration: 1 });
-  if (!tour)
-    throw new NotFoundError(
-      `Booked tour with id ${booking.tourId} not found for booking ${bookingId}`
-    );
+  if (!tour) throw new NotFoundError(`Booked tour with id ${booking.tourId} not found for booking ${bookingId}`);
 
   const user = await User.findOne({ email }, { _id: 1 }).lean();
   if (String(user?._id) !== String(booking.userId))
-    throw new NotFoundError(
-      `${email} tried to access booking ${booking.bookingId} which was done by ${user?.email}`
-    ); // We are sending 404 instead of bad request to confuse user that there is no booking with this id, so it will prevent someone who tries to enumerate booking details
+    throw new NotFoundError(`${email} tried to access booking ${booking.bookingId} which was done by ${user?.email}`); // We are sending 404 instead of bad request to confuse user that there is no booking with this id, so it will prevent someone who tries to enumerate booking details
 
   const payment = booking.transaction.history[booking.transaction.history.length - 1];
   return {
@@ -271,9 +244,7 @@ export const getBooking = async (bookingId: string, email: string) => {
     email: booking.bookerInfo.email,
     status: booking.bookingStatus,
     freeCancellation:
-      tour.freeCancellation &&
-      booking.bookingStatus !== "canceled" &&
-      booking.bookingStatus !== "failed",
+      tour.freeCancellation && booking.bookingStatus !== "canceled" && booking.bookingStatus !== "failed",
     isCancellable: new Date().getTime() < booking.startDate.getTime(),
     amount: payment.amount,
     amountPaid: payment.status === "success" ? payment.amount : 0,
@@ -296,11 +267,7 @@ export const getBooking = async (bookingId: string, email: string) => {
   };
 };
 
-export const bookReservedTour = async (
-  tourData: BookingSchemaType,
-  reserveId: string,
-  email: string
-) => {
+export const bookReservedTour = async (tourData: BookingSchemaType, reserveId: string, email: string) => {
   const reservedTour = await Reserved.findOne({ reserveId });
   if (!reservedTour) throw new BadRequestError(`Invalid booking for reserve id ${reserveId}`);
 
@@ -308,14 +275,11 @@ export const bookReservedTour = async (
   if (!user) throw new BadRequestError(`Invalid user id ${reservedTour.userId} used for booking`);
 
   if (String(reservedTour.userId) !== String(user._id) || user.email !== email)
-    throw new BadRequestError(
-      `Invalid user id ${String(user._id)} or reserve id ${reserveId} used for booking`
-    );
+    throw new BadRequestError(`Invalid user id ${String(user._id)} or reserve id ${reserveId} used for booking`);
 
   const now = new Date();
   const currency = "USD";
-  if (reservedTour.expiresAt < now.getTime())
-    throw new GoneError(`Reservation ${reservedTour.id} is timed out`);
+  if (reservedTour.expiresAt < now.getTime()) throw new GoneError(`Reservation ${reservedTour.id} is timed out`);
 
   const existingBooking = await Booking.findOne({ reserveId: reservedTour._id });
   if (existingBooking && existingBooking.attempts === MAX_BOOKING_RETRY)
@@ -395,9 +359,7 @@ export const bookReservedTour = async (
 export const cancelBookedTour = async (bookingId: string, email: string) => {
   const booking = await Booking.findOne({ bookingId });
   if (!booking)
-    throw new BadRequestError(
-      `Cancellation request for booking id ${bookingId} failed, ${bookingId} does not exist`
-    );
+    throw new BadRequestError(`Cancellation request for booking id ${bookingId} failed, ${bookingId} does not exist`);
 
   const user = await User.findOne({ email }, { _id: 1 }).lean();
   const tour = await Tour.findOne({ tourId: booking.tourId }, { name: 1, destinationId: 1 }).lean();
@@ -406,10 +368,7 @@ export const cancelBookedTour = async (bookingId: string, email: string) => {
       `Invalid email ${email} tried to cancel booking ${booking.bookingId} which was done by ${user?.email}`
     ); // We are sending 404 instead of bad request to confuse user that there is no booking with this id, so it will prevent someone who tries to enumerate booking details
 
-  if (!tour)
-    throw new NotFoundError(
-      `Invalid tour id ${booking.tourId} is stored for booking ${booking.bookingId}`
-    );
+  if (!tour) throw new NotFoundError(`Invalid tour id ${booking.tourId} is stored for booking ${booking.bookingId}`);
 
   if (booking.bookingStatus === "success") {
     const payment = booking.transaction.history[booking.transaction.history.length - 1];
@@ -417,15 +376,10 @@ export const cancelBookedTour = async (bookingId: string, email: string) => {
     booking.transaction.paymentStatus = "refunded";
   }
 
-  const destination = await Destination.findOne(
-    { destinationId: tour.destinationId },
-    { destination: 1 }
-  ).lean();
+  const destination = await Destination.findOne({ destinationId: tour.destinationId }, { destination: 1 }).lean();
 
   if (!destination)
-    throw new ServerError(
-      `Invalid destination id ${tour.destinationId} from tour with id ${booking.tourId}`
-    );
+    throw new ServerError(`Invalid destination id ${tour.destinationId} from tour with id ${booking.tourId}`);
 
   booking.bookingStatus = "canceled";
   const { error } = await sendBookingMail({
@@ -441,8 +395,7 @@ export const tourReview = async (review: RatingType, tourId: string, email: stri
   const user = await User.findOne({ email }, { _id: 1 }).lean();
   const tour = await Tour.findOne({ tourId }, { _id: 1 }).lean();
   if (!user) throw new BadRequestError(`User with ${email} does not exist and tried to put review`);
-  if (!tour)
-    throw new BadRequestError(`Tour with ${tourId} does not exist and happened to put review`);
+  if (!tour) throw new BadRequestError(`Tour with ${tourId} does not exist and happened to put review`);
   await Review.create({
     userId: user._id,
     tourId: tour._id,
@@ -454,20 +407,14 @@ export const tourReview = async (review: RatingType, tourId: string, email: stri
   if (result.length > 0) {
     const { totalRatings, averageRating } = result[0];
 
-    await Tour.findByIdAndUpdate(
-      tour._id,
-      { totalRatings, averageRating },
-      { new: true, runValidators: true }
-    );
+    await Tour.findByIdAndUpdate(tour._id, { totalRatings, averageRating }, { new: true, runValidators: true });
   }
 };
 
 export const getTourReview = async (tourId: string) => {
   const tourDb = await Tour.findOne({ tourId }, { _id: 1 }).lean();
   if (!tourDb) {
-    throw new BadRequestError(
-      `Tour with ${tourId} id does not exist and happened to access review`
-    );
+    throw new BadRequestError(`Tour with ${tourId} id does not exist and happened to access review`);
   }
 
   const reviews = await Review.aggregate(tourAggregations.getReviews(tourDb._id));

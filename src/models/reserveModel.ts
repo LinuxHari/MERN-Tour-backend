@@ -29,7 +29,8 @@ export const reservedSchema = new mongoose.Schema(
     },
     passengers: {
       type: passengerSchema,
-      required: true
+      required: true,
+      _id: false
     },
     reserveId: {
       type: String,
