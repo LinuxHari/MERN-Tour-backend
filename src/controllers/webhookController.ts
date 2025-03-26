@@ -36,10 +36,10 @@ export const stripeWebhook = asyncWrapper(async (req: Request, res: Response) =>
 
 export const upstashWebhook = asyncWrapper(async (req: Request, res: Response) => {
   const signature = req.headers["upstash-signature"] as string;
-  const isValidData = await upstashValidate({ signature, body: req.body });
-  if (!isValidData) {
-    throw new BadRequestError(`Invalid signature from upstash ${signature}`);
-  }
+  // const isValidData = await upstashValidate({ signature, body: req.body });
+  // if (!isValidData) {
+  //   throw new BadRequestError(`Invalid signature from upstash ${signature}`);
+  // }
 
   const { eventType, reserveId } = JSON.parse(req.body) as upstashPublishData["body"];
   switch (eventType) {
