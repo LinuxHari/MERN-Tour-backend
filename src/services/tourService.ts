@@ -1,4 +1,11 @@
-import { BadRequestError, GoneError, ManyRequests, NotFoundError, ServerError } from "../handlers/errorHandler";
+import {
+  BadRequestError,
+  ConflictError,
+  GoneError,
+  ManyRequests,
+  NotFoundError,
+  ServerError
+} from "../handlers/errorHandler";
 import Tour, { TourModel } from "../models/tourModel";
 import generateId from "../utils/generateId";
 import { TourSchemaType } from "../validators/adminValidators";
@@ -14,6 +21,10 @@ import getDuration from "../utils/getDuration";
 import Review from "../models/reviewModel";
 import { sendBookingMail } from "./emailService";
 import userAggregations from "../aggregations/userAggregations";
+import Availability from "../models/availabilityModel";
+import { upstashPublish } from "./upstashService";
+import envConfig from "../config/envConfig";
+import mongoose from "mongoose";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
@@ -32,7 +43,7 @@ export const getTours = async (params: TourListingSchemaType, email?: string) =>
     infants,
     teens,
     page,
-    // startDate,
+    startDate,
     // endDate,
     filters,
     sortType,
@@ -51,7 +62,7 @@ export const getTours = async (params: TourListingSchemaType, email?: string) =>
   const cityDestinationIds = destinationResult.length ? destinationResult[0].destinationIds : [destinationId];
 
   const result = await Tour.aggregate(
-    tourAggregations.getTours(
+    tourAggregations.getTours({
       cityDestinationIds,
       minAge,
       page,
@@ -66,8 +77,10 @@ export const getTours = async (params: TourListingSchemaType, email?: string) =>
       tourTypes,
       specials,
       languages,
-      sortType
-    )
+      sortType,
+      date: new Date(startDate)
+    }),
+    { hint: { destinationId: 1, minAge: 1 }, $allowDiskUse: true }
   );
 
   const returnResult = result[0];
@@ -90,43 +103,21 @@ export const getTours = async (params: TourListingSchemaType, email?: string) =>
 };
 
 export const getToursByCategory = async (params: TourListingSchemaType, category: string, email?: string) => {
-  const {
-    adults,
-    children,
-    infants,
-    teens,
-    page,
-    // startDate,
-    // endDate,
-    filters,
-    sortType,
-    specials,
-    languages,
-    rating,
-    minPrice,
-    maxPrice
-  } = params;
-
-  const minAge = infants ? 0 : children ? 3 : teens ? 13 : 18;
-  // const duration = getDuration(startDate, endDate);
+  const { page, filters, sortType, specials, languages, rating, minPrice, maxPrice } = params;
 
   const result = await Tour.aggregate(
-    tourAggregations.getToursByCategory(
+    tourAggregations.getToursByCategory({
       category,
-      minAge,
       page,
       filters,
-      adults,
-      teens,
-      children,
-      infants,
       rating,
       minPrice,
       maxPrice,
       specials,
       languages,
       sortType
-    )
+    }),
+    { hint: { category: 1 }, $allowDiskUse: true }
   );
 
   const returnResult = result[0];
@@ -172,38 +163,77 @@ export const updateTour = async (tourId: string, tourData: TourSchemaType) => {
 };
 
 export const reserveTour = async (reserveDetails: ReserveTourType, email: string) => {
-  const reserveId = generateId();
-  const { startDate, endDate, tourId, pax } = reserveDetails;
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  const userId = await User.findOne({ email }, { _id: 1 }).lean();
-  if (!userId) throw new NotFoundError(`User with ${email} email not found`);
+  try {
+    const reserveId = generateId();
+    const { startDate, endDate, tourId, pax } = reserveDetails;
 
-  const tour = await Tour.findOne({ tourId }, { price: 1 });
-  if (!tour) throw new NotFoundError(`Tour with ${tourId} id not found`);
+    const user = await User.findOne({ email }, { _id: 1 }).lean().session(session);
+    if (!user) throw new NotFoundError(`User with ${email} email not found`);
 
-  // Calculating total amount as we have different price for different age categories
-  const totalAmount = (() => {
+    const tour = await Tour.findOne({ tourId }, { price: 1 }).session(session);
+    if (!tour) throw new NotFoundError(`Tour with ${tourId} id not found`);
+
+    const totalPassengers = pax.adults + (pax?.teens || 0) + (pax?.children || 0) + (pax?.infants || 0);
+
+    startDate.setUTCHours(0, 0, 0, 0);
+
+    const availabilityDetails = await Availability.findOne({
+      tourId,
+      date: {
+        $gte: startDate,
+        $lt: new Date(startDate.getTime() + 24 * 60 * 60 * 1000)
+      }
+    }).session(session);
+
+    if (!availabilityDetails) throw new NotFoundError(`Availability for tour ${tourId} not found`);
+
+    if (availabilityDetails.availableSeats < totalPassengers) throw new ConflictError("Tour is not available");
+
     const { price } = tour;
     let totalAmount = pax.adults * price.adult;
     if (price?.teen) totalAmount += price.teen * (pax.teens || 0);
     if (price?.child) totalAmount += price.child * (pax.children || 0);
     if (price?.infant) totalAmount += price.infant * (pax.infants || 0);
-    return totalAmount;
-  })();
 
-  const now = new Date();
-  const expiresAt = new Date(now.setMinutes(now.getMinutes() + 10)).getTime();
-  await Reserved.create({
-    tourId,
-    reserveId,
-    startDate,
-    endDate,
-    userId,
-    passengers: pax,
-    expiresAt,
-    totalAmount
-  });
-  return reserveId;
+    const now = new Date();
+    const expiresAt = new Date(now.setMinutes(now.getMinutes() + 10)).getTime();
+
+    await Reserved.create(
+      [
+        {
+          tourId,
+          reserveId,
+          startDate,
+          endDate,
+          userId: user._id,
+          passengers: pax,
+          expiresAt,
+          totalAmount
+        }
+      ],
+      { session }
+    );
+
+    availabilityDetails.availableSeats -= totalPassengers;
+    await availabilityDetails.save({ session });
+
+    await upstashPublish({
+      body: { eventType: "reserve", reserveId },
+      delay: 12 * 60
+    });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return reserveId;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
 };
 
 export const getReservedDetails = async (reserveId: string, email: string) => {
@@ -435,4 +465,10 @@ export const getTopTrendingTours = async () => {
   if (!tours.length) throw new NotFoundError("No popular tours found");
 
   return tours;
+};
+
+export const getSingleTourAvailability = async (tourId: string) => {
+  const availability = await Availability.find({ tourId }, { date: 1, availableSeats: 1, _id: 0 }).lean();
+  if (!availability.length) throw new NotFoundError(`No availability found for tour ${tourId}`);
+  return availability;
 };

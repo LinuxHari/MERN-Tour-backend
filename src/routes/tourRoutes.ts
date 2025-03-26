@@ -5,6 +5,7 @@ import {
   cancelBooking,
   getPopularTours,
   getReview,
+  getTourAvailability,
   getTrendingTours,
   reserve,
   reservedDetails,
@@ -33,18 +34,8 @@ const router = Router();
 
 router.get("/search", requestHandler(SearchSuggestionSchema, "query"), search);
 router.post("/reserve", verifyAuthToken, requestHandler(ReserveTourSchema), reserve);
-router.get(
-  "/reserve/:reserveId",
-  verifyAuthToken,
-  requestHandler(ReserveTourParamSchema, "params"),
-  reservedDetails
-);
-router.get(
-  "/book/:bookingId",
-  verifyAuthToken,
-  requestHandler(BookingTourParamSchema, "params"),
-  bookedTour
-);
+router.get("/reserve/:reserveId", verifyAuthToken, requestHandler(ReserveTourParamSchema, "params"), reservedDetails);
+router.get("/book/:bookingId", verifyAuthToken, requestHandler(BookingTourParamSchema, "params"), bookedTour);
 router.post(
   "/book/:reserveId",
   verifyAuthToken,
@@ -75,6 +66,8 @@ router.get(
   requestHandler(ToursByCategorySchema, "query"),
   toursByCategory
 );
+
+router.get("/:tourId/availability", requestHandler(SingleTourParamSchema, "params"), getTourAvailability);
 
 router.get("/", requestHandler(TourListingSchema, "query"), tours);
 router.get("/:tourId", requestHandler(SingleTourParamSchema, "params"), tour);

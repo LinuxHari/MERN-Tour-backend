@@ -14,6 +14,8 @@ const app = express();
 
 app.use(helmet());
 
+app.use("/webhook", webhookRoutes);
+
 const limiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 30
@@ -34,8 +36,6 @@ app.use(
     credentials: true
   })
 );
-
-app.use("/webhook", webhookRoutes);
 
 app.use(express.json());
 

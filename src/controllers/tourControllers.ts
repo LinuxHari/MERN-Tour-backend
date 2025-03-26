@@ -4,6 +4,7 @@ import {
   cancelBookedTour,
   getBooking,
   getReservedDetails,
+  getSingleTourAvailability,
   getTopPopularTours,
   getTopTrendingTours,
   getTour,
@@ -59,11 +60,7 @@ export const bookedTour = asyncWrapper(async (req: Request, res: Response) => {
 });
 
 export const bookTour = asyncWrapper(async (req: Request, res: Response) => {
-  const { clientSecret, bookingId } = await bookReservedTour(
-    req.body,
-    req.params.reserveId,
-    res.locals.email
-  );
+  const { clientSecret, bookingId } = await bookReservedTour(req.body, req.params.reserveId, res.locals.email);
   responseHandler.ok(res, { clientSecret, bookingId });
 });
 
@@ -90,4 +87,10 @@ export const getPopularTours = asyncWrapper(async (_: Request, res: Response) =>
 export const getTrendingTours = asyncWrapper(async (_: Request, res: Response) => {
   const tours = await getTopTrendingTours();
   responseHandler.ok(res, tours);
+});
+
+export const getTourAvailability = asyncWrapper(async (req: Request, res: Response) => {
+  const tourId = req.params.tourId;
+  const availability = await getSingleTourAvailability(tourId);
+  responseHandler.ok(res, availability);
 });
