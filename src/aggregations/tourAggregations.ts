@@ -629,6 +629,52 @@ const tourAggregations = {
       }
     },
     {
+      $lookup: {
+        from: "availabilities",
+        localField: "tourId",
+        foreignField: "tourId",
+        as: "availability"
+      }
+    },
+    {
+      $addFields: {
+        availableDates: {
+          $map: {
+            input: {
+              $filter: {
+                input: "$availability",
+                as: "av",
+                cond: {
+                  $gte: [
+                    "$$av.date",
+                    {
+                      $dateAdd: {
+                        startDate: {
+                          $dateFromParts: {
+                            year: { $year: new Date() },
+                            month: { $month: new Date() },
+                            day: { $dayOfMonth: new Date() },
+                            hour: 0,
+                            minute: 0,
+                            second: 0,
+                            millisecond: 0
+                          }
+                        },
+                        unit: "day",
+                        amount: 3
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            as: "av",
+            in: "$$av.date"
+          }
+        }
+      }
+    },
+    {
       $project: {
         _id: 0,
         markAsDeleted: 0,
@@ -636,6 +682,7 @@ const tourAggregations = {
         submissionStatus: 0,
         publisherId: 0,
         destinationId: 0,
+        availability: 0,
         "cityDetails._id": 0,
         "stateDetails._id": 0,
         "countryDetails._id": 0,

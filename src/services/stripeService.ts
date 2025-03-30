@@ -95,9 +95,7 @@ export const stripeSuccess = async ({ amountCharged, userId, bookingId, data }: 
     if (!existingBooking || userId !== String(existingBooking.userId))
       throw new NotFoundError(`Existing Booking with ${bookingId} is not found for stripe success`);
 
-    const reservation = await Reserved.findOne({ reserveId: existingBooking.reserveId }, { expiresAt: 1 }).session(
-      session
-    );
+    const reservation = await Reserved.findById(existingBooking.reserveId, { expiresAt: 1 }).session(session);
     if (!reservation)
       throw new ServerError(`Reservation for ${existingBooking.bookingId} is not found in stripe success`);
 

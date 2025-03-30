@@ -38,7 +38,7 @@ const bookingTemplate = (booking: EmailBooking) => {
                 } 
 
                 <div style="text-align: center; margin-bottom: 30px;"> 
-                    <h1 style="color: #1A1B3D; font-size: 24px; margin-bottom: 10px;">${booking.bookerInfo.name}, your tour is ${isSuccess ? "confirmed" : "canceled"} successfully!</h1> 
+                    <h1 style="color: #1A1B3D; font-size: 24px; margin-bottom: 10px;">${booking.bookerInfo.name}, your tour is ${isSuccess ? "confirmed successfully!" : "canceled!"}</h1> 
                 </div> 
 
                 <div style="border: 1px dashed #F26B3C; border-radius: 8px; padding: 20px; margin-bottom: 30px;"> 

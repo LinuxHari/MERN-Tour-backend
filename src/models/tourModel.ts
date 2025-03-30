@@ -1,5 +1,5 @@
 import mongoose, { InferSchemaType } from "mongoose";
-import { CATEGORIES, LANGUAGES, MIN_AGE, SUBMISSION_STATUS } from "../config/tourConfig";
+import { CATEGORIES, LANGUAGES, MIN_AGE } from "../config/tourConfig";
 import { modelOptions } from "../config/modelConfig";
 
 const itineraryType = {
@@ -129,20 +129,20 @@ const tourSchema = new mongoose.Schema(
       type: String,
       required: true
     },
-    publisher: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Users",
-      required: true
-    },
-    recurringEndDate: {
-      type: Date,
-      required: true
-    },
-    submissionStatus: {
-      type: String,
-      required: true,
-      enum: SUBMISSION_STATUS
-    },
+    // publisher: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Users",
+    //   required: true
+    // },
+    // recurringEndDate: {
+    //   type: Date,
+    //   required: true
+    // },
+    // submissionStatus: {
+    //   type: String,
+    //   required: true,
+    //   enum: SUBMISSION_STATUS
+    // },
     freeCancellation: {
       type: Boolean,
       default: false

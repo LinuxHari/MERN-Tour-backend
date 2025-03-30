@@ -190,34 +190,18 @@ export const BaseTourSchema = z.object({
     alcoholicBeverages: z.boolean()
   }),
 
-  minAge: z
-    .string()
-    .transform((age) => parseInt(age, 10))
-    .pipe(
-      z.union(
-        [
-          z.literal(allowedAges[0]),
-          z.literal(allowedAges[1]),
-          z.literal(allowedAges[2]),
-          z.literal(allowedAges[3])
-        ],
-        {
-          message: "Invalid age is selected"
-        }
-      )
-    ),
-
+  minAge: z.union([
+    z.literal(allowedAges[0]),
+    z.literal(allowedAges[1]),
+    z.literal(allowedAges[2]),
+    z.literal(allowedAges[3])
+  ]),
   images: z
     .array(
       z
         .string()
         .transform(removeSpaces)
-        .pipe(
-          z
-            .string()
-            .min(30, { message: "Invalid image url" })
-            .max(400, { message: "Invalid image url too long" })
-        )
+        .pipe(z.string().min(30, { message: "Invalid image url" }).max(400, { message: "Invalid image url too long" }))
     )
     .min(2, { message: "Atleast 2 images needed" })
     .max(10, { message: "Can't upload more than 10 images" }),
@@ -227,7 +211,25 @@ export const BaseTourSchema = z.object({
     .refine((value) => value === "yes" || value === "no", {
       message: "Invalid value provided"
     })
-    .default("yes")
+    .default("yes"),
+  availableDates: z
+    .array(z.string(), { message: "Invalid dates are passed" })
+    .min(1, { message: "Minimum one available date should be selected." })
+    .max(400, { message: "Available dates cannot be more than 400" })
+    .transform((dates) =>
+      dates.map((dateStr) => {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) throw new Error("Invalid date format");
+
+        date.setUTCHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0);
+
+        if (date < today) throw new Error("Dates cannot be in the past.");
+
+        return date;
+      })
+    )
 });
 
 export const TourSchema = BaseTourSchema.extend(LocationSchema.shape);

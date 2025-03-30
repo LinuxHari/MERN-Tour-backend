@@ -23,7 +23,6 @@ import { sendBookingMail } from "./emailService";
 import userAggregations from "../aggregations/userAggregations";
 import Availability from "../models/availabilityModel";
 import { upstashPublish } from "./upstashService";
-import envConfig from "../config/envConfig";
 import mongoose from "mongoose";
 
 export const searchSuggestions = async (searchText: string) => {
@@ -153,10 +152,7 @@ export const updateTour = async (tourId: string, tourData: TourSchemaType) => {
 
   const updatedTour = {
     ...tourData,
-    duration: tourData.itinerary.length,
-    submissionStatus: existingTour.submissionStatus,
-    recurringEndDate: existingTour.recurringEndDate,
-    publisher: existingTour.publisher
+    duration: tourData.itinerary.length
   };
 
   await Tour.updateOne({ tourId }, updatedTour, { runValidators: true });
@@ -392,12 +388,12 @@ export const cancelBookedTour = async (bookingId: string, email: string) => {
     throw new BadRequestError(`Cancellation request for booking id ${bookingId} failed, ${bookingId} does not exist`);
 
   const user = await User.findOne({ email }, { _id: 1 }).lean();
-  const tour = await Tour.findOne({ tourId: booking.tourId }, { name: 1, destinationId: 1 }).lean();
   if (String(user?._id) !== String(booking.userId))
     throw new NotFoundError(
       `Invalid email ${email} tried to cancel booking ${booking.bookingId} which was done by ${user?.email}`
     ); // We are sending 404 instead of bad request to confuse user that there is no booking with this id, so it will prevent someone who tries to enumerate booking details
 
+  const tour = await Tour.findOne({ tourId: booking.tourId }, { name: 1, destinationId: 1 }).lean();
   if (!tour) throw new NotFoundError(`Invalid tour id ${booking.tourId} is stored for booking ${booking.bookingId}`);
 
   if (booking.bookingStatus === "success") {
