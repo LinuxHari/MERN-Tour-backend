@@ -138,7 +138,6 @@ const cancelBookedTour = async (bookingId: string, session: mongoose.ClientSessi
   });
 
   booking.emailStatus = error ? "failed" : "sent";
-  console.log(`booking for ${bookingId} is canceled`);
   await booking.save({ session });
 };
 

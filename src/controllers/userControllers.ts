@@ -8,8 +8,10 @@ import {
   getUserBookings,
   getUserInfo,
   removeFavoriteTour,
+  sendUserVerificationMail,
   updateUserPassword,
-  updateUserProfile
+  updateUserProfile,
+  verifyUserEmail
 } from "../services/userService";
 import responseHandler from "../handlers/responseHandler";
 import { BookingStatusSchemaType } from "../validators/userValidators";
@@ -43,6 +45,16 @@ export const logout = asyncWrapper(async (_: Request, res: Response) => {
   });
 
   res.send();
+});
+
+export const verifyEmail = asyncWrapper(async (req: Request, res: Response) => {
+  await verifyUserEmail(req.body.authToken);
+  responseHandler.ok(res, { message: "success" });
+});
+
+export const sendVerificationMail = asyncWrapper(async (req: Request, res: Response) => {
+  await sendUserVerificationMail(req.body.email);
+  responseHandler.ok(res, { message: "success" });
 });
 
 export const userInfo = asyncWrapper(async (_: Request, res: Response) => {

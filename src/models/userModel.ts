@@ -53,6 +53,10 @@ const userSchema = new mongoose.Schema({
   publishedTours: {
     type: [mongoose.Schema.Types.ObjectId],
     ref: "Tours"
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
   }
 });
 

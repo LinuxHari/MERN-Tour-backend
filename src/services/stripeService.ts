@@ -47,8 +47,7 @@ export const stripeCreate = async ({ amount, currency, bookingId, userId }: Stri
 export const stripeValidate = ({ data, signature }: StripeValidateParam) => {
   try {
     return Stripe.webhooks.constructEvent(data, signature, envConfig.stripeWebhookSecret as string);
-  } catch (err) {
-    console.log(err);
+  } catch (_) {
     throw new BadRequestError("Invalid signature");
   }
 };

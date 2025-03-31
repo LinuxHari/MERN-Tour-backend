@@ -1,6 +1,6 @@
 export type JwtData = {
   email: string;
-  role: string;
+  role?: string;
 };
 
 export type upstashData = {

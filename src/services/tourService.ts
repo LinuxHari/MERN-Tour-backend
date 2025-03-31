@@ -166,7 +166,7 @@ export const reserveTour = async (reserveDetails: ReserveTourType, email: string
     const reserveId = generateId();
     const { startDate, endDate, tourId, pax } = reserveDetails;
 
-    const user = await User.findOne({ email }, { _id: 1 }).lean().session(session);
+    const user = await User.findOne({ email, isVerified: true }, { _id: 1 }).lean().session(session);
     if (!user) throw new NotFoundError(`User with ${email} email not found`);
 
     const tour = await Tour.findOne({ tourId }, { price: 1 }).session(session);
@@ -238,7 +238,7 @@ export const getReservedDetails = async (reserveId: string, email: string) => {
   if (!reserved) throw new NotFoundError(`Reserve id ${reserveId} is not found`);
 
   const user = await User.findById(reserved.userId).lean({ email: 1 }); // Prevent someone else other than reserved user intercepts with valid reserve id
-  if (user?.email !== email) throw new BadRequestError(`Reserve id ${reserveId} is not valid`);
+  if (user?.email !== email || !user.isVerified) throw new BadRequestError(`Reserve id ${reserveId} is not valid`);
 
   reserved.expiresAt = reserved.expiresAt - 60000; // We are sending expire time one minute less than stored time since submission backend process may go upto 1 minute
 
@@ -258,7 +258,7 @@ export const getBooking = async (bookingId: string, email: string) => {
   const tour = await Tour.findOne({ tourId: booking.tourId }).lean({ name: 1, duration: 1 });
   if (!tour) throw new NotFoundError(`Booked tour with id ${booking.tourId} not found for booking ${bookingId}`);
 
-  const user = await User.findOne({ email }, { _id: 1 }).lean();
+  const user = await User.findOne({ email, isVerified: true }, { _id: 1 }).lean();
   if (String(user?._id) !== String(booking.userId))
     throw new NotFoundError(`${email} tried to access booking ${booking.bookingId} which was done by ${user?.email}`); // We are sending 404 instead of bad request to confuse user that there is no booking with this id, so it will prevent someone who tries to enumerate booking details
 
@@ -298,7 +298,7 @@ export const bookReservedTour = async (tourData: BookingSchemaType, reserveId: s
   if (!reservedTour) throw new BadRequestError(`Invalid booking for reserve id ${reserveId}`);
 
   const user = await User.findById(reservedTour.userId, { _id: 1, email: 1 }).lean();
-  if (!user) throw new BadRequestError(`Invalid user id ${reservedTour.userId} used for booking`);
+  if (!user || !user.isVerified) throw new BadRequestError(`Invalid user id ${reservedTour.userId} used for booking`);
 
   if (String(reservedTour.userId) !== String(user._id) || user.email !== email)
     throw new BadRequestError(`Invalid user id ${String(user._id)} or reserve id ${reserveId} used for booking`);
@@ -387,7 +387,7 @@ export const cancelBookedTour = async (bookingId: string, email: string) => {
   if (!booking)
     throw new BadRequestError(`Cancellation request for booking id ${bookingId} failed, ${bookingId} does not exist`);
 
-  const user = await User.findOne({ email }, { _id: 1 }).lean();
+  const user = await User.findOne({ email, isVerified: true }, { _id: 1 }).lean();
   if (String(user?._id) !== String(booking.userId))
     throw new NotFoundError(
       `Invalid email ${email} tried to cancel booking ${booking.bookingId} which was done by ${user?.email}`
@@ -418,7 +418,7 @@ export const cancelBookedTour = async (bookingId: string, email: string) => {
 };
 
 export const tourReview = async (review: RatingType, tourId: string, email: string) => {
-  const user = await User.findOne({ email }, { _id: 1 }).lean();
+  const user = await User.findOne({ email, isVerified: true }, { _id: 1 }).lean();
   const tour = await Tour.findOne({ tourId }, { _id: 1 }).lean();
   if (!user) throw new BadRequestError(`User with ${email} does not exist and tried to put review`);
   if (!tour) throw new BadRequestError(`Tour with ${tourId} does not exist and happened to put review`);

@@ -16,6 +16,11 @@ const bookingTemplate = (booking: EmailBooking) => {
     <title>Booking ${isSuccess ? "Confirmation" : "Cancellation"}</title> 
 </head> 
 <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;"> 
+   <div>
+   <a href=${envConfig.frontend}>
+   <img src="https://firebasestorage.googleapis.com/v0/b/mern-tours-e23a8.appspot.com/o/assets%2Flogo-1.svg?alt=media&amp;token=abbcab85-1eed-4fdd-9ee5-cd4653407341" alt="Viatours" style="display: block;"><span style="font-size: 0.5rem;">Adventure Awaits! Let's Begin</span>
+   </a>
+   </div>
     <table cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px; width: 100%;"> 
         <tr> 
             <td> 

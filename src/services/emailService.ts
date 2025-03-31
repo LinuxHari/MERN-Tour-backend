@@ -2,6 +2,7 @@ import nodeMailer from "nodemailer";
 import envConfig from "../config/envConfig";
 import bookingTemplate from "../templates/bookingTemplate";
 import { BookingType } from "../models/bookingModel";
+import verificationTemplate from "../templates/verificationTemplate";
 
 export type EmailBooking = BookingType & { tourName: string; destination: string };
 
@@ -25,6 +26,20 @@ export const sendBookingMail = async (booking: EmailBooking) => {
     });
     return { error: false };
   } catch (err) {
+    return { error: true };
+  }
+};
+
+export const sendVerificationMail = async (email: string, token: string, name: string) => {
+  try {
+    await transporter.sendMail({
+      from: envConfig.emailUser,
+      to: email,
+      subject: "Email Verification",
+      html: verificationTemplate(token, name)
+    });
+    return { error: false };
+  } catch (_) {
     return { error: true };
   }
 };

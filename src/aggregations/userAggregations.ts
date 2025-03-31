@@ -38,12 +38,7 @@ const userAggregations = {
           imgUrl: { $arrayElemAt: ["$tourDetails.images", 0] }
         },
         passengers: {
-          $sum: [
-            "$passengers.adults",
-            "$passengers.teens",
-            "$passengers.children",
-            "$passengers.infants"
-          ]
+          $sum: ["$passengers.adults", "$passengers.teens", "$passengers.children", "$passengers.infants"]
         },
         bookingId: 1,
         bookedDate: "$createdAt",
@@ -66,11 +61,7 @@ const userAggregations = {
       $limit: limit
     }
   ],
-  getFavoriteTours: (
-    tourIds: mongoose.Types.ObjectId[],
-    page: number,
-    limit: number
-  ): PipelineStage[] => [
+  getFavoriteTours: (tourIds: mongoose.Types.ObjectId[], page: number, limit: number): PipelineStage[] => [
     {
       $match: {
         _id: { $in: tourIds },
@@ -156,7 +147,7 @@ const userAggregations = {
   ],
   getFavoriteToursIds: (email: string) => [
     {
-      $match: { email }
+      $match: { email, isVerified: true }
     },
     {
       $lookup: {
