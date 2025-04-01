@@ -297,7 +297,7 @@ export const bookReservedTour = async (tourData: BookingSchemaType, reserveId: s
   const reservedTour = await Reserved.findOne({ reserveId });
   if (!reservedTour) throw new BadRequestError(`Invalid booking for reserve id ${reserveId}`);
 
-  const user = await User.findById(reservedTour.userId, { _id: 1, email: 1 }).lean();
+  const user = await User.findById(reservedTour.userId, { _id: 1, email: 1, isVerified: 1 }).lean();
   if (!user || !user.isVerified) throw new BadRequestError(`Invalid user id ${reservedTour.userId} used for booking`);
 
   if (String(reservedTour.userId) !== String(user._id) || user.email !== email)
