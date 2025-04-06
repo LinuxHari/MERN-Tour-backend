@@ -72,7 +72,7 @@ export const stripeAuthorized = async (bookingId: string) => {
   const existingBooking = await Booking.findById(bookingId);
   if (!existingBooking)
     throw new NotFoundError(`Existing Booking with ${bookingId} is not found for stripe authorization`);
-  existingBooking.bookingStatus = "init";
+  existingBooking.bookingStatus = "pending";
   await existingBooking.save();
 };
 
@@ -128,6 +128,10 @@ export const stripeSuccess = async ({
     payment.refundableAmount = tour.freeCancellation
       ? payment.amount
       : calcPercentage(payment.amount, NON_FREE_REFUND_CHARGE);
+
+    payment.baseRefundableAmount = tour.freeCancellation
+      ? payment.baseAmount
+      : calcPercentage(payment.baseAmount, NON_FREE_REFUND_CHARGE);
 
     payment.status = "success";
     payment.currency = currency;

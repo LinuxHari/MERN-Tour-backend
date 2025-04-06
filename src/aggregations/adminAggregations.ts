@@ -7,29 +7,49 @@ const adminAggregations = {
     const startOfThisYear = new Date(now.getFullYear(), 0, 1);
     const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
     const firstDayOfMonth = startOfThisMonth.getDay();
 
     return [
-      { $unwind: "$transaction.history" },
       {
         $project: {
-          amount: "$transaction.history.baseAmount",
-          status: "$transaction.history.status",
-          attemptDate: "$transaction.history.attemptDate",
-          bookingStatus: "$bookingStatus",
-          year: { $year: "$transaction.history.attemptDate" },
-          month: { $month: "$transaction.history.attemptDate" },
-          day: { $dayOfMonth: "$transaction.history.attemptDate" },
+          transaction: {
+            $let: {
+              vars: {
+                history: {
+                  $cond: [{ $isArray: "$transaction.history" }, "$transaction.history", []]
+                }
+              },
+              in: {
+                latest: {
+                  $arrayElemAt: ["$$history", -1]
+                }
+              }
+            }
+          },
+          bookingStatus: 1,
+          paymentStatus: "$transaction.paymentStatus"
+        }
+      },
+      {
+        $project: {
+          amount: "$transaction.latest.baseAmount",
+          refundableAmount: "$transaction.latest.baseRefundableAmount",
+          status: "$transaction.latest.status",
+          attemptDate: "$transaction.latest.attemptDate",
+          bookingStatus: 1,
+          paymentStatus: 1,
+          year: { $year: "$transaction.latest.attemptDate" },
+          month: { $month: "$transaction.latest.attemptDate" },
+          day: { $dayOfMonth: "$transaction.latest.attemptDate" },
           twoHourInterval: {
             $floor: {
-              $divide: [{ $hour: "$transaction.history.attemptDate" }, 2]
+              $divide: [{ $hour: "$transaction.latest.attemptDate" }, 2]
             }
           },
           weekOfMonth: {
             $ceil: {
               $divide: [
-                { $add: [{ $dayOfMonth: "$transaction.history.attemptDate" }, { $subtract: [firstDayOfMonth, 1] }] },
+                { $add: [{ $dayOfMonth: "$transaction.latest.attemptDate" }, { $subtract: [firstDayOfMonth, 1] }] },
                 7
               ]
             }
@@ -38,41 +58,74 @@ const adminAggregations = {
       },
       {
         $facet: {
-          totalEarnings: [
-            { $match: { bookingStatus: { $in: ["success", "canceled"] } } },
-            { $group: { _id: null, total: { $sum: "$amount" } } },
-            { $project: { _id: 0, total: 1 } }
-          ],
-          todayEarnings: [
-            { $match: { bookingStatus: { $in: ["success", "canceled"] }, attemptDate: { $gte: startOfToday } } },
-            { $group: { _id: null, total: { $sum: "$amount" } } },
-            { $project: { _id: 0, total: 1 } }
-          ],
           totalPendingEarnings: [
-            { $match: { status: "pending" } },
-            { $group: { _id: null, total: { $sum: "$amount" } } },
-            { $project: { _id: 0, total: 1 } }
-          ],
-          todayPendingEarnings: [
-            { $match: { status: "pending", attemptDate: { $gte: startOfToday } } },
+            { $match: { bookingStatus: "pending" } },
             { $group: { _id: null, total: { $sum: "$amount" } } },
             { $project: { _id: 0, total: 1 } }
           ],
           totalSuccessfulEarnings: [
-            { $match: { status: "success" } },
+            { $match: { bookingStatus: "success" } },
             { $group: { _id: null, total: { $sum: "$amount" } } },
             { $project: { _id: 0, total: 1 } }
           ],
           todaySuccessfulEarnings: [
-            { $match: { status: "success", attemptDate: { $gte: startOfToday } } },
+            { $match: { bookingStatus: "success", attemptDate: { $gte: startOfToday } } },
             { $group: { _id: null, total: { $sum: "$amount" } } },
+            { $project: { _id: 0, total: 1 } }
+          ],
+          todayPendingEarnings: [
+            { $match: { bookingStatus: "pending", attemptDate: { $gte: startOfToday } } },
+            { $group: { _id: null, total: { $sum: "$amount" } } },
+            { $project: { _id: 0, total: 1 } }
+          ],
+          retainedFromCanceled: [
+            {
+              $match: {
+                bookingStatus: "canceled",
+                paymentStatus: "refunded",
+                $expr: { $lt: ["$refundableAmount", "$amount"] }
+              }
+            },
+            {
+              $project: {
+                retained: { $subtract: ["$amount", "$refundableAmount"] }
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: "$retained" }
+              }
+            },
+            { $project: { _id: 0, total: 1 } }
+          ],
+          retainedFromCanceledToday: [
+            {
+              $match: {
+                bookingStatus: "canceled",
+                paymentStatus: "refunded",
+                attemptDate: { $gte: startOfToday },
+                $expr: { $lt: ["$refundableAmount", "$amount"] }
+              }
+            },
+            {
+              $project: {
+                retained: { $subtract: ["$amount", "$refundableAmount"] }
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: "$retained" }
+              }
+            },
             { $project: { _id: 0, total: 1 } }
           ],
           earningsByTwoHours: [
             {
               $match: {
                 attemptDate: { $gte: startOfToday },
-                bookingStatus: { $in: ["success", "canceled"] }
+                bookingStatus: "success"
               }
             },
             {
@@ -87,7 +140,7 @@ const adminAggregations = {
             {
               $match: {
                 attemptDate: { $gte: startOfThisMonth, $lte: endOfThisMonth },
-                bookingStatus: { $in: ["success", "canceled"] }
+                bookingStatus: "success"
               }
             },
             {
@@ -103,7 +156,7 @@ const adminAggregations = {
               $match: {
                 attemptDate: { $gte: startOfThisYear },
                 year: now.getFullYear(),
-                bookingStatus: { $in: ["success", "canceled"] }
+                bookingStatus: "success"
               }
             },
             {
@@ -118,12 +171,28 @@ const adminAggregations = {
       },
       {
         $project: {
-          totalEarnings: { $ifNull: [{ $arrayElemAt: ["$totalEarnings.total", 0] }, 0] },
-          todayEarnings: { $ifNull: [{ $arrayElemAt: ["$todayEarnings.total", 0] }, 0] },
           totalPendingEarnings: { $ifNull: [{ $arrayElemAt: ["$totalPendingEarnings.total", 0] }, 0] },
-          todayPendingEarnings: { $ifNull: [{ $arrayElemAt: ["$todayPendingEarnings.total", 0] }, 0] },
-          successfulEarnings: { $ifNull: [{ $arrayElemAt: ["$totalSuccessfulEarnings.total", 0] }, 0] },
+          totalSuccessfulEarnings: { $ifNull: [{ $arrayElemAt: ["$totalSuccessfulEarnings.total", 0] }, 0] },
+          retainedFromCanceled: { $ifNull: [{ $arrayElemAt: ["$retainedFromCanceled.total", 0] }, 0] },
+          totalEarnings: {
+            $add: [
+              { $ifNull: [{ $arrayElemAt: ["$totalSuccessfulEarnings.total", 0] }, 0] },
+              { $ifNull: [{ $arrayElemAt: ["$totalPendingEarnings.total", 0] }, 0] },
+              { $ifNull: [{ $arrayElemAt: ["$retainedFromCanceled.total", 0] }, 0] }
+            ]
+          },
           todaySuccessfulEarnings: { $ifNull: [{ $arrayElemAt: ["$todaySuccessfulEarnings.total", 0] }, 0] },
+          todayPendingEarnings: { $ifNull: [{ $arrayElemAt: ["$todayPendingEarnings.total", 0] }, 0] },
+          retainedFromCanceledToday: {
+            $ifNull: [{ $arrayElemAt: ["$retainedFromCanceledToday.total", 0] }, 0]
+          },
+          todayEarnings: {
+            $add: [
+              { $ifNull: [{ $arrayElemAt: ["$todaySuccessfulEarnings.total", 0] }, 0] },
+              { $ifNull: [{ $arrayElemAt: ["$todayPendingEarnings.total", 0] }, 0] },
+              { $ifNull: [{ $arrayElemAt: ["$retainedFromCanceledToday.total", 0] }, 0] }
+            ]
+          },
           earningsByTwoHours: {
             $map: {
               input: Array.from({ length: 12 }, (_, i) => i),

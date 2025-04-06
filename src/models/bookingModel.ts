@@ -69,6 +69,10 @@ const historySchema = {
     type: Number,
     required: true
   },
+  baseRefundableAmount: {
+    type: Number,
+    required: true
+  },
   status: {
     type: String,
     enum: ["pending", "failed", "success"] as const,
@@ -132,8 +136,7 @@ const bookingSchema = new mongoose.Schema(
     },
     bookingStatus: {
       type: String,
-      enum: ["init", "failed", "success", "canceled"],
-      default: "init",
+      enum: ["init", "pending", "failed", "success", "canceled"],
       required: true
     },
     attempts: {

@@ -23,7 +23,7 @@ export const stripeWebhook = asyncWrapper(async (req: Request, res: Response) =>
         bookingId: event.data.object.metadata.bookingId,
         userId: event.data.object.metadata.userId,
         data: event.data.object,
-        currency: event.data.object.currency as Currency
+        currency: event.data.object.currency.toUpperCase() as Currency
       });
       break;
     case "payment_intent.payment_failed":

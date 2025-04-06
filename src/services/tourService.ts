@@ -350,6 +350,7 @@ export const bookReservedTour = async (tourData: BookingSchemaType, reserveId: s
       currency: reservedTour.currency,
       amount: reservedTour.totalAmount,
       refundableAmount: 0,
+      baseRefundableAmount: 0,
       status: "pending",
       attemptDate: new Date(),
       baseAmount: reservedTour.baseTotalAmount
@@ -380,6 +381,7 @@ export const bookReservedTour = async (tourData: BookingSchemaType, reserveId: s
           currency: reservedTour.currency,
           amount: reservedTour.totalAmount,
           refundableAmount: 0,
+          baseRefundableAmount: 0,
           status: "pending",
           attemptDate: new Date(),
           baseAmount: reservedTour.baseTotalAmount
