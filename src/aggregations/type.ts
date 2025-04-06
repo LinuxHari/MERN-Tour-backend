@@ -16,7 +16,8 @@ export type ToursParams = {
   specials?: string[];
   languages?: string[];
   sortType?: (typeof SORTTYPES)[number];
-  date: Date;
+  startDate: Date;
+  duration: number;
 };
 
 export type ToursByCategoryParams = {

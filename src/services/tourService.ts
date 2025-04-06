@@ -47,7 +47,7 @@ export const getTours = async (params: TourListingSchemaType, email?: string) =>
     teens,
     page,
     startDate,
-    // endDate,
+    endDate,
     filters,
     sortType,
     specials,
@@ -59,7 +59,7 @@ export const getTours = async (params: TourListingSchemaType, email?: string) =>
   } = params;
 
   const minAge = infants ? 0 : children ? 3 : teens ? 13 : 18;
-  // const duration = getDuration(startDate, endDate);
+  const duration = getDuration(startDate, endDate);
 
   const destinationResult = await Destination.aggregate(tourAggregations.destinationQuery(destinationId));
   const cityDestinationIds = destinationResult.length ? destinationResult[0].destinationIds : [destinationId];
@@ -81,7 +81,8 @@ export const getTours = async (params: TourListingSchemaType, email?: string) =>
       specials,
       languages,
       sortType,
-      date: new Date(startDate)
+      startDate: new Date(startDate),
+      duration
     }),
     { hint: { destinationId: 1, minAge: 1 }, $allowDiskUse: true }
   );
@@ -462,12 +463,12 @@ export const tourReview = async (review: RatingType, tourId: string, email: stri
 };
 
 export const getTourReview = async (tourId: string) => {
-  const tourDb = await Tour.findOne({ tourId }, { _id: 1 }).lean();
-  if (!tourDb) {
+  const tour = await Tour.findOne({ tourId }, { _id: 1 }).lean();
+  if (!tour) {
     throw new BadRequestError(`Tour with ${tourId} id does not exist and happened to access review`);
   }
 
-  const reviews = await Review.aggregate(tourAggregations.getReviews(tourDb._id));
+  const reviews = await Review.aggregate(tourAggregations.getReviews(tour._id));
   return reviews[0];
 };
 

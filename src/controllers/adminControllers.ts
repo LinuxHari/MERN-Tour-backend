@@ -5,7 +5,8 @@ import {
   deletePublishedTour,
   getPublishedTours,
   getAllStats,
-  updatePublishedTour
+  updatePublishedTour,
+  getPublishedTour
 } from "../services/adminService";
 import asyncWrapper from "../asyncWrapper";
 
@@ -17,8 +18,14 @@ export const addTour = asyncWrapper(async (req: Request, res: Response) => {
 export const getTours = asyncWrapper(async (req: Request, res: Response) => {
   const page = typeof req.query.page === "number" ? req.query.page : 1;
   const tourName = req.query.tourName as string;
-  const response = await getPublishedTours(page, tourName);
-  responseHandler.ok(res, response);
+  const tours = await getPublishedTours(page, tourName);
+  responseHandler.ok(res, tours);
+});
+
+export const getTour = asyncWrapper(async (req: Request, res: Response) => {
+  const tourId = req.params.tourId as string;
+  const tour = await getPublishedTour(tourId);
+  responseHandler.ok(res, tour);
 });
 
 export const updateTour = asyncWrapper(async (req: Request, res: Response) => {

@@ -95,6 +95,12 @@ export const getPublishedTours = async (page: number, tourName: string) => {
   return { tours, totalPages, totalCount };
 };
 
+export const getPublishedTour = async (tourId: string) => {
+  const tour = await Tour.aggregate(tourAggregations.getPublishedTour(tourId));
+
+  return tour[0];
+};
+
 const extractDates = (availableDates: Date[], existingAvailableDates: { date: Date }[]) => {
   const normalizeDate = (date: Date): string => {
     const d = new Date(date);
