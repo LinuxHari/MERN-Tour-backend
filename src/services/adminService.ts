@@ -84,11 +84,11 @@ export const createTour = async (tourData: TourSchemaType) => {
   await Tour.create(newTour);
 };
 
-export const getPublishedTours = async (page: number) => {
+export const getPublishedTours = async (page: number, tourName: string) => {
   const limit = 12;
   const totalCount = await Tour.countDocuments({ markAsDeleted: { $ne: true } });
 
-  const tours = await Tour.aggregate(tourAggregations.getPublishedTours(limit, page));
+  const tours = await Tour.aggregate(tourAggregations.getPublishedTours(limit, page, tourName));
 
   const totalPages = Math.ceil(totalCount / limit);
 
@@ -121,7 +121,7 @@ const cancelBookedTour = async (bookingId: string, session: mongoose.ClientSessi
 
   if (booking.bookingStatus === "success") {
     const payment = booking.transaction.history[booking.transaction.history.length - 1];
-    await stripeRefund(payment.paymentId, payment.refundableAmount * 100);
+    await stripeRefund(payment.paymentId, payment.refundableAmount * 100, payment.currency);
     booking.transaction.paymentStatus = "refunded";
   }
 

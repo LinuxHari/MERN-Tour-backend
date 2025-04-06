@@ -3,6 +3,7 @@ import envConfig from "../config/envConfig";
 import bookingTemplate from "../templates/bookingTemplate";
 import { BookingType } from "../models/bookingModel";
 import verificationTemplate from "../templates/verificationTemplate";
+import resetPasswordTemplate from "../templates/resetPassTemplate";
 
 export type EmailBooking = BookingType & { tourName: string; destination: string };
 
@@ -37,6 +38,20 @@ export const sendVerificationMail = async (email: string, token: string, name: s
       to: email,
       subject: "Email Verification",
       html: verificationTemplate(token, name)
+    });
+    return { error: false };
+  } catch (_) {
+    return { error: true };
+  }
+};
+
+export const sendResetPassMail = async (email: string, token: string, name: string) => {
+  try {
+    await transporter.sendMail({
+      from: envConfig.emailUser,
+      to: email,
+      subject: "Email Verification",
+      html: resetPasswordTemplate(token, name)
     });
     return { error: false };
   } catch (_) {

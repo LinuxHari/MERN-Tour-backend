@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { CATEGORIES, LANGUAGES, MIN_AGE } from "../config/tourConfig";
 import removeSpaces from "../utils/removeSpaces";
+import { parseToInt } from "../utils/schemaUtils";
 
 const allowedAges = Object.values(MIN_AGE);
 
@@ -231,6 +232,28 @@ export const BaseTourSchema = z.object({
       })
     )
 });
+
+export const PageSchema = z.object({
+  page: z
+    .string()
+    .transform(parseToInt)
+    .pipe(z.number().int().min(0).max(1000000, { message: "Page number is not valid" }))
+});
+
+export const PublishedTourSchema = z
+  .object({
+    tourName: z
+      .string()
+      .transform(removeSpaces)
+      .pipe(
+        z
+          .string()
+          .min(2, { message: "Tour name should not be less than 2 characters" })
+          .max(40, { message: "Tour name should not be more than 40 characters long" })
+      )
+      .optional()
+  })
+  .merge(PageSchema);
 
 export const TourSchema = BaseTourSchema.extend(LocationSchema.shape);
 

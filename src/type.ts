@@ -1,3 +1,5 @@
+import { ReserveTourType } from "./validators/tourValidators";
+
 export type JwtData = {
   email: string;
   role?: string;
@@ -15,3 +17,5 @@ export type upstashPublishData = {
   };
   delay: number;
 };
+
+export type Currency = ReserveTourType["currency"];

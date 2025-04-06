@@ -1,13 +1,4 @@
-export const LANGUAGES = [
-  "English",
-  "Spanish",
-  "French",
-  "German",
-  "Tamil",
-  "Chinese",
-  "Italian",
-  "Russian"
-] as const;
+export const LANGUAGES = ["English", "Spanish", "French", "German", "Tamil", "Chinese", "Italian", "Russian"] as const;
 
 export const CATEGORIES = ["Nature", "Adventure", "Cultural", "Food", "City", "Cruises"] as const;
 

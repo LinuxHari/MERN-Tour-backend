@@ -1,5 +1,7 @@
 import mongoose, { InferSchemaType } from "mongoose";
 import { modelOptions } from "../config/modelConfig";
+import { CURRENCIES } from "../config/otherConfig";
+import { priceType } from "./tourModel";
 
 export const passengerSchema = {
   adults: {
@@ -46,6 +48,20 @@ export const reservedSchema = new mongoose.Schema(
     },
     totalAmount: {
       type: Number,
+      required: true
+    },
+    price: {
+      type: priceType,
+      required: true
+    },
+    baseTotalAmount: {
+      // Total amount in base currency for analytics
+      type: Number,
+      required: true
+    },
+    currency: {
+      type: String,
+      enum: CURRENCIES,
       required: true
     },
     expiresAt: {

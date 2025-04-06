@@ -6,26 +6,42 @@ import {
   login,
   logout,
   removeTourFromFavorite,
+  sendResetPassMail,
   sendVerificationMail,
   signup,
   updatePassword,
   updateProfile,
+  updateResetPassword,
   userInfo,
-  verifyEmail
+  verifyEmail,
+  verifyResetToken
 } from "../controllers/userControllers";
 import requestHandler from "../handlers/requestHandler";
 import { EmailSchema, LoginSchema, SignupSchema } from "../validators/authValidators";
-import { PasswordSchema, TokenSchema, UserBookings, UserSchema } from "../validators/userValidators";
+import {
+  PasswordSchema,
+  ResetPasswordSchema,
+  TokenSchema,
+  UserBookings,
+  UserSchema
+} from "../validators/userValidators";
 import verifyAuthToken from "../middlewares/verifyAuthToken";
-import { PageSchema, SingleTourParamSchema } from "../validators/tourValidators";
+import { SingleTourParamSchema } from "../validators/tourValidators";
+import { PageSchema } from "../validators/adminValidators";
 
 const router = express.Router();
 
 router.post("/signup", requestHandler(SignupSchema), signup);
 router.post("/login", requestHandler(LoginSchema), login);
 router.post("/logout", verifyAuthToken, requestHandler(TokenSchema, "signedCookies"), logout);
+
 router.post("/verify-email", requestHandler(TokenSchema), verifyEmail);
 router.post("/send-verification-email", requestHandler(EmailSchema), sendVerificationMail);
+
+router.post("/reset-password", requestHandler(EmailSchema), sendResetPassMail);
+router.post("/verify-reset-token", requestHandler(TokenSchema), verifyResetToken);
+router.patch("/update-password", requestHandler(ResetPasswordSchema), updateResetPassword);
+
 router.get("/bookings", verifyAuthToken, requestHandler(UserBookings, "query"), getBookings);
 router.get("/favorite", verifyAuthToken, requestHandler(PageSchema, "query"), getUserFavoriteTours);
 router.post("/favorite/:tourId", verifyAuthToken, requestHandler(SingleTourParamSchema, "params"), addTourToFavorite);

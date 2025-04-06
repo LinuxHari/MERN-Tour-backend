@@ -2,8 +2,8 @@ import { Request, Response } from "express";
 import asyncWrapper from "../asyncWrapper";
 import { stripeAuthorized, stripeFailed, stripeSuccess, stripeValidate } from "../services/stripeService";
 import responseHandler from "../handlers/responseHandler";
-import { upstashValidate } from "../services/upstashService";
-import { upstashPublishData } from "../type";
+// import { upstashValidate } from "../services/upstashService";
+import { Currency, upstashPublishData } from "../type";
 import { BadRequestError, NotFoundError } from "../handlers/errorHandler";
 import Availability from "../models/availabilityModel";
 import Reserved from "../models/reserveModel";
@@ -22,7 +22,8 @@ export const stripeWebhook = asyncWrapper(async (req: Request, res: Response) =>
         amountCharged: event.data.object.amount_received / 100,
         bookingId: event.data.object.metadata.bookingId,
         userId: event.data.object.metadata.userId,
-        data: event.data.object
+        data: event.data.object,
+        currency: event.data.object.currency as Currency
       });
       break;
     case "payment_intent.payment_failed":

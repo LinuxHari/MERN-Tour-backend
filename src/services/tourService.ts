@@ -24,6 +24,10 @@ import userAggregations from "../aggregations/userAggregations";
 import Availability from "../models/availabilityModel";
 import { upstashPublish } from "./upstashService";
 import mongoose from "mongoose";
+import { getCurrencyExchangeRate } from "./exchangeService";
+import { CURRENCY_CODES } from "../config/otherConfig";
+import calculatePaxPrice from "../utils/calculatePaxPrice";
+import formatPrice from "../utils/formatPrice";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
@@ -164,7 +168,7 @@ export const reserveTour = async (reserveDetails: ReserveTourType, email: string
 
   try {
     const reserveId = generateId();
-    const { startDate, endDate, tourId, pax } = reserveDetails;
+    const { startDate, endDate, tourId, pax, currency } = reserveDetails;
 
     const user = await User.findOne({ email, isVerified: true }, { _id: 1 }).lean().session(session);
     if (!user) throw new NotFoundError(`User with ${email} email not found`);
@@ -188,6 +192,11 @@ export const reserveTour = async (reserveDetails: ReserveTourType, email: string
 
     if (availabilityDetails.availableSeats < totalPassengers) throw new ConflictError("Tour is not available");
 
+    const exchangeData = await getCurrencyExchangeRate(currency);
+
+    if (!exchangeData || !exchangeData.exchangeRate)
+      throw new ServerError(`Failed to get exchange rate for ${currency}`);
+
     const { price } = tour;
     let totalAmount = pax.adults * price.adult;
     if (price?.teen) totalAmount += price.teen * (pax.teens || 0);
@@ -207,7 +216,10 @@ export const reserveTour = async (reserveDetails: ReserveTourType, email: string
           userId: user._id,
           passengers: pax,
           expiresAt,
-          totalAmount
+          price: calculatePaxPrice(price, exchangeData.exchangeRate),
+          totalAmount: formatPrice(exchangeData.exchangeRate * totalAmount),
+          baseTotalAmount: formatPrice(totalAmount),
+          currency
         }
       ],
       { session }
@@ -247,15 +259,19 @@ export const getReservedDetails = async (reserveId: string, email: string) => {
     { duration: 1, price: 1, images: 1, name: 1, minAge: 1, _id: 0 }
   ).lean();
 
+  if (!tour) throw new ServerError(`Reserved tour ${reserved.tourId} is not found`);
+
+  tour.price = reserved.price;
+
   const { tourId: _, userId: __, ...reservedDetails } = reserved;
-  return { ...reservedDetails, tourDetails: tour };
+  return { ...reservedDetails, tourDetails: tour, currencyCode: CURRENCY_CODES[reserved.currency] };
 };
 
 export const getBooking = async (bookingId: string, email: string) => {
   const booking = await Booking.findOne({ bookingId }).lean();
   if (!booking) throw new NotFoundError(`Booking for booking id ${bookingId} not found`);
 
-  const tour = await Tour.findOne({ tourId: booking.tourId }).lean({ name: 1, duration: 1 });
+  const tour = await Tour.findOne({ tourId: booking.tourId }, { name: 1, freeCancellation: 1 }).lean();
   if (!tour) throw new NotFoundError(`Booked tour with id ${booking.tourId} not found for booking ${bookingId}`);
 
   const user = await User.findOne({ email, isVerified: true }, { _id: 1 }).lean();
@@ -274,6 +290,7 @@ export const getBooking = async (bookingId: string, email: string) => {
     isCancellable: new Date().getTime() < booking.startDate.getTime(),
     amount: payment.amount,
     amountPaid: payment.status === "success" ? payment.amount : 0,
+    currencyCode: CURRENCY_CODES[payment.currency] || "",
     refundableAmount: payment.refundableAmount,
     tourInfo: {
       tourName: tour.name,
@@ -304,7 +321,6 @@ export const bookReservedTour = async (tourData: BookingSchemaType, reserveId: s
     throw new BadRequestError(`Invalid user id ${String(user._id)} or reserve id ${reserveId} used for booking`);
 
   const now = new Date();
-  const currency = "USD";
   if (reservedTour.expiresAt < now.getTime()) throw new GoneError(`Reservation ${reservedTour.id} is timed out`);
 
   const existingBooking = await Booking.findOne({ reserveId: reservedTour._id });
@@ -314,7 +330,7 @@ export const bookReservedTour = async (tourData: BookingSchemaType, reserveId: s
   const booking = existingBooking ? existingBooking : new Booking();
   const { clientSecret, paymentId } = await stripeCreate({
     amount: reservedTour.totalAmount * 100,
-    currency,
+    currency: reservedTour.currency,
     bookingId: booking.id,
     userId: String(user._id)
   });
@@ -331,11 +347,12 @@ export const bookReservedTour = async (tourData: BookingSchemaType, reserveId: s
     const newTransaction = {
       clientSecret: clientSecret as string,
       paymentId,
-      currency,
+      currency: reservedTour.currency,
       amount: reservedTour.totalAmount,
       refundableAmount: 0,
       status: "pending",
-      attemptDate: new Date()
+      attemptDate: new Date(),
+      baseAmount: reservedTour.baseTotalAmount
     } as PaymentType;
 
     existingBooking.transaction.history.push(newTransaction);
@@ -360,11 +377,12 @@ export const bookReservedTour = async (tourData: BookingSchemaType, reserveId: s
         {
           clientSecret: clientSecret as string,
           paymentId,
-          currency,
+          currency: reservedTour.currency,
           amount: reservedTour.totalAmount,
           refundableAmount: 0,
           status: "pending",
-          attemptDate: new Date()
+          attemptDate: new Date(),
+          baseAmount: reservedTour.baseTotalAmount
         }
       ]
     },
@@ -387,6 +405,10 @@ export const cancelBookedTour = async (bookingId: string, email: string) => {
   if (!booking)
     throw new BadRequestError(`Cancellation request for booking id ${bookingId} failed, ${bookingId} does not exist`);
 
+  const isCancellable = new Date().getTime() < booking.startDate.getTime();
+
+  if (!isCancellable) throw new ConflictError(`Cannot cancel past booking ${booking.bookingId}`);
+
   const user = await User.findOne({ email, isVerified: true }, { _id: 1 }).lean();
   if (String(user?._id) !== String(booking.userId))
     throw new NotFoundError(
@@ -398,7 +420,7 @@ export const cancelBookedTour = async (bookingId: string, email: string) => {
 
   if (booking.bookingStatus === "success") {
     const payment = booking.transaction.history[booking.transaction.history.length - 1];
-    await stripeRefund(payment.paymentId, payment.refundableAmount * 100);
+    await stripeRefund(payment.paymentId, payment.refundableAmount * 100, payment.currency);
     booking.transaction.paymentStatus = "refunded";
   }
 

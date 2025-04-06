@@ -1,66 +1,93 @@
 import mongoose, { PipelineStage } from "mongoose";
 import { BookingStatusSchemaType } from "../validators/userValidators";
+import { CURRENCY_CODES } from "../config/otherConfig";
 
 const userAggregations = {
   userBookings: (
     userId: mongoose.Types.ObjectId,
     page: number,
     status: BookingStatusSchemaType["status"],
-    limit: number
-  ): PipelineStage[] => [
-    {
+    limit: number,
+    bookingId?: string
+  ): PipelineStage[] => {
+    const currencyBranches = Object.entries(CURRENCY_CODES).map(([currency, symbol]) => ({
+      case: { $eq: ["$latestCurrency", currency] },
+      then: { $literal: symbol }
+    }));
+
+    const matchStage: PipelineStage.Match = {
       $match: {
         userId,
         bookingStatus: status === "pending" ? "init" : status === "confirmed" ? "success" : status
       }
-    },
-    {
-      $lookup: {
-        from: "tours",
-        localField: "tourId",
-        foreignField: "tourId",
-        as: "tourDetails"
-      }
-    },
-    {
-      $unwind: "$tourDetails"
-    },
-    {
-      $project: {
-        _id: 0,
-        price: {
-          $arrayElemAt: ["$transaction.history.amount", -1] // Get the latest transaction amount
-        },
-        duration: "$tourDetails.duration",
-        startDate: 1,
-        tour: {
-          name: "$tourDetails.name",
-          imgUrl: { $arrayElemAt: ["$tourDetails.images", 0] }
-        },
-        passengers: {
-          $sum: ["$passengers.adults", "$passengers.teens", "$passengers.children", "$passengers.infants"]
-        },
-        bookingId: 1,
-        bookedDate: "$createdAt",
-        status: {
-          $cond: [
-            { $eq: ["$bookingStatus", "success"] },
-            "Confirmed",
-            { $cond: [{ $eq: ["$bookingStatus", "init"] }, "Pending", "Canceled"] }
-          ]
-        }
-      }
-    },
-    {
-      $sort: { bookedDate: -1 }
-    },
-    {
-      $skip: (page - 1) * limit
-    },
-    {
-      $limit: limit
+    };
+
+    if (bookingId) {
+      matchStage.$match.bookingId = { $regex: bookingId, $options: "i" };
     }
-  ],
+
+    return [
+      matchStage,
+      {
+        $lookup: {
+          from: "tours",
+          localField: "tourId",
+          foreignField: "tourId",
+          as: "tourDetails"
+        }
+      },
+      {
+        $unwind: "$tourDetails"
+      },
+      {
+        $addFields: {
+          latestCurrency: { $arrayElemAt: ["$transaction.history.currency", -1] }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          price: {
+            $arrayElemAt: ["$transaction.history.amount", -1]
+          },
+          currency: "$latestCurrency",
+          currencyCode: {
+            $switch: {
+              branches: currencyBranches,
+              default: { $literal: "" }
+            }
+          },
+          duration: "$tourDetails.duration",
+          startDate: 1,
+          tour: {
+            name: "$tourDetails.name",
+            imgUrl: { $arrayElemAt: ["$tourDetails.images", 0] }
+          },
+          passengers: {
+            $sum: ["$passengers.adults", "$passengers.teens", "$passengers.children", "$passengers.infants"]
+          },
+          bookingId: 1,
+          bookedDate: "$createdAt",
+          status: {
+            $cond: [
+              { $eq: ["$bookingStatus", "success"] },
+              "Confirmed",
+              { $cond: [{ $eq: ["$bookingStatus", "init"] }, "Pending", "Canceled"] }
+            ]
+          }
+        }
+      },
+      {
+        $sort: { bookedDate: -1 }
+      },
+      {
+        $skip: (page - 1) * limit
+      },
+      {
+        $limit: limit
+      }
+    ];
+  },
   getFavoriteTours: (tourIds: mongoose.Types.ObjectId[], page: number, limit: number): PipelineStage[] => [
     {
       $match: {

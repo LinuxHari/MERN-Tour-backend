@@ -8,10 +8,13 @@ import {
   getUserBookings,
   getUserInfo,
   removeFavoriteTour,
+  sendUserResetPassMail,
   sendUserVerificationMail,
   updateUserPassword,
   updateUserProfile,
-  verifyUserEmail
+  updateUserResetPassword,
+  verifyUserEmail,
+  verifyUserResetToken
 } from "../services/userService";
 import responseHandler from "../handlers/responseHandler";
 import { BookingStatusSchemaType } from "../validators/userValidators";
@@ -57,6 +60,21 @@ export const sendVerificationMail = asyncWrapper(async (req: Request, res: Respo
   responseHandler.ok(res, { message: "success" });
 });
 
+export const sendResetPassMail = asyncWrapper(async (req: Request, res: Response) => {
+  await sendUserResetPassMail(req.body.email);
+  responseHandler.ok(res, { message: "success" });
+});
+
+export const verifyResetToken = asyncWrapper(async (req: Request, res: Response) => {
+  await verifyUserResetToken(req.body.authToken);
+  responseHandler.ok(res, { message: "success" });
+});
+
+export const updateResetPassword = asyncWrapper(async (req: Request, res: Response) => {
+  await updateUserResetPassword(req.body.newPassword, req.body.authToken);
+  responseHandler.ok(res, { message: "success" });
+});
+
 export const userInfo = asyncWrapper(async (_: Request, res: Response) => {
   const userInfo = await getUserInfo(res.locals.email);
   responseHandler.ok(res, userInfo);
@@ -91,7 +109,8 @@ export const removeTourFromFavorite = asyncWrapper(async (req: Request, res: Res
 export const getBookings = asyncWrapper(async (req: Request, res: Response) => {
   const page = typeof req.query.page === "number" ? req.query.page : 1;
   const status = req.query.status as BookingStatusSchemaType["status"];
+  const bookingId = req.query.bookingId as string | undefined;
 
-  const bookings = await getUserBookings(res.locals.email, page, status, req.ip);
+  const bookings = await getUserBookings(res.locals.email, page, status, bookingId, req.ip);
   responseHandler.ok(res, bookings);
 });

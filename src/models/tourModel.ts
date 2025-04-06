@@ -32,7 +32,7 @@ const faqType = {
   }
 };
 
-const priceType = {
+export const priceType = {
   adult: {
     type: Number,
     required: true

@@ -16,7 +16,8 @@ export const addTour = asyncWrapper(async (req: Request, res: Response) => {
 
 export const getTours = asyncWrapper(async (req: Request, res: Response) => {
   const page = typeof req.query.page === "number" ? req.query.page : 1;
-  const response = await getPublishedTours(page);
+  const tourName = req.query.tourName as string;
+  const response = await getPublishedTours(page, tourName);
   responseHandler.ok(res, response);
 });
 

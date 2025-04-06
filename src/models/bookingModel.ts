@@ -1,5 +1,6 @@
 import mongoose, { InferSchemaType } from "mongoose";
 import { passengerSchema } from "./reserveModel";
+import { CURRENCIES } from "../config/otherConfig";
 
 const bookerInfoSchema = {
   name: {
@@ -52,10 +53,15 @@ const historySchema = {
   },
   currency: {
     type: String,
-    enum: ["INR", "USD"] as const,
+    enum: CURRENCIES,
     required: true
   },
   amount: {
+    type: Number,
+    required: true
+  },
+  baseAmount: {
+    // Base currency(USD) amount
     type: Number,
     required: true
   },

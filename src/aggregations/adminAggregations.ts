@@ -14,7 +14,7 @@ const adminAggregations = {
       { $unwind: "$transaction.history" },
       {
         $project: {
-          amount: "$transaction.history.amount",
+          amount: "$transaction.history.baseAmount",
           status: "$transaction.history.status",
           attemptDate: "$transaction.history.attemptDate",
           bookingStatus: "$bookingStatus",

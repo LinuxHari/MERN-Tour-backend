@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import mongoose from "mongoose";
 import { BadRequestError, NotFoundError, ServerError } from "../handlers/errorHandler";
 import Booking, { PaymentType } from "../models/bookingModel";
 import envConfig from "../config/envConfig";
@@ -8,11 +9,11 @@ import { NON_FREE_REFUND_CHARGE } from "../config/tourConfig";
 import Tour from "../models/tourModel";
 import { sendBookingMail } from "./emailService";
 import Destination from "../models/destinationModel";
-import mongoose from "mongoose";
+import { Currency } from "../type";
 
 type StripeCreateParam = {
   amount: number;
-  currency: "USD" | "INR";
+  currency: Currency;
   bookingId: string;
   userId: string;
 };
@@ -27,6 +28,7 @@ type StripeWebhookSuccessparam = {
   userId: string;
   bookingId: string;
   data: Stripe.PaymentIntent;
+  currency: Currency;
 };
 
 const stripe = new Stripe(envConfig.stripeSecret as string);
@@ -85,7 +87,13 @@ export const stripeFailed = async (bookingId: string, data: Stripe.PaymentIntent
   await existingBooking.save();
 };
 
-export const stripeSuccess = async ({ amountCharged, userId, bookingId, data }: StripeWebhookSuccessparam) => {
+export const stripeSuccess = async ({
+  amountCharged,
+  userId,
+  bookingId,
+  data,
+  currency
+}: StripeWebhookSuccessparam) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -102,7 +110,7 @@ export const stripeSuccess = async ({ amountCharged, userId, bookingId, data }: 
 
     if (amountCharged !== payment.amount) {
       await stripeFailed(bookingId, data);
-      throw new BadRequestError(`Amount mismatch for booking ${bookingId}`);
+      throw new BadRequestError(`Amount mismatch for booking ${bookingId} ${amountCharged} ${payment.amount}`);
     }
 
     const tour = await Tour.findOne(
@@ -120,7 +128,9 @@ export const stripeSuccess = async ({ amountCharged, userId, bookingId, data }: 
     payment.refundableAmount = tour.freeCancellation
       ? payment.amount
       : calcPercentage(payment.amount, NON_FREE_REFUND_CHARGE);
+
     payment.status = "success";
+    payment.currency = currency;
 
     existingBooking.bookingStatus = "success";
     existingBooking.transaction.paymentStatus = "paid";
@@ -151,9 +161,10 @@ export const stripeSuccess = async ({ amountCharged, userId, bookingId, data }: 
   }
 };
 
-export const stripeRefund = async (paymentIntent: string, amount: number) => {
+export const stripeRefund = async (paymentIntent: string, amount: number, currency: Currency) => {
   await stripe.refunds.create({
     payment_intent: paymentIntent,
-    amount
+    amount,
+    currency
   });
 };

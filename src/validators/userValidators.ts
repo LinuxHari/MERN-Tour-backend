@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { LocationSchema } from "./adminValidators";
+import { LocationSchema, PageSchema } from "./adminValidators";
 import { EmailSchema, LoginSchema, NameSchema } from "./authValidators";
 import removeSpaces from "../utils/removeSpaces";
 import { BOOKING_STATUS } from "../config/userConfig";
-import { PageSchema } from "./tourValidators";
+import { BookingTourParamSchema } from "./tourValidators";
 
 export const TokenSchema = z.object({
   authToken: z.string()
@@ -22,10 +22,7 @@ export const UserSchema = z
     //       message: "Only images are allowed to be sent."
     //     })
     // }),
-    address: z
-      .string({ message: "Invalid address" })
-      .transform(removeSpaces)
-      .pipe(z.string().min(10).max(200))
+    address: z.string({ message: "Invalid address" }).transform(removeSpaces).pipe(z.string().min(10).max(200))
   })
   .extend(NameSchema.shape)
   .extend(LocationSchema.shape)
@@ -35,18 +32,34 @@ export const BookingStatusSchema = z.object({
   status: z.enum(BOOKING_STATUS)
 });
 
+const BasePasswordSchema = z.object({
+  newPassword: LoginSchema.shape.password,
+  confirmPassword: LoginSchema.shape.password
+});
+
 export const PasswordSchema = z
   .object({
-    oldPassword: LoginSchema.shape.password,
-    newPassword: LoginSchema.shape.password,
-    confirmPassword: LoginSchema.shape.password
+    oldPassword: LoginSchema.shape.password
   })
+  .merge(BasePasswordSchema)
   .refine(({ newPassword, confirmPassword }) => newPassword === confirmPassword, {
     message: "Password did not match"
   });
 
-export const UserBookings = BookingStatusSchema.merge(PageSchema);
+export const ResetPasswordSchema = TokenSchema.merge(BasePasswordSchema).refine(
+  ({ newPassword, confirmPassword }) => newPassword === confirmPassword,
+  {
+    message: "Password did not match"
+  }
+);
+
+export const UserBookings = BookingStatusSchema.merge(PageSchema).merge(
+  z.object({
+    bookingId: BookingTourParamSchema.shape.bookingId.optional()
+  })
+);
 
 export type UserSchemaType = z.infer<typeof UserSchema>;
 export type BookingStatusSchemaType = z.infer<typeof BookingStatusSchema>;
 export type PasswordSchemaType = z.infer<typeof PasswordSchema>;
+export type UserBookingsType = z.infer<typeof UserBookings>;

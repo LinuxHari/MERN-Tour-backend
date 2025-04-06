@@ -10,7 +10,10 @@ const verificationTemplate = (token: string, name: string) => {
         </head>
         <body style="font-family: Arial, sans-serif; background-color: #f8f9fa; text-align: center; padding: 20px;">
             <div style="max-width: 600px; background: #ffffff; padding: 20px; border-radius: 10px; margin: auto; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);">
-                <div style="text-align: center;">
+            <a href=${envConfig.frontend}>
+               <img src="https://firebasestorage.googleapis.com/v0/b/mern-tours-e23a8.appspot.com/o/assets%2Flogo-1.svg?alt=media&amp;token=abbcab85-1eed-4fdd-9ee5-cd4653407341" alt="Viatours" style="display: block;"><span style="font-size: 0.5rem;">Adventure Awaits! Let's Begin</span>
+               </a>    
+            <div style="text-align: center;">
                     <img src="https://firebasestorage.googleapis.com/v0/b/mern-tours-e23a8.appspot.com/o/assets%2Fsuccess.png?alt=media&token=6952e61b-0fbb-4539-94fa-2b2ba40f9e37" alt="mern-tours" style="height:60px;width:60px;"/>
                     <h2 style="color: #1d1d1d;">Verify Your Email</h2>
                 </div>

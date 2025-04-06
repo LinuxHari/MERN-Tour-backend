@@ -2,26 +2,12 @@ import { z } from "zod";
 import removeSpaces from "../utils/removeSpaces";
 import { CATEGORIES, SORTTYPES, SPECIALS } from "../config/tourConfig";
 import { EmailSchema } from "./authValidators";
-import { LocationSchema } from "./adminValidators";
-
-const isValidDate = (date: string) => date === new Date(date).toISOString().split("T")[0];
-const parseToInt = (value: string) => parseInt(value);
-
-const strToArr = (values: string) => {
-  const valueArr = values.split(",");
-  if (valueArr.length) return valueArr;
-  return [values];
-};
+import { LocationSchema, PageSchema } from "./adminValidators";
+import { CURRENCIES } from "../config/otherConfig";
+import { isValidDate, parseToInt, strToArr } from "../utils/schemaUtils";
 
 export const SearchSuggestionSchema = z.object({
   searchText: z.string().transform(removeSpaces).pipe(z.string().min(1).max(50))
-});
-
-export const PageSchema = z.object({
-  page: z
-    .string()
-    .transform(parseToInt)
-    .pipe(z.number().int().min(0).max(1000000, { message: "Page number is not valid" }))
 });
 
 const FiltersSchema = z
@@ -102,7 +88,8 @@ export const ReserveTourSchema = z
       children: z.number().int().min(0).max(10, { message: "Number of children should not exceed 9" }).optional(),
       infants: z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" }).optional(),
       teens: z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" }).optional()
-    })
+    }),
+    currency: z.enum(CURRENCIES)
   })
   .merge(SingleTourParamSchema);
 

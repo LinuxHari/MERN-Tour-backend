@@ -8,7 +8,7 @@ import { generateToken, verifyToken } from "../utils/authTokenManager";
 import { LoginSchemaType, SignupSchemaType } from "../validators/authValidators";
 import bcrypt from "bcrypt";
 import { BookingStatusSchemaType, PasswordSchemaType, UserSchemaType } from "../validators/userValidators";
-import { sendVerificationMail } from "./emailService";
+import { sendResetPassMail, sendVerificationMail } from "./emailService";
 
 export const sendUserVerificationMail = async (email: string, name?: string) => {
   const token = generateToken({ email });
@@ -16,8 +16,25 @@ export const sendUserVerificationMail = async (email: string, name?: string) => 
   else {
     const user = await User.findOne({ email }, { firstName: 1, lastName: 1 }).lean();
     if (!user) throw new BadRequestError(`Invalid email ${email} sent to verification process`);
+    if (user.isVerified) throw new ConflictError(`User email was already verified`);
     await sendVerificationMail(email, token, `${user.firstName} ${user.lastName}`);
   }
+};
+
+export const sendUserResetPassMail = async (email: string) => {
+  const token = generateToken({ email });
+
+  const user = await User.findOne({ email }, { firstName: 1, lastName: 1 }).lean();
+  if (!user) throw new BadRequestError(`Invalid email ${email} sent to verification process`);
+  await sendResetPassMail(email, token, `${user.firstName} ${user.lastName}`);
+};
+
+export const verifyUserResetToken = async (token: string) => {
+  const { error, data } = verifyToken(token);
+  if (error || !data) throw new BadRequestError("Reset token verification failed");
+  const user = await User.findOne({ email: data.email }, { isVerified: 1 }).lean();
+  if (!user) throw new BadRequestError(`Invalid email ${data.email} sent to verification process`);
+  if (!user.isVerified) throw new UnauthroizedError(`User has not verified email ${data.email} yet`);
 };
 
 export const createUser = async (userData: Omit<SignupSchemaType, "confirmPassword">) => {
@@ -35,6 +52,7 @@ export const verifyUserEmail = async (token: string) => {
 
   const user = await User.findOne({ email: data.email }, { isVerified: 1 });
   if (!user) throw new BadRequestError(`User with ${data.email} is not found after token is verified`);
+  if (user.isVerified) throw new ConflictError(`User email was already verified`);
 
   user.isVerified = true;
   await user.save();
@@ -68,6 +86,16 @@ export const updateUserPassword = async ({ newPassword, oldPassword }: PasswordS
   if (!user) throw new BadRequestError(`User with ${email} does not exist`);
   const isValidPassword = await user.validatePassword(oldPassword);
   if (!isValidPassword) throw new BadRequestError("Invalid password");
+  user.hashPassword(newPassword);
+  await user.save();
+};
+
+export const updateUserResetPassword = async (newPassword: string, token: string) => {
+  const { error, data } = verifyToken(token);
+  if (error || !data) throw new BadRequestError("Password reset token verification failed");
+  const user = await User.findOne({ email: data.email });
+  if (!user) throw new BadRequestError(`User with ${data.email} does not exist`);
+  if (!user.isVerified) throw new UnauthroizedError(`User email ${data.email} is not verified`);
   user.hashPassword(newPassword);
   await user.save();
 };
@@ -109,12 +137,13 @@ export const getUserBookings = async (
   email: string,
   page: number,
   status: BookingStatusSchemaType["status"],
+  bookingId?: string,
   ip?: string
 ) => {
   const limit = 10;
   const user = await User.findOne({ email, isVerified: true }, { _id: 1 }).lean();
   if (!user) throw new BadRequestError(`User with ip ${ip} tried to access all bookings with email ${email}`);
-  const bookings = await Booking.aggregate(bookingAggregations.userBookings(user._id, page, status, limit));
+  const bookings = await Booking.aggregate(bookingAggregations.userBookings(user._id, page, status, limit, bookingId));
 
   return { bookings, totalPages: Math.ceil(bookings.length / limit) };
 };

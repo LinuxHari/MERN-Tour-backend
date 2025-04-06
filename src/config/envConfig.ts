@@ -15,7 +15,8 @@ const envConfig = {
   frontend: process.env.FRONTEND_URL,
   backend: process.env.BACKEND_URL,
   emailUser: process.env.EMAIL_USER,
-  emailPass: process.env.EMAIL_PASS
+  emailPass: process.env.EMAIL_PASS,
+  exchangeKey: process.env.EXCHANGE_API_KEY
 } as const;
 
 export default envConfig;

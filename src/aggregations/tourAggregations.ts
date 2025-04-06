@@ -580,149 +580,157 @@ const tourAggregations = {
       }
     }
   ],
-  getPublishedTours: (limit: number, page: number): PipelineStage[] => [
-    {
+  getPublishedTours: (limit: number, page: number, tourName: string): PipelineStage[] => {
+    const matchStage: PipelineStage.Match = {
       $match: {
         markAsDeleted: { $ne: true }
       }
-    },
-    {
-      $lookup: {
-        from: "destinations",
-        localField: "destinationId",
-        foreignField: "destinationId",
-        as: "cityDetails"
-      }
-    },
-    {
-      $unwind: {
-        path: "$cityDetails",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $lookup: {
-        from: "destinations",
-        localField: "cityDetails.parentDestinationId",
-        foreignField: "destinationId",
-        as: "stateDetails"
-      }
-    },
-    {
-      $unwind: {
-        path: "$stateDetails",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $lookup: {
-        from: "destinations",
-        localField: "stateDetails.parentDestinationId",
-        foreignField: "destinationId",
-        as: "countryDetails"
-      }
-    },
-    {
-      $unwind: {
-        path: "$countryDetails",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $lookup: {
-        from: "availabilities",
-        localField: "tourId",
-        foreignField: "tourId",
-        as: "availability"
-      }
-    },
-    {
-      $addFields: {
-        availableDates: {
-          $map: {
-            input: {
-              $filter: {
-                input: "$availability",
-                as: "av",
-                cond: {
-                  $gte: [
-                    "$$av.date",
-                    {
-                      $dateAdd: {
-                        startDate: {
-                          $dateFromParts: {
-                            year: { $year: new Date() },
-                            month: { $month: new Date() },
-                            day: { $dayOfMonth: new Date() },
-                            hour: 0,
-                            minute: 0,
-                            second: 0,
-                            millisecond: 0
-                          }
-                        },
-                        unit: "day",
-                        amount: 3
+    };
+
+    if (tourName) {
+      matchStage.$match.name = { $regex: tourName, $options: "i" };
+    }
+
+    return [
+      matchStage,
+      {
+        $lookup: {
+          from: "destinations",
+          localField: "destinationId",
+          foreignField: "destinationId",
+          as: "cityDetails"
+        }
+      },
+      {
+        $unwind: {
+          path: "$cityDetails",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "destinations",
+          localField: "cityDetails.parentDestinationId",
+          foreignField: "destinationId",
+          as: "stateDetails"
+        }
+      },
+      {
+        $unwind: {
+          path: "$stateDetails",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "destinations",
+          localField: "stateDetails.parentDestinationId",
+          foreignField: "destinationId",
+          as: "countryDetails"
+        }
+      },
+      {
+        $unwind: {
+          path: "$countryDetails",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "availabilities",
+          localField: "tourId",
+          foreignField: "tourId",
+          as: "availability"
+        }
+      },
+      {
+        $addFields: {
+          availableDates: {
+            $map: {
+              input: {
+                $filter: {
+                  input: "$availability",
+                  as: "av",
+                  cond: {
+                    $gte: [
+                      "$$av.date",
+                      {
+                        $dateAdd: {
+                          startDate: {
+                            $dateFromParts: {
+                              year: { $year: new Date() },
+                              month: { $month: new Date() },
+                              day: { $dayOfMonth: new Date() },
+                              hour: 0,
+                              minute: 0,
+                              second: 0,
+                              millisecond: 0
+                            }
+                          },
+                          unit: "day",
+                          amount: 3
+                        }
                       }
-                    }
-                  ]
+                    ]
+                  }
                 }
-              }
-            },
-            as: "av",
-            in: "$$av.date"
+              },
+              as: "av",
+              in: "$$av.date"
+            }
           }
         }
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        markAsDeleted: 0,
-        recurringEndDate: 0,
-        submissionStatus: 0,
-        publisherId: 0,
-        destinationId: 0,
-        availability: 0,
-        "cityDetails._id": 0,
-        "stateDetails._id": 0,
-        "countryDetails._id": 0,
-        "cityDetails.parentDestinationId": 0,
-        "stateDetails.parentDestinationId": 0
-      }
-    },
-    {
-      $addFields: {
-        country: {
-          name: "$countryDetails.destination",
-          id: "$countryDetails.destinationId"
-        },
-        state: {
-          name: "$stateDetails.destination",
-          id: "$stateDetails.destinationId"
-        },
-        city: {
-          name: "$cityDetails.destination",
-          id: "$cityDetails.destinationId"
+      },
+      {
+        $project: {
+          _id: 0,
+          markAsDeleted: 0,
+          recurringEndDate: 0,
+          submissionStatus: 0,
+          publisherId: 0,
+          destinationId: 0,
+          availability: 0,
+          "cityDetails._id": 0,
+          "stateDetails._id": 0,
+          "countryDetails._id": 0,
+          "cityDetails.parentDestinationId": 0,
+          "stateDetails.parentDestinationId": 0
         }
+      },
+      {
+        $addFields: {
+          country: {
+            name: "$countryDetails.destination",
+            id: "$countryDetails.destinationId"
+          },
+          state: {
+            name: "$stateDetails.destination",
+            id: "$stateDetails.destinationId"
+          },
+          city: {
+            name: "$cityDetails.destination",
+            id: "$cityDetails.destinationId"
+          }
+        }
+      },
+      {
+        $project: {
+          cityDetails: 0,
+          stateDetails: 0,
+          countryDetails: 0
+        }
+      },
+      {
+        $sort: { createdAt: -1 }
+      },
+      {
+        $skip: (page - 1) * limit
+      },
+      {
+        $limit: limit
       }
-    },
-    {
-      $project: {
-        cityDetails: 0,
-        stateDetails: 0,
-        countryDetails: 0
-      }
-    },
-    {
-      $sort: { createdAt: -1 }
-    },
-    {
-      $skip: (page - 1) * limit
-    },
-    {
-      $limit: limit
-    }
-  ],
+    ];
+  },
   getPopularTours: (): PipelineStage[] => [
     {
       $match: {

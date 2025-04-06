@@ -1,4 +1,5 @@
 import envConfig from "../config/envConfig";
+import { CURRENCY_CODES } from "../config/otherConfig";
 import { EmailBooking } from "../services/emailService";
 import getDuration from "../utils/getDuration";
 
@@ -8,6 +9,7 @@ const bookingTemplate = (booking: EmailBooking) => {
   const isFreeCancelation = isSuccess && payment.refundableAmount !== payment.amount;
   const transformedDestination = booking.destination.split("-").join("_").split(" ").join("-");
   const transformedTourName = booking.tourName.split("-").join("_").split(" ").join("-");
+  const currencyCode = CURRENCY_CODES[payment.currency];
 
   return `<!DOCTYPE html> 
 <html> 
@@ -57,7 +59,7 @@ const bookingTemplate = (booking: EmailBooking) => {
                         <tr> 
                             <td style="color: #5B4DFF;">${booking.bookingId}</td> 
                             <td>${booking.createdAt.toISOString().split("T")[0]}</td> 
-                            <td>$${payment.amount.toFixed(2)}</td> 
+                            <td>${currencyCode}${payment.amount}</td> 
                             <td>Card</td> 
                         </tr> 
                     </table> 
