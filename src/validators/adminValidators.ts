@@ -233,6 +233,19 @@ export const BaseTourSchema = z.object({
     )
 });
 
+export const LimitSchema = z.object({
+  limit: z
+    .string()
+    .transform(parseToInt)
+    .pipe(
+      z
+        .number({ message: "Invalid limit" })
+        .min(5, { message: "Limit should not be less than 5" })
+        .max(25, "Limit should not be more than 25")
+    )
+    .optional()
+});
+
 export const PageSchema = z.object({
   page: z
     .string()
@@ -253,7 +266,8 @@ export const PublishedTourSchema = z
       )
       .optional()
   })
-  .merge(PageSchema);
+  .merge(PageSchema)
+  .merge(LimitSchema);
 
 export const TourSchema = BaseTourSchema.extend(LocationSchema.shape);
 

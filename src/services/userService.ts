@@ -78,7 +78,16 @@ export const getUserInfo = async (email: string) => {
 };
 
 export const updateUserProfile = async (updatedData: UserSchemaType, email: string) => {
-  await User.updateOne({ email, isVerified: true }, { $set: updatedData }, { runValidators: true });
+  const user = await User.findOneAndUpdate(
+    { email, isVerified: true },
+    { $set: updatedData },
+    { new: true, runValidators: true }
+  );
+
+  if (!user) throw new NotFoundError("User not found");
+
+  const token = generateToken({ email: user.email, role: user.role });
+  return token;
 };
 
 export const updateUserPassword = async ({ newPassword, oldPassword }: PasswordSchemaType, email: string) => {
@@ -110,8 +119,7 @@ export const addTourToFavorites = async (tourId: string, email: string, ip?: str
   await user.save();
 };
 
-export const getFavoriteTours = async (email: string, page: number, ip?: string) => {
-  const limit = 12;
+export const getFavoriteTours = async (email: string, page: number, limit: number, ip?: string) => {
   const user = await User.findOne({ email }, { favorites: 1 }).lean();
   if (!user)
     throw new BadRequestError(`Unauthorized user with ip ${ip} tried to get favorite tours with email ${email}`);
@@ -137,10 +145,10 @@ export const getUserBookings = async (
   email: string,
   page: number,
   status: BookingStatusSchemaType["status"],
+  limit: number,
   bookingId?: string,
   ip?: string
 ) => {
-  const limit = 10;
   const user = await User.findOne({ email, isVerified: true }, { _id: 1 }).lean();
   if (!user) throw new BadRequestError(`User with ip ${ip} tried to access all bookings with email ${email}`);
   const bookings = await Booking.aggregate(bookingAggregations.userBookings(user._id, page, status, limit, bookingId));

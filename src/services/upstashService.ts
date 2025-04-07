@@ -1,6 +1,6 @@
 import { Client, Receiver } from "@upstash/qstash";
 import envConfig from "../config/envConfig";
-import { upstashData, upstashPublishData } from "../type";
+import { UpstashData, UpstashPublishData } from "../type";
 
 const upstashClient = new Client({
   token: envConfig.upstashToken
@@ -13,7 +13,7 @@ const upstashReciever = new Receiver({
 
 const upstashWebhook = `${envConfig.backend}/webhook/upstash`;
 
-export const upstashValidate = async ({ signature, body }: upstashData) => {
+export const upstashValidate = async ({ signature, body }: UpstashData) => {
   return await upstashReciever.verify({
     signature,
     body,
@@ -21,7 +21,7 @@ export const upstashValidate = async ({ signature, body }: upstashData) => {
   });
 };
 
-export const upstashPublish = async ({ body, delay }: upstashPublishData) =>
+export const upstashPublish = async ({ body, delay }: UpstashPublishData) =>
   await upstashClient.publishJSON({
     body,
     delay,

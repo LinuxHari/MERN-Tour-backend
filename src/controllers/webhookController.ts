@@ -3,7 +3,7 @@ import asyncWrapper from "../asyncWrapper";
 import { stripeAuthorized, stripeFailed, stripeSuccess, stripeValidate } from "../services/stripeService";
 import responseHandler from "../handlers/responseHandler";
 // import { upstashValidate } from "../services/upstashService";
-import { Currency, upstashPublishData } from "../type";
+import { Currency, UpstashPublishData } from "../type";
 import { BadRequestError, NotFoundError } from "../handlers/errorHandler";
 import Availability from "../models/availabilityModel";
 import Reserved from "../models/reserveModel";
@@ -42,7 +42,7 @@ export const upstashWebhook = asyncWrapper(async (req: Request, res: Response) =
   //   throw new BadRequestError(`Invalid signature from upstash ${signature}`);
   // }
 
-  const { eventType, reserveId } = JSON.parse(req.body) as upstashPublishData["body"];
+  const { eventType, reserveId } = JSON.parse(req.body) as UpstashPublishData["body"];
   switch (eventType) {
     case "reserve":
       const reservedTour = await Reserved.findOne(

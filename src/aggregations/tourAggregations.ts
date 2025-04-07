@@ -92,7 +92,8 @@ const tourAggregations = {
     languages,
     sortType,
     startDate,
-    duration
+    duration,
+    limit
   }: ToursParams): PipelineStage[] => {
     const matchStage: Record<string, any> = {
       destinationId: { $in: cityDestinationIds },
@@ -194,7 +195,12 @@ const tourAggregations = {
       }
     };
 
-    const paginatedResultsPipeline = [...toursPipeline, finalProjectStage, { $skip: (page - 1) * 10 }, { $limit: 10 }];
+    const paginatedResultsPipeline = [
+      ...toursPipeline,
+      finalProjectStage,
+      { $skip: (page - 1) * limit },
+      { $limit: limit }
+    ];
 
     const totalCountPipeline = [...baseToursPipeline, { $count: "total" }];
 
@@ -256,7 +262,8 @@ const tourAggregations = {
     maxPrice,
     specials,
     languages,
-    sortType
+    sortType,
+    limit
   }: ToursByCategoryParams) => {
     const matchStage: Record<string, any> = {
       category
@@ -354,8 +361,8 @@ const tourAggregations = {
     const paginatedResultsPipeline = [
       ...baseToursPipeline,
       finalProjectStage,
-      { $skip: (page - 1) * 10 },
-      { $limit: 10 }
+      { $skip: (page - 1) * limit },
+      { $limit: limit }
     ];
 
     const totalCountPipeline = [...baseToursPipeline, { $count: "total" }];
@@ -489,7 +496,7 @@ const tourAggregations = {
       }
     ];
   },
-  getReviews: (tourId: Types.ObjectId) =>
+  getReviews: (tourId: Types.ObjectId, limit: number) =>
     [
       {
         $match: { tourId }
@@ -520,7 +527,7 @@ const tourAggregations = {
         $sort: { createdAt: -1 }
       },
       {
-        $limit: 10
+        $limit: limit
       },
       {
         $group: {
@@ -870,7 +877,7 @@ const tourAggregations = {
       }
     ];
   },
-  getPopularTours: (): PipelineStage[] => [
+  getPopularTours: (limit: number): PipelineStage[] => [
     {
       $match: {
         markAsDeleted: false
@@ -966,10 +973,10 @@ const tourAggregations = {
       }
     },
     {
-      $limit: 8
+      $limit: limit
     }
   ],
-  getTrendingTours: (): PipelineStage[] => [
+  getTrendingTours: (limit: number): PipelineStage[] => [
     {
       $group: {
         _id: "$tourId",
@@ -1063,7 +1070,7 @@ const tourAggregations = {
       $sort: { bookingCount: -1 }
     },
     {
-      $limit: 10
+      $limit: limit
     }
   ]
 };

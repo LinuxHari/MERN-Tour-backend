@@ -1,11 +1,11 @@
 import { Response } from "express";
 import { ZodIssue } from "zod";
 import envConfig from "../config/envConfig";
+import { CookieData } from "../type";
 
 type ResponseData = object | object[];
 
-const responseWithStatus = (res: Response, statusCode: number, data: ResponseData) =>
-  res.status(statusCode).json(data);
+const responseWithStatus = (res: Response, statusCode: number, data: ResponseData) => res.status(statusCode).json(data);
 
 const isDevelopment = envConfig.environment === "development";
 
@@ -67,6 +67,20 @@ const manyRequests = (res: Response) =>
     message: "Too many requests"
   });
 
+const setCookie = (res: Response, { cookieName, expires, maxAge, data }: CookieData) =>
+  res
+    .cookie(cookieName, data, {
+      signed: true,
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge,
+      expires
+    })
+    .send();
+
+const clearCookie = (res: Response, cookieName: string) => res.clearCookie(cookieName).send();
+
 const responseHandler = {
   error,
   badrequest,
@@ -77,7 +91,9 @@ const responseHandler = {
   notfound,
   conflict,
   gone,
-  manyRequests
+  manyRequests,
+  setCookie,
+  clearCookie
 };
 
 export default responseHandler;

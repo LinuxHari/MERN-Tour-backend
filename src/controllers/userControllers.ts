@@ -18,6 +18,7 @@ import {
 } from "../services/userService";
 import responseHandler from "../handlers/responseHandler";
 import { BookingStatusSchemaType } from "../validators/userValidators";
+import { COOKIE } from "../config/userConfig";
 
 export const signup = asyncWrapper(async (req: Request, res: Response) => {
   const { firstName, lastName, password, email } = req.body;
@@ -27,28 +28,18 @@ export const signup = asyncWrapper(async (req: Request, res: Response) => {
 
 export const login = asyncWrapper(async (req: Request, res: Response) => {
   const authToken = await authenticateUser(req.body);
-  res
-    .cookie("authToken", authToken, {
-      signed: true,
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 60 * 60 * 24 * 365 * 1000,
-      expires: new Date(Date.now() + 60 * 60 * 24 * 365)
-    })
-    .send();
-});
 
-export const logout = asyncWrapper(async (_: Request, res: Response) => {
-  res.clearCookie("authToken", {
-    signed: true,
-    httpOnly: true,
-    secure: true,
-    sameSite: "none"
+  responseHandler.setCookie(res, {
+    cookieName: COOKIE.authToken,
+    data: authToken,
+    maxAge: 60 * 60 * 24 * 365 * 1000,
+    expires: new Date(Date.now() + 60 * 60 * 24 * 365)
   });
-
-  res.send();
 });
+
+export const logout = asyncWrapper(async (_: Request, res: Response) =>
+  responseHandler.clearCookie(res, COOKIE.authToken)
+);
 
 export const verifyEmail = asyncWrapper(async (req: Request, res: Response) => {
   await verifyUserEmail(req.body.authToken);
@@ -81,8 +72,14 @@ export const userInfo = asyncWrapper(async (_: Request, res: Response) => {
 });
 
 export const updateProfile = asyncWrapper(async (req: Request, res: Response) => {
-  await updateUserProfile(req.body, res.locals.email);
-  responseHandler.ok(res, { message: "Success" });
+  const authToken = await updateUserProfile(req.body, res.locals.email);
+
+  responseHandler.setCookie(res, {
+    cookieName: COOKIE.authToken,
+    data: authToken,
+    maxAge: 60 * 60 * 24 * 365 * 1000,
+    expires: new Date(Date.now() + 60 * 60 * 24 * 365)
+  });
 });
 
 export const updatePassword = asyncWrapper(async (req: Request, res: Response) => {
@@ -97,7 +94,8 @@ export const addTourToFavorite = asyncWrapper(async (req: Request, res: Response
 
 export const getUserFavoriteTours = asyncWrapper(async (req: Request, res: Response) => {
   const page = typeof req.query.page === "number" ? req.query.page : 1;
-  const favoriteTours = await getFavoriteTours(res.locals.email, page, req.ip);
+  const limit = typeof req.query.limit === "number" ? req.query.limit : 12;
+  const favoriteTours = await getFavoriteTours(res.locals.email, page, limit, req.ip);
   responseHandler.ok(res, favoriteTours);
 });
 
@@ -108,9 +106,10 @@ export const removeTourFromFavorite = asyncWrapper(async (req: Request, res: Res
 
 export const getBookings = asyncWrapper(async (req: Request, res: Response) => {
   const page = typeof req.query.page === "number" ? req.query.page : 1;
+  const limit = typeof req.query.limit === "number" ? req.query.limit : 10;
   const status = req.query.status as BookingStatusSchemaType["status"];
   const bookingId = req.query.bookingId as string | undefined;
 
-  const bookings = await getUserBookings(res.locals.email, page, status, bookingId, req.ip);
+  const bookings = await getUserBookings(res.locals.email, page, status, limit, bookingId, req.ip);
   responseHandler.ok(res, bookings);
 });

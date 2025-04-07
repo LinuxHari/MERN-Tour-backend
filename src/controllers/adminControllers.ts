@@ -17,8 +17,9 @@ export const addTour = asyncWrapper(async (req: Request, res: Response) => {
 
 export const getTours = asyncWrapper(async (req: Request, res: Response) => {
   const page = typeof req.query.page === "number" ? req.query.page : 1;
+  const limit = typeof req.query.limit === "number" ? req.query.limit : 12;
   const tourName = req.query.tourName as string;
-  const tours = await getPublishedTours(page, tourName);
+  const tours = await getPublishedTours(page, tourName, limit);
   responseHandler.ok(res, tours);
 });
 

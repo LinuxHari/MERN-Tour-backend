@@ -55,7 +55,8 @@ export const getTours = async (params: TourListingSchemaType, email?: string) =>
     rating,
     tourTypes,
     minPrice,
-    maxPrice
+    maxPrice,
+    limit
   } = params;
 
   const minAge = infants ? 0 : children ? 3 : teens ? 13 : 18;
@@ -82,7 +83,8 @@ export const getTours = async (params: TourListingSchemaType, email?: string) =>
       languages,
       sortType,
       startDate: new Date(startDate),
-      duration
+      duration,
+      limit: limit || 10
     }),
     { hint: { destinationId: 1, minAge: 1 }, $allowDiskUse: true }
   );
@@ -106,7 +108,12 @@ export const getTours = async (params: TourListingSchemaType, email?: string) =>
   return returnResult;
 };
 
-export const getToursByCategory = async (params: TourListingSchemaType, category: string, email?: string) => {
+export const getToursByCategory = async (
+  params: TourListingSchemaType,
+  category: string,
+  limit: number,
+  email?: string
+) => {
   const { page, filters, sortType, specials, languages, rating, minPrice, maxPrice } = params;
 
   const result = await Tour.aggregate(
@@ -119,7 +126,8 @@ export const getToursByCategory = async (params: TourListingSchemaType, category
       maxPrice,
       specials,
       languages,
-      sortType
+      sortType,
+      limit
     }),
     { hint: { category: 1 }, $allowDiskUse: true }
   );
@@ -462,26 +470,26 @@ export const tourReview = async (review: RatingType, tourId: string, email: stri
   }
 };
 
-export const getTourReview = async (tourId: string) => {
+export const getTourReview = async (tourId: string, limit: number) => {
   const tour = await Tour.findOne({ tourId }, { _id: 1 }).lean();
   if (!tour) {
     throw new BadRequestError(`Tour with ${tourId} id does not exist and happened to access review`);
   }
 
-  const reviews = await Review.aggregate(tourAggregations.getReviews(tour._id));
+  const reviews = await Review.aggregate(tourAggregations.getReviews(tour._id, limit));
   return reviews[0];
 };
 
-export const getTopPopularTours = async () => {
-  const tours = await Tour.aggregate(tourAggregations.getPopularTours());
+export const getTopPopularTours = async (limit: number) => {
+  const tours = await Tour.aggregate(tourAggregations.getPopularTours(limit));
 
   if (!tours.length) throw new NotFoundError("No popular tours found");
 
   return tours;
 };
 
-export const getTopTrendingTours = async () => {
-  const tours = await Booking.aggregate(tourAggregations.getTrendingTours());
+export const getTopTrendingTours = async (limit: number) => {
+  const tours = await Booking.aggregate(tourAggregations.getTrendingTours(limit));
 
   if (!tours.length) throw new NotFoundError("No popular tours found");
 

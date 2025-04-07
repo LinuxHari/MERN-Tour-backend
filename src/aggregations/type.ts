@@ -18,6 +18,7 @@ export type ToursParams = {
   sortType?: (typeof SORTTYPES)[number];
   startDate: Date;
   duration: number;
+  limit: number;
 };
 
 export type ToursByCategoryParams = {
@@ -30,4 +31,5 @@ export type ToursByCategoryParams = {
   specials?: string[];
   languages?: string[];
   sortType?: (typeof SORTTYPES)[number];
+  limit: number;
 };

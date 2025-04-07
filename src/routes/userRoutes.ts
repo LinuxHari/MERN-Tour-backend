@@ -19,6 +19,7 @@ import {
 import requestHandler from "../handlers/requestHandler";
 import { EmailSchema, LoginSchema, SignupSchema } from "../validators/authValidators";
 import {
+  FavoriteTours,
   PasswordSchema,
   ResetPasswordSchema,
   TokenSchema,
@@ -43,13 +44,21 @@ router.post("/verify-reset-token", requestHandler(TokenSchema), verifyResetToken
 router.patch("/update-password", requestHandler(ResetPasswordSchema), updateResetPassword);
 
 router.get("/bookings", verifyAuthToken, requestHandler(UserBookings, "query"), getBookings);
-router.get("/favorite", verifyAuthToken, requestHandler(PageSchema, "query"), getUserFavoriteTours);
+router.get("/favorite", verifyAuthToken, requestHandler(FavoriteTours, "query"), getUserFavoriteTours);
 router.post("/favorite/:tourId", verifyAuthToken, requestHandler(SingleTourParamSchema, "params"), addTourToFavorite);
 router.delete(
   "/favorite/:tourId",
   verifyAuthToken,
   requestHandler(SingleTourParamSchema, "params"),
   removeTourFromFavorite
+);
+
+router.put(
+  "/password",
+  verifyAuthToken,
+  requestHandler(TokenSchema, "signedCookies"),
+  requestHandler(PasswordSchema, "body"),
+  updatePassword
 );
 
 router.get("/", verifyAuthToken, requestHandler(TokenSchema, "signedCookies"), userInfo);
@@ -59,14 +68,6 @@ router.put(
   requestHandler(TokenSchema, "signedCookies"),
   requestHandler(UserSchema, "body"),
   updateProfile
-);
-
-router.put(
-  "/password",
-  verifyAuthToken,
-  requestHandler(TokenSchema, "signedCookies"),
-  requestHandler(PasswordSchema, "body"),
-  updatePassword
 );
 
 export default router;

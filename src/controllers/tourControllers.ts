@@ -34,7 +34,8 @@ export const tours = asyncWrapper(async (req: Request, res: Response) => {
 export const toursByCategory = asyncWrapper(async (req: Request, res: Response) => {
   const { data } = verifyToken(req.signedCookies["authToken"]);
   const category = req.params.category;
-  const tours = await getToursByCategory(Object(req.query), category, data?.email);
+  const limit = typeof req.query.limit === "number" ? req.query.limit : 10;
+  const tours = await getToursByCategory(Object(req.query), category, limit, data?.email);
   responseHandler.ok(res, tours);
 });
 
@@ -75,17 +76,20 @@ export const reviewTour = asyncWrapper(async (req: Request, res: Response) => {
 });
 
 export const getReview = asyncWrapper(async (req: Request, res: Response) => {
-  const reviews = await getTourReview(req.params.tourId);
+  const limit = typeof req.query.limit === "number" ? req.query.limit : 10;
+  const reviews = await getTourReview(req.params.tourId, limit);
   responseHandler.ok(res, reviews);
 });
 
-export const getPopularTours = asyncWrapper(async (_: Request, res: Response) => {
-  const tours = await getTopPopularTours();
+export const getPopularTours = asyncWrapper(async (req: Request, res: Response) => {
+  const limit = typeof req.query.limit === "number" ? req.query.limit : 8;
+  const tours = await getTopPopularTours(limit);
   responseHandler.ok(res, tours);
 });
 
-export const getTrendingTours = asyncWrapper(async (_: Request, res: Response) => {
-  const tours = await getTopTrendingTours();
+export const getTrendingTours = asyncWrapper(async (req: Request, res: Response) => {
+  const limit = typeof req.query.limit === "number" ? req.query.limit : 10;
+  const tours = await getTopTrendingTours(limit);
   responseHandler.ok(res, tours);
 });
 

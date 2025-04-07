@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { LocationSchema, PageSchema } from "./adminValidators";
+import { LimitSchema, LocationSchema, PageSchema } from "./adminValidators";
 import { EmailSchema, LoginSchema, NameSchema } from "./authValidators";
 import removeSpaces from "../utils/removeSpaces";
 import { BOOKING_STATUS } from "../config/userConfig";
@@ -22,6 +22,7 @@ export const UserSchema = z
     //       message: "Only images are allowed to be sent."
     //     })
     // }),
+    countryCode: z.number().min(1).max(999),
     address: z.string({ message: "Invalid address" }).transform(removeSpaces).pipe(z.string().min(10).max(200))
   })
   .extend(NameSchema.shape)
@@ -53,11 +54,15 @@ export const ResetPasswordSchema = TokenSchema.merge(BasePasswordSchema).refine(
   }
 );
 
-export const UserBookings = BookingStatusSchema.merge(PageSchema).merge(
-  z.object({
-    bookingId: BookingTourParamSchema.shape.bookingId.optional()
-  })
-);
+export const UserBookings = BookingStatusSchema.merge(PageSchema)
+  .merge(
+    z.object({
+      bookingId: BookingTourParamSchema.shape.bookingId.optional()
+    })
+  )
+  .merge(LimitSchema);
+
+export const FavoriteTours = PageSchema.merge(LimitSchema);
 
 export type UserSchemaType = z.infer<typeof UserSchema>;
 export type BookingStatusSchemaType = z.infer<typeof BookingStatusSchema>;

@@ -5,17 +5,24 @@ export type JwtData = {
   role?: string;
 };
 
-export type upstashData = {
+export type UpstashData = {
   body: string;
   signature: string;
 };
 
-export type upstashPublishData = {
+export type UpstashPublishData = {
   body: {
     eventType: "reserve";
     reserveId: string;
   };
   delay: number;
+};
+
+export type CookieData = {
+  cookieName: string;
+  expires: Date;
+  maxAge: number;
+  data: string;
 };
 
 export type Currency = ReserveTourType["currency"];

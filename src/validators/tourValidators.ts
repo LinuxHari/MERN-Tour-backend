@@ -2,7 +2,7 @@ import { z } from "zod";
 import removeSpaces from "../utils/removeSpaces";
 import { CATEGORIES, SORTTYPES, SPECIALS } from "../config/tourConfig";
 import { EmailSchema } from "./authValidators";
-import { LocationSchema, PageSchema } from "./adminValidators";
+import { LimitSchema, LocationSchema, PageSchema } from "./adminValidators";
 import { CURRENCIES } from "../config/otherConfig";
 import { isValidDate, parseToInt, strToArr } from "../utils/schemaUtils";
 
@@ -63,7 +63,8 @@ export const TourListingSchema = z
       .transform(parseToInt)
       .pipe(z.number().int().min(0).max(9, { message: "Number of infant should not exceed 9" }))
   })
-  .merge(FiltersSchema);
+  .merge(FiltersSchema)
+  .merge(LimitSchema);
 
 export const SingleTourParamSchema = z.object({
   tourId: z.string().length(8, { message: "Invalid tour id" })
@@ -142,7 +143,7 @@ export const RatingSchema = z.object({
 
 export const ToursByCategorySchema = FiltersSchema.omit({
   tourTypes: true
-});
+}).merge(LimitSchema);
 
 export const CategorySchema = z.object({
   category: z.enum(CATEGORIES, { message: "Invalid category" })

@@ -29,6 +29,7 @@ import {
   CategorySchema
 } from "../validators/tourValidators";
 import verifyAuthToken from "../middlewares/verifyAuthToken";
+import { LimitSchema } from "../validators/adminValidators";
 
 const router = Router();
 
@@ -49,7 +50,12 @@ router.post(
   requestHandler(BookingTourParamSchema, "params"),
   cancelBooking
 );
-router.get("/review/:tourId", requestHandler(SingleTourParamSchema, "params"), getReview);
+router.get(
+  "/review/:tourId",
+  requestHandler(SingleTourParamSchema, "params"),
+  requestHandler(LimitSchema, "query"),
+  getReview
+);
 router.post(
   "/review/:tourId",
   verifyAuthToken,
@@ -57,8 +63,8 @@ router.post(
   requestHandler(RatingSchema),
   reviewTour
 );
-router.get("/popular", getPopularTours);
-router.get("/trending", getTrendingTours);
+router.get("/popular", requestHandler(LimitSchema, "query"), getPopularTours);
+router.get("/trending", requestHandler(LimitSchema, "query"), getTrendingTours);
 
 router.get(
   "/category/:category",
