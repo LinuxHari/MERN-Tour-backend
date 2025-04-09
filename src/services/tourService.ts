@@ -16,7 +16,7 @@ import User from "../models/userModel";
 import Reserved from "../models/reserveModel";
 import { stripeCreate, stripeRefund } from "./stripeService";
 import Booking, { BookingType, PaymentType } from "../models/bookingModel";
-import { MAX_BOOKING_RETRY } from "../config/tourConfig";
+import { MAX_BOOKING_RETRY, MIN_AGE } from "../config/tourConfig";
 import getDuration from "../utils/getDuration";
 import Review from "../models/reviewModel";
 import { sendBookingMail } from "./emailService";
@@ -31,11 +31,71 @@ import formatPrice from "../utils/formatPrice";
 
 export const searchSuggestions = async (searchText: string) => {
   const regex = new RegExp(searchText, "i");
-  const result = await Destination.find({ destination: regex }, { _id: 0, parentDestinationId: 0, __v: 0 })
-    .limit(5)
-    .lean();
 
-  return result;
+  const destinations = await Destination.aggregate([
+    { $match: { destination: regex } },
+    {
+      $project: {
+        _id: 0,
+        destination: 1,
+        destinationType: 1,
+        destinationId: 1
+      }
+    },
+    { $limit: 3 }
+  ]);
+
+  const remaining = 5 - destinations.length;
+
+  let tours = [];
+
+  if (remaining > 0) {
+    tours = await Tour.aggregate([
+      { $match: { name: regex } },
+      {
+        $project: {
+          _id: 0,
+          type: { $literal: "tour" },
+          name: 1,
+          tourId: 1,
+          image: { $arrayElemAt: ["$images", 0] },
+          destinationId: 1,
+          minAge: 1
+        }
+      },
+      { $limit: remaining },
+      {
+        $lookup: {
+          from: "destinations",
+          localField: "destinationId",
+          foreignField: "destinationId",
+          as: "destinationDetails"
+        }
+      },
+      {
+        $addFields: {
+          destination: {
+            $cond: {
+              if: { $gt: [{ $size: "$destinationDetails" }, 0] },
+              then: { $arrayElemAt: ["$destinationDetails.destination", 0] },
+              else: ""
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          name: 1,
+          tourId: 1,
+          image: 1,
+          destination: 1,
+          minAge: 1
+        }
+      }
+    ]);
+  }
+
+  return { destinations, tours };
 };
 
 export const getTours = async (params: TourListingSchemaType, email?: string) => {
@@ -184,6 +244,15 @@ export const reserveTour = async (reserveDetails: ReserveTourType, email: string
 
     const tour = await Tour.findOne({ tourId }, { price: 1 }).session(session);
     if (!tour) throw new NotFoundError(`Tour with ${tourId} id not found`);
+
+    const isValidPax = (() => {
+      return Object.entries(MIN_AGE).every(([paxType, ageLimit]) => {
+        const count = pax[paxType as keyof ReserveTourType["pax"]] || 0;
+        return ageLimit >= tour.minAge || count === 0;
+      });
+    })();
+
+    if (!isValidPax) throw new BadRequestError(`Invalid pas have been sent ${JSON.stringify(pax)}`);
 
     const totalPassengers = pax.adults + (pax?.teens || 0) + (pax?.children || 0) + (pax?.infants || 0);
 
