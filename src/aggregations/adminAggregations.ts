@@ -1,4 +1,5 @@
 import { PipelineStage } from "mongoose";
+import { CURRENCY_CODES } from "../config/otherConfig";
 
 const adminAggregations = {
   getEarnings: (): PipelineStage[] => {
@@ -261,6 +262,97 @@ const adminAggregations = {
           }
         }
       }
+    ];
+  },
+  getBookings: (page: number, status: string, limit: number, bookingId?: string): PipelineStage[] => {
+    const skip = (page - 1) * limit;
+
+    const match: Record<string, any> = {};
+    if (bookingId) match.bookingId = { $regex: bookingId, $options: "i" };
+    if (status) {
+      match.bookingStatus = status === "pending" ? "init" : status === "confirmed" ? "success" : status;
+    }
+
+    const currencyBranches = Object.entries(CURRENCY_CODES).map(([currency, symbol]) => ({
+      case: { $eq: ["$latestPayment.currency", currency] },
+      then: { $literal: symbol }
+    }));
+
+    return [
+      { $match: match },
+      {
+        $addFields: {
+          latestPayment: { $last: "$transaction.history" }
+        }
+      },
+      {
+        $lookup: {
+          from: "tours",
+          localField: "tourId",
+          foreignField: "tourId",
+          as: "tourDetails"
+        }
+      },
+      { $unwind: "$tourDetails" },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "user"
+        }
+      },
+      { $unwind: "$user" },
+      {
+        $project: {
+          _id: 0,
+          bookingId: 1,
+          startDate: 1,
+          tour: {
+            name: "$tourDetails.name",
+            imgUrl: { $arrayElemAt: ["$tourDetails.images", 0] }
+          },
+          duration: "$tourDetails.duration",
+          details: "$tourDetails.details",
+          amount: "$latestPayment.amount",
+          refundableAmount: "$latestPayment.refundableAmount",
+          status: {
+            $cond: [
+              { $eq: ["$bookingStatus", "success"] },
+              "Confirmed",
+              { $cond: [{ $eq: ["$bookingStatus", "pending"] }, "Pending", "Canceled"] }
+            ]
+          },
+          passengers: {
+            $add: [
+              { $ifNull: ["$passengers.adults", 0] },
+              { $ifNull: ["$passengers.teens", 0] },
+              { $ifNull: ["$passengers.children", 0] },
+              { $ifNull: ["$passengers.infants", 0] }
+            ]
+          },
+          currencyCode: {
+            $switch: {
+              branches: currencyBranches,
+              default: { $literal: "" }
+            }
+          },
+          name: "$bookerInfo.name",
+          email: "$bookerInfo.email",
+          phoneNumber: "$bookerInfo.phoneNumber",
+          countryCode: "$user.countryCode",
+          isCancelable: {
+            $cond: {
+              if: { $gt: ["$startDate", new Date()] },
+              then: true,
+              else: false
+            }
+          }
+        }
+      },
+      { $sort: { startDate: -1 } },
+      { $skip: skip },
+      { $limit: limit }
     ];
   }
 };

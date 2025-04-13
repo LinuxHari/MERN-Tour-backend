@@ -6,7 +6,9 @@ import {
   getPublishedTours,
   getAllStats,
   updatePublishedTour,
-  getPublishedTour
+  getPublishedTour,
+  getTotalBookings,
+  cancelBookedTour
 } from "../services/adminService";
 import asyncWrapper from "../asyncWrapper";
 
@@ -39,7 +41,22 @@ export const deleteTour = asyncWrapper(async (req: Request, res: Response) => {
   responseHandler.ok(res, { message: "Success" });
 });
 
-export const getStats = asyncWrapper(async (req: Request, res: Response) => {
+export const getStats = asyncWrapper(async (_: Request, res: Response) => {
   const revenue = await getAllStats();
   responseHandler.ok(res, revenue);
+});
+
+export const getBookings = asyncWrapper(async (req: Request, res: Response) => {
+  const limit = typeof req.query.limit === "number" ? req.query.limit : 10;
+  const page = typeof req.query.page === "number" ? req.query.page : 1;
+  const status = req.query.status as string;
+  const bookingId = req.query.bookingId as string;
+  const revenue = await getTotalBookings(page, status, limit, bookingId);
+  responseHandler.ok(res, revenue);
+});
+
+export const cancelBooking = asyncWrapper(async (req: Request, res: Response) => {
+  const bookingId = req.params.bookingId as string;
+  await cancelBookedTour(bookingId);
+  responseHandler.ok(res, { mesage: "success" });
 });

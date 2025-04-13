@@ -47,7 +47,7 @@ const userAggregations = {
       {
         $project: {
           _id: 0,
-          price: {
+          amount: {
             $arrayElemAt: ["$transaction.history.amount", -1]
           },
           currency: "$latestCurrency",
@@ -72,7 +72,7 @@ const userAggregations = {
             $cond: [
               { $eq: ["$bookingStatus", "success"] },
               "Confirmed",
-              { $cond: [{ $eq: ["$bookingStatus", "init"] }, "Pending", "Canceled"] }
+              { $cond: [{ $eq: ["$bookingStatus", "pending"] }, "Pending", "Canceled"] }
             ]
           }
         }

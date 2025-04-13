@@ -20,7 +20,7 @@ const bookingTemplate = (booking: EmailBooking) => {
 <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;"> 
    <div>
    <a href=${envConfig.frontend}>
-   <img src="https://firebasestorage.googleapis.com/v0/b/mern-tours-e23a8.appspot.com/o/assets%2Flogo-1.svg?alt=media&amp;token=abbcab85-1eed-4fdd-9ee5-cd4653407341" alt="Viatours" style="display: block;"><span style="font-size: 0.5rem;">Adventure Awaits! Let's Begin</span>
+   <img src="https://firebasestorage.googleapis.com/v0/b/mern-tours-e23a8.appspot.com/o/assets%2Flogo-1.svg?alt=media&amp;token=abbcab85-1eed-4fdd-9ee5-cd4653407341" alt="Viatours" style="display: block; width: 162px;height:42px;">
    </a>
    </div>
     <table cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px; width: 100%;"> 
@@ -30,7 +30,7 @@ const bookingTemplate = (booking: EmailBooking) => {
                     <table align="center">
                         <tr>
                             <td>
-                               <img src="https://firebasestorage.googleapis.com/v0/b/mern-tours-e23a8.appspot.com/o/assets%2Fsuccess.png?alt=media&token=6952e61b-0fbb-4539-94fa-2b2ba40f9e37" alt="mern-tours" style="height:60px;width:60px;"/>
+                               <img src="https://firebasestorage.googleapis.com/v0/b/mern-tours-e23a8.appspot.com/o/assets%2Flogo.png?alt=media&token=626fdce0-f733-49d0-bdcb-ea7f63b0963a" alt="mern-tours" style="height:60px;width:60px;"/>
                             </td>
                         </tr>
                     </table>

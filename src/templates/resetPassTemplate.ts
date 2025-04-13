@@ -11,7 +11,7 @@ const resetPasswordTemplate = (token: string, name: string) => {
 <body style="font-family: Arial, sans-serif; background-color: #f8f9fa; text-align: center; padding: 20px;">
     <div style="max-width: 600px; background: #ffffff; padding: 20px; border-radius: 10px; margin: auto; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);">
     <a href=${envConfig.frontend}>
-       <img src="https://firebasestorage.googleapis.com/v0/b/mern-tours-e23a8.appspot.com/o/assets%2Flogo-1.svg?alt=media&amp;token=abbcab85-1eed-4fdd-9ee5-cd4653407341" alt="Viatours" style="display: block;"><span style="font-size: 0.5rem;">Adventure Awaits! Let's Begin</span>
+       <img src="https://firebasestorage.googleapis.com/v0/b/mern-tours-e23a8.appspot.com/o/assets%2Flogo.png?alt=media&token=626fdce0-f733-49d0-bdcb-ea7f63b0963a" alt="Viatours" style="display: block; width: 162px; height: 42px;">
        </a>    
     <div style="text-align: center;">
             <img src="https://firebasestorage.googleapis.com/v0/b/mern-tours-e23a8.appspot.com/o/assets%2Fsuccess.png?alt=media&token=6952e61b-0fbb-4539-94fa-2b2ba40f9e37" alt="mern-tours" style="height:60px;width:60px;"/>

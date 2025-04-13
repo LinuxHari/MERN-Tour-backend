@@ -1,7 +1,7 @@
 import mongoose, { ClientSession } from "mongoose";
 import { TourSchemaType } from "../validators/adminValidators";
 import Destination, { DestinationType } from "../models/destinationModel";
-import { BadRequestError, NotFoundError, ServerError } from "../handlers/errorHandler";
+import { BadRequestError, ConflictError, NotFoundError, ServerError } from "../handlers/errorHandler";
 import generateId from "../utils/generateId";
 import Tour from "../models/tourModel";
 import tourAggregations from "../aggregations/tourAggregations";
@@ -116,13 +116,20 @@ const extractDates = (availableDates: Date[], existingAvailableDates: { date: Da
   return { removedDates, newDates };
 };
 
-const cancelBookedTour = async (bookingId: string, session: mongoose.ClientSession) => {
-  const booking = await Booking.findOne({ bookingId }).session(session);
+export const cancelBookedTour = async (bookingId: string, session?: mongoose.ClientSession) => {
+  const bookingQuery = Booking.findOne({ bookingId });
+  const booking = session ? await bookingQuery.session(session) : await bookingQuery;
+
   if (!booking)
     throw new BadRequestError(`Cancellation request for booking id ${bookingId} failed, ${bookingId} does not exist`);
 
   const tour = await Tour.findOne({ tourId: booking.tourId }, { name: 1, destinationId: 1 }).lean();
+
   if (!tour) throw new NotFoundError(`Invalid tour id ${booking.tourId} is stored for booking ${booking.bookingId}`);
+
+  const isCancellable = new Date().getTime() < booking.startDate.getTime();
+
+  if (!isCancellable) throw new ConflictError(`Cannot cancel past booking ${booking.bookingId}`);
 
   if (booking.bookingStatus === "success") {
     const payment = booking.transaction.history[booking.transaction.history.length - 1];
@@ -130,7 +137,9 @@ const cancelBookedTour = async (bookingId: string, session: mongoose.ClientSessi
     booking.transaction.paymentStatus = "refunded";
   }
 
-  const destination = await Destination.findOne({ destinationId: tour.destinationId }, { destination: 1 }).lean();
+  const destinationQuery = Destination.findOne({ destinationId: tour.destinationId }, { destination: 1 });
+  const destination = session ? await destinationQuery.session(session).lean() : await destinationQuery.lean();
+
   if (!destination)
     throw new ServerError(`Invalid destination id ${tour.destinationId} from tour with id ${booking.tourId}`);
 
@@ -143,7 +152,8 @@ const cancelBookedTour = async (bookingId: string, session: mongoose.ClientSessi
   });
 
   booking.emailStatus = error ? "failed" : "sent";
-  await booking.save({ session });
+
+  await (session ? booking.save({ session }) : booking.save());
 };
 
 export const updatePublishedTour = async (tourData: TourSchemaType, tourId: string) => {
@@ -234,4 +244,9 @@ export const getAllStats = async () => {
   const revenueStats = await Booking.aggregate(adminAggregations.getEarnings());
 
   return revenueStats[0];
+};
+
+export const getTotalBookings = async (page: number, status: string, limit: number, bookingId?: string) => {
+  const totalBookings = await Booking.aggregate(adminAggregations.getBookings(page, status, limit, bookingId));
+  return { bookings: totalBookings, totalPages: Math.ceil(totalBookings.length / limit) };
 };
