@@ -5,6 +5,7 @@ import {
   authenticateUser,
   createUser,
   getFavoriteTours,
+  getStats,
   getUserBookings,
   getUserInfo,
   removeFavoriteTour,
@@ -112,4 +113,9 @@ export const getBookings = asyncWrapper(async (req: Request, res: Response) => {
 
   const bookings = await getUserBookings(res.locals.email, page, status, limit, bookingId, req.ip);
   responseHandler.ok(res, bookings);
+});
+
+export const getUserStats = asyncWrapper(async (req: Request, res: Response) => {
+  const stats = await getStats(res.locals.email, req.ip);
+  responseHandler.ok(res, stats);
 });

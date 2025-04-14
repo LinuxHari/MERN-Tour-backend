@@ -3,6 +3,7 @@ import {
   addTourToFavorite,
   getBookings,
   getUserFavoriteTours,
+  getUserStats,
   login,
   logout,
   removeTourFromFavorite,
@@ -52,6 +53,8 @@ router.delete(
   requestHandler(SingleTourParamSchema, "params"),
   removeTourFromFavorite
 );
+
+router.get("/statistics", verifyAuthToken, getUserStats);
 
 router.put(
   "/password",

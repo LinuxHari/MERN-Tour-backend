@@ -211,6 +211,190 @@ const userAggregations = {
         tourIds: 1
       }
     }
+  ],
+  getUserStats: (currentDate: Date, monthsArray: Date[], userId: mongoose.Types.ObjectId): PipelineStage[] => [
+    {
+      $match: {
+        userId: new mongoose.Types.ObjectId(userId),
+        bookingStatus: "success"
+      }
+    },
+    {
+      $lookup: {
+        from: "tours",
+        localField: "tourId",
+        foreignField: "tourId",
+        as: "tourInfo"
+      }
+    },
+
+    {
+      $unwind: {
+        path: "$tourInfo",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+
+    {
+      $lookup: {
+        from: "destinations",
+        let: { destId: "$tourInfo.destinationId" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: ["$destinationId", "$$destId"] }, { $eq: ["$destinationType", "City"] }]
+              }
+            }
+          }
+        ],
+        as: "destination"
+      }
+    },
+    {
+      $facet: {
+        totalBookings: [{ $count: "count" }],
+
+        upcomingTrips: [
+          {
+            $match: {
+              startDate: { $gt: currentDate }
+            }
+          },
+          { $count: "count" }
+        ],
+
+        totalDestinations: [
+          {
+            $match: {
+              "destination.0": { $exists: true }
+            }
+          },
+          {
+            $group: {
+              _id: "$destination.destinationId",
+              name: { $first: "$destination.destination" }
+            }
+          },
+          {
+            $count: "count"
+          }
+        ],
+
+        totalDays: [
+          {
+            $project: {
+              daysDifference: {
+                $ceil: {
+                  $divide: [{ $subtract: ["$endDate", "$startDate"] }, 1000 * 60 * 60 * 24]
+                }
+              }
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              totalDays: { $sum: "$daysDifference" }
+            }
+          }
+        ],
+
+        monthlyData: [
+          {
+            $project: {
+              startDate: 1,
+              endDate: 1,
+              monthRanges: monthsArray.map((monthStart, i) => {
+                const monthEnd = new Date(monthStart);
+                monthEnd.setMonth(monthEnd.getMonth() + 1);
+
+                return {
+                  monthIndex: i,
+                  monthStart,
+                  monthEnd
+                };
+              })
+            }
+          },
+          { $unwind: "$monthRanges" },
+          {
+            $project: {
+              monthIndex: "$monthRanges.monthIndex",
+              daysInMonth: {
+                $cond: {
+                  if: {
+                    $or: [
+                      {
+                        $and: [
+                          { $gte: ["$startDate", "$monthRanges.monthStart"] },
+                          { $lt: ["$startDate", "$monthRanges.monthEnd"] }
+                        ]
+                      },
+                      {
+                        $and: [
+                          { $gte: ["$endDate", "$monthRanges.monthStart"] },
+                          { $lt: ["$endDate", "$monthRanges.monthEnd"] }
+                        ]
+                      },
+                      {
+                        $and: [
+                          { $lt: ["$startDate", "$monthRanges.monthStart"] },
+                          { $gt: ["$endDate", "$monthRanges.monthEnd"] }
+                        ]
+                      }
+                    ]
+                  },
+                  then: {
+                    $let: {
+                      vars: {
+                        effectiveStart: {
+                          $cond: {
+                            if: { $lt: ["$startDate", "$monthRanges.monthStart"] },
+                            then: "$monthRanges.monthStart",
+                            else: "$startDate"
+                          }
+                        },
+                        effectiveEnd: {
+                          $cond: {
+                            if: { $gt: ["$endDate", "$monthRanges.monthEnd"] },
+                            then: "$monthRanges.monthEnd",
+                            else: "$endDate"
+                          }
+                        }
+                      },
+                      in: {
+                        $ceil: {
+                          $divide: [{ $subtract: ["$$effectiveEnd", "$$effectiveStart"] }, 1000 * 60 * 60 * 24]
+                        }
+                      }
+                    }
+                  },
+                  else: 0
+                }
+              }
+            }
+          },
+          {
+            $group: {
+              _id: "$monthIndex",
+              days: { $sum: "$daysInMonth" }
+            }
+          },
+          {
+            $sort: { _id: 1 }
+          }
+        ]
+      }
+    },
+    {
+      $project: {
+        totalBookings: { $ifNull: [{ $arrayElemAt: ["$totalBookings.count", 0] }, 0] },
+        upcomingTrips: { $ifNull: [{ $arrayElemAt: ["$upcomingTrips.count", 0] }, 0] },
+        totalDestinations: { $ifNull: [{ $arrayElemAt: ["$totalDestinations.count", 0] }, 0] },
+        totalDays: { $ifNull: [{ $arrayElemAt: ["$totalDays.totalDays", 0] }, 0] },
+        monthlyData: "$monthlyData"
+      }
+    }
   ]
 };
 

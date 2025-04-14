@@ -9,6 +9,7 @@ import { LoginSchemaType, SignupSchemaType } from "../validators/authValidators"
 import bcrypt from "bcrypt";
 import { BookingStatusSchemaType, PasswordSchemaType, UserSchemaType } from "../validators/userValidators";
 import { sendResetPassMail, sendVerificationMail } from "./emailService";
+import userAggregations from "../aggregations/userAggregations";
 
 export const sendUserVerificationMail = async (email: string, name?: string) => {
   const token = generateToken({ email });
@@ -154,4 +155,24 @@ export const getUserBookings = async (
   const bookings = await Booking.aggregate(bookingAggregations.userBookings(user._id, page, status, limit, bookingId));
 
   return { bookings, totalPages: Math.ceil(bookings.length / limit) };
+};
+
+export const getStats = async (email: string, ip?: string) => {
+  const currentDate = new Date();
+
+  const monthsArray = Array.from({ length: 12 }, (_, i) => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+    date.setDate(1);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }).reverse();
+
+  const user = await User.findOne({ email }, { _id: 1 }).lean();
+
+  if (!user) throw new BadRequestError(`User with ip ${ip} tried to get access user stats ${email}`);
+
+  const userStats = await Booking.aggregate(userAggregations.getUserStats(currentDate, monthsArray, user._id));
+
+  return userStats[0];
 };

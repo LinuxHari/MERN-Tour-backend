@@ -44,8 +44,8 @@ export const BaseTourSchema = z.object({
     .pipe(
       z
         .string()
-        .min(8, { message: "Tour name should be minimum 8 characters" })
-        .max(60, { message: "Tour name should be maximum 40 characters" })
+        .min(20, { message: "Tour name should be minimum 20 characters" })
+        .max(60, { message: "Tour name should be maximum 60 characters" })
     ),
 
   description: z
