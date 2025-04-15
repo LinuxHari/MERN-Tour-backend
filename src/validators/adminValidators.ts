@@ -2,6 +2,7 @@ import { z } from "zod";
 import { CATEGORIES, LANGUAGES, MIN_AGE } from "../config/tourConfig";
 import removeSpaces from "../utils/removeSpaces";
 import { parseToInt } from "../utils/schemaUtils";
+import { EmailSchema } from "./authValidators";
 
 const allowedAges = Object.values(MIN_AGE);
 
@@ -268,6 +269,13 @@ export const PublishedTourSchema = z
   })
   .merge(PageSchema)
   .merge(LimitSchema);
+
+export const UsersSchema = PageSchema.merge(
+  z.object({
+    limit: LimitSchema.shape.limit,
+    email: EmailSchema.shape.email.optional()
+  })
+);
 
 export const TourSchema = BaseTourSchema.extend(LocationSchema.shape);
 

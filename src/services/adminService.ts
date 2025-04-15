@@ -10,6 +10,7 @@ import adminAggregations from "../aggregations/adminAggregations";
 import Availability from "../models/availabilityModel";
 import { stripeRefund } from "./stripeService";
 import { sendBookingMail } from "./emailService";
+import User from "../models/userModel";
 
 export const createTour = async (tourData: TourSchemaType) => {
   const createDestination = async (
@@ -249,4 +250,26 @@ export const getAllStats = async () => {
 export const getTotalBookings = async (page: number, status: string, limit: number, bookingId?: string) => {
   const totalBookings = await Booking.aggregate(adminAggregations.getBookings(page, status, limit, bookingId));
   return { bookings: totalBookings, totalPages: Math.ceil(totalBookings.length / limit) };
+};
+
+export const getAllUsers = async (page: number, limit: number, email: string) => {
+  const options = { favorites: 0, _id: 0, publishedTours: 0, __v: 0, password: 0, role: 0 };
+  if (email) {
+    const user = await User.findOne({ email, isDeleted: false }, options);
+    if (user) return { users: [user], totalPages: 1 };
+    return { users: [], totalPages: 0 };
+  } else {
+    const users = await User.find({ isDeleted: false }, options)
+      .sort({ _id: 1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+    return { users, totalPages: Math.ceil(users.length / 10) };
+  }
+};
+
+export const deleteExistingUser = async (email: string) => {
+  const user = await User.findOne({ email });
+  if (!user) throw new BadRequestError(`User with ${email} is not available so it can not be deleted.`);
+  user.isDeleted = true;
+  await user.save();
 };

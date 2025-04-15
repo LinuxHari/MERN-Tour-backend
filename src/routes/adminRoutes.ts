@@ -6,12 +6,15 @@ import {
   deleteTour,
   updateTour,
   getTour,
-  getBookings
+  getBookings,
+  getUsers,
+  deleteUser
 } from "../controllers/adminControllers";
-import { BaseTourSchema, PublishedTourSchema, TourSchema } from "../validators/adminValidators";
+import { BaseTourSchema, PublishedTourSchema, TourSchema, UsersSchema } from "../validators/adminValidators";
 import requestHandler from "../handlers/requestHandler";
 import { BookingTourParamSchema, SingleTourParamSchema } from "../validators/tourValidators";
 import { UserBookings } from "../validators/userValidators";
+import { EmailSchema } from "../validators/authValidators";
 
 const router = Router();
 
@@ -28,5 +31,7 @@ router.delete("/tour/:tourId", requestHandler(SingleTourParamSchema, "params"), 
 router.get("/stats", getStats);
 router.get("/bookings", requestHandler(UserBookings, "query"), getBookings);
 router.post("/bookings/:bookingId/cancel", requestHandler(BookingTourParamSchema, "params"), getBookings);
+router.get("/users", requestHandler(UsersSchema, "query"), getUsers);
+router.delete("/users", requestHandler(EmailSchema, "query"), deleteUser);
 
 export default router;
