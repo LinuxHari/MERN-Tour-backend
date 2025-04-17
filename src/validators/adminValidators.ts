@@ -277,6 +277,8 @@ export const UsersSchema = PageSchema.merge(
   })
 );
 
+export const ReviewSchema = LimitSchema.merge(PageSchema);
+
 export const TourSchema = BaseTourSchema.extend(LocationSchema.shape);
 
 export type TourSchemaType = z.infer<typeof TourSchema>;

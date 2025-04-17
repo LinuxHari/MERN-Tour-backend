@@ -519,34 +519,72 @@ export const cancelBookedTour = async (bookingId: string, email: string) => {
   await booking.save();
 };
 
+const updateOverallTourReview = async (tourId: mongoose.Types.ObjectId) => {
+  const result = await Review.aggregate(tourAggregations.getTourReviews(tourId));
+
+  if (result.length > 0) {
+    const { totalRatings, averageRating } = result[0];
+
+    await Tour.findByIdAndUpdate(tourId, { totalRatings, averageRating }, { new: true, runValidators: true });
+  }
+};
+
 export const tourReview = async (review: RatingType, tourId: string, email: string) => {
   const user = await User.findOne({ email, isVerified: true }, { _id: 1 }).lean();
   const tour = await Tour.findOne({ tourId }, { _id: 1 }).lean();
   if (!user) throw new BadRequestError(`User with ${email} does not exist and tried to put review`);
   if (!tour) throw new BadRequestError(`Tour with ${tourId} does not exist and happened to put review`);
+  const booking = await Booking.findOne({ tourId, userId: user._id }, { _id: 1 });
+  if (!booking) throw new BadRequestError(`User ${user._id} have not booked tour ${tourId} but tried to put review`);
   await Review.create({
     userId: user._id,
     tourId: tour._id,
     ...review
   });
 
-  const result = await Review.aggregate(tourAggregations.getTourReviews(tour._id));
-
-  if (result.length > 0) {
-    const { totalRatings, averageRating } = result[0];
-
-    await Tour.findByIdAndUpdate(tour._id, { totalRatings, averageRating }, { new: true, runValidators: true });
-  }
+  await updateOverallTourReview(tour._id);
 };
 
-export const getTourReview = async (tourId: string, limit: number) => {
+export const updateTourReview = async (review: RatingType, tourId: string, email: string) => {
+  const user = await User.findOne({ email, isVerified: true }, { _id: 1 }).lean();
+  const tour = await Tour.findOne({ tourId }, { _id: 1 }).lean();
+  if (!user) throw new BadRequestError(`User with ${email} does not exist and tried to update review`);
+  if (!tour) throw new BadRequestError(`Tour with ${tourId} does not exist and happened to update review`);
+  const booking = await Booking.findOne({ tourId, userId: user._id }, { _id: 1 });
+  if (!booking) throw new BadRequestError(`User ${user._id} have not booked tour ${tourId} but tried to update review`);
+
+  const existingReview = await Review.findOneAndUpdate({
+    userId: user._id,
+    tourId: tour._id,
+    ...review
+  });
+
+  if (!existingReview) throw new BadRequestError(`Review from ${user._id} for tour ${tour._id} does not exist`);
+
+  await updateOverallTourReview(tour._id);
+};
+
+export const getTourReview = async (tourId: string, limit: number, email?: string) => {
   const tour = await Tour.findOne({ tourId }, { _id: 1 }).lean();
   if (!tour) {
     throw new BadRequestError(`Tour with ${tourId} id does not exist and happened to access review`);
   }
 
-  const reviews = await Review.aggregate(tourAggregations.getReviews(tour._id, limit));
+  const reviews = await Review.aggregate(tourAggregations.getReviews(tour._id, limit, email));
   return reviews[0];
+};
+
+export const deleteTourReview = async (tourId: string, email: string) => {
+  const user = await User.findOne({ email }, { _id: 1 }).lean();
+  if (!user) throw new BadRequestError(`Invalid user with ${email} tried to delete review for tour ${tourId}`);
+  const tour = await Tour.findOne({ tourId }, { _id: 1 }).lean();
+  if (!tour)
+    throw new BadRequestError(
+      `Tour with ${tourId} id does not exist and happened to delete review for user with email ${email}`
+    );
+
+  await Review.deleteOne({ userId: user._id, tourId: tour._id });
+  await updateOverallTourReview(tour._id);
 };
 
 export const getTopPopularTours = async (limit: number) => {

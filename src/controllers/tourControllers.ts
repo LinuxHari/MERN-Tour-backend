@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import {
   bookReservedTour,
   cancelBookedTour,
+  deleteTourReview,
   getBooking,
   getReservedDetails,
   getSingleTourAvailability,
@@ -13,7 +14,8 @@ import {
   getToursByCategory,
   reserveTour,
   searchSuggestions,
-  tourReview
+  tourReview,
+  updateTourReview
 } from "../services/tourService";
 import responseHandler from "../handlers/responseHandler";
 import asyncWrapper from "../asyncWrapper";
@@ -67,18 +69,29 @@ export const bookTour = asyncWrapper(async (req: Request, res: Response) => {
 
 export const cancelBooking = asyncWrapper(async (req: Request, res: Response) => {
   await cancelBookedTour(req.params.bookingId, res.locals.email);
-  responseHandler.ok(res, { status: "Canceled" });
+  responseHandler.ok(res, { status: "canceled" });
 });
 
 export const reviewTour = asyncWrapper(async (req: Request, res: Response) => {
   await tourReview(req.body, req.params.tourId, res.locals.email);
-  responseHandler.ok(res, {});
+  responseHandler.ok(res, { message: "success" });
+});
+
+export const updateReview = asyncWrapper(async (req: Request, res: Response) => {
+  await updateTourReview(req.body, req.params.tourId, res.locals.email);
+  responseHandler.ok(res, { message: "success" });
 });
 
 export const getReview = asyncWrapper(async (req: Request, res: Response) => {
   const limit = typeof req.query.limit === "number" ? req.query.limit : 10;
-  const reviews = await getTourReview(req.params.tourId, limit);
+  const { data } = verifyToken(req.signedCookies["authToken"]);
+  const reviews = await getTourReview(req.params.tourId, limit, data?.email);
   responseHandler.ok(res, reviews);
+});
+
+export const deleteReview = asyncWrapper(async (req: Request, res: Response) => {
+  await deleteTourReview(req.params.tourId, res.locals.email);
+  responseHandler.ok(res, { message: "success" });
 });
 
 export const getPopularTours = asyncWrapper(async (req: Request, res: Response) => {

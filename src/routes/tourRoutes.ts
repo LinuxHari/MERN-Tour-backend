@@ -3,6 +3,7 @@ import {
   bookedTour,
   bookTour,
   cancelBooking,
+  deleteReview,
   getPopularTours,
   getReview,
   getTourAvailability,
@@ -13,7 +14,8 @@ import {
   search,
   tour,
   tours,
-  toursByCategory
+  toursByCategory,
+  updateReview
 } from "../controllers/tourControllers";
 import requestHandler from "../handlers/requestHandler";
 import {
@@ -29,7 +31,7 @@ import {
   CategorySchema
 } from "../validators/tourValidators";
 import verifyAuthToken from "../middlewares/verifyAuthToken";
-import { LimitSchema } from "../validators/adminValidators";
+import { LimitSchema, ReviewSchema } from "../validators/adminValidators";
 
 const router = Router();
 
@@ -53,7 +55,7 @@ router.post(
 router.get(
   "/review/:tourId",
   requestHandler(SingleTourParamSchema, "params"),
-  requestHandler(LimitSchema, "query"),
+  requestHandler(ReviewSchema, "query"),
   getReview
 );
 router.post(
@@ -63,6 +65,16 @@ router.post(
   requestHandler(RatingSchema),
   reviewTour
 );
+router.put(
+  "/review/:tourId",
+  verifyAuthToken,
+  requestHandler(SingleTourParamSchema, "params"),
+  requestHandler(RatingSchema),
+  updateReview
+);
+
+router.delete("/review/:tourId", verifyAuthToken, requestHandler(SingleTourParamSchema, "params"), deleteReview);
+
 router.get("/popular", requestHandler(LimitSchema, "query"), getPopularTours);
 router.get("/trending", requestHandler(LimitSchema, "query"), getTrendingTours);
 

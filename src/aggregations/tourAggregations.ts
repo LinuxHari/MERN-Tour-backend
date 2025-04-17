@@ -496,80 +496,160 @@ const tourAggregations = {
       }
     ];
   },
-  getReviews: (tourId: Types.ObjectId, limit: number) =>
-    [
+  getReviews: (tourId: Types.ObjectId, limit: number, email?: string, page: number = 1) => {
+    const needUserReview = page === 1 && email !== undefined;
+    const effectiveLimit = needUserReview ? limit - 1 : limit;
+    const skip = page > 1 ? (page - 1) * limit : 0;
+
+    const pipeline: PipelineStage[] = [
       {
-        $match: { tourId }
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "userId",
-          foreignField: "_id",
-          as: "userInfo"
-        }
-      },
-      {
-        $unwind: {
-          path: "$userInfo"
-        }
-      },
-      {
-        $addFields: {
-          userName: { $concat: ["$userInfo.firstName", " ", "$userInfo.lastName"] },
-          individualRating: {
-            $avg: ["$ratings.Location", "$ratings.Amenities", "$ratings.Food", "$ratings.Room", "$ratings.Price"]
-          },
-          profile: "$userInfo.profile" // Add profile from userModel
-        }
-      },
-      {
-        $sort: { createdAt: -1 }
-      },
-      {
-        $limit: limit
-      },
-      {
-        $group: {
-          _id: null,
-          overallRating: {
-            $avg: {
-              $avg: ["$ratings.Location", "$ratings.Amenities", "$ratings.Food", "$ratings.Room", "$ratings.Price"]
+        $facet: {
+          allStats: [
+            { $match: { tourId } },
+            {
+              $lookup: {
+                from: "users",
+                localField: "userId",
+                foreignField: "_id",
+                as: "userInfo"
+              }
+            },
+            { $unwind: { path: "$userInfo" } },
+            {
+              $group: {
+                _id: null,
+                overallRating: {
+                  $avg: {
+                    $avg: [
+                      "$ratings.Location",
+                      "$ratings.Amenities",
+                      "$ratings.Food",
+                      "$ratings.Room",
+                      "$ratings.Price"
+                    ]
+                  }
+                },
+                location: { $avg: "$ratings.Location" },
+                food: { $avg: "$ratings.Food" },
+                price: { $avg: "$ratings.Price" },
+                rooms: { $avg: "$ratings.Room" },
+                amenities: { $avg: "$ratings.Amenities" },
+                totalCount: { $sum: 1 }
+              }
             }
-          },
-          location: { $avg: "$ratings.Location" },
-          food: { $avg: "$ratings.Food" },
-          price: { $avg: "$ratings.Price" },
-          rooms: { $avg: "$ratings.Room" },
-          amenities: { $avg: "$ratings.Amenities" },
-          totalCount: { $sum: 1 },
-          userReviews: {
-            $push: {
-              name: "$userName",
-              profile: "$profile",
-              postedAt: "$createdAt",
-              overallRating: "$individualRating",
-              title: "$title",
-              comment: "$comment"
+          ],
+          userReview: needUserReview
+            ? [
+                { $match: { tourId } },
+                {
+                  $lookup: {
+                    from: "users",
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "userInfo"
+                  }
+                },
+                { $unwind: { path: "$userInfo" } },
+                { $match: { "userInfo.email": email } },
+                { $limit: 1 },
+                {
+                  $addFields: {
+                    userName: { $concat: ["$userInfo.firstName", " ", "$userInfo.lastName"] },
+                    individualRating: {
+                      $avg: [
+                        "$ratings.Location",
+                        "$ratings.Amenities",
+                        "$ratings.Food",
+                        "$ratings.Room",
+                        "$ratings.Price"
+                      ]
+                    },
+                    isUserReview: true
+                  }
+                },
+                {
+                  $project: {
+                    _id: 0,
+                    name: "$userName",
+                    profile: "$profile",
+                    postedAt: "$createdAt",
+                    overallRating: "$individualRating",
+                    title: "$title",
+                    comment: "$comment",
+                    isUserReview: 1,
+                    ratings: "$ratings"
+                  }
+                }
+              ]
+            : [],
+          otherReviews: [
+            { $match: { tourId } },
+            {
+              $lookup: {
+                from: "users",
+                localField: "userId",
+                foreignField: "_id",
+                as: "userInfo"
+              }
+            },
+            { $unwind: { path: "$userInfo" } },
+            ...(needUserReview ? [{ $match: { "userInfo.email": { $ne: email } } }] : []),
+            {
+              $addFields: {
+                userName: { $concat: ["$userInfo.firstName", " ", "$userInfo.lastName"] },
+                individualRating: {
+                  $avg: ["$ratings.Location", "$ratings.Amenities", "$ratings.Food", "$ratings.Room", "$ratings.Price"]
+                }
+              }
+            },
+            { $sort: { createdAt: -1 } },
+            { $skip: skip },
+            { $limit: effectiveLimit },
+            {
+              $project: {
+                _id: 0,
+                name: "$userName",
+                profile: "$profile",
+                postedAt: "$createdAt",
+                overallRating: "$individualRating",
+                title: "$title",
+                comment: "$comment"
+              }
             }
+          ]
+        }
+      },
+      {
+        $match: {
+          $expr: {
+            $gt: [{ $arrayElemAt: ["$allStats.totalCount", 0] }, 0]
           }
         }
       },
       {
         $project: {
-          _id: 0,
-          overallRating: 1,
-          location: 1,
-          food: 1,
-          price: 1,
-          rooms: 1,
-          amenities: 1,
-          totalCount: 1,
-          userReviews: 1
+          overallRating: {
+            $round: [{ $arrayElemAt: ["$allStats.overallRating", 0] }, 1]
+          },
+          location: { $arrayElemAt: ["$allStats.location", 0] },
+          food: { $arrayElemAt: ["$allStats.food", 0] },
+          price: { $arrayElemAt: ["$allStats.price", 0] },
+          rooms: { $arrayElemAt: ["$allStats.rooms", 0] },
+          amenities: { $arrayElemAt: ["$allStats.amenities", 0] },
+          totalCount: { $arrayElemAt: ["$allStats.totalCount", 0] },
+          userReviews: {
+            $cond: {
+              if: { $and: [needUserReview, { $gt: [{ $size: "$userReview" }, 0] }] },
+              then: { $concatArrays: ["$userReview", "$otherReviews"] },
+              else: "$otherReviews"
+            }
+          }
         }
       }
-    ] as PipelineStage[],
+    ];
 
+    return pipeline;
+  },
   getTourReviews: (tourId: Types.ObjectId): PipelineStage[] => [
     { $match: { tourId: tourId } },
     {
