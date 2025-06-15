@@ -6,7 +6,7 @@ import { BOOKING_STATUS } from "../config/userConfig";
 import { BookingTourParamSchema } from "./tourValidators";
 
 export const TokenSchema = z.object({
-  authToken: z.string()
+  accessToken: z.string()
 });
 
 export const UserSchema = z

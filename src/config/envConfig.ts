@@ -16,7 +16,8 @@ const envConfig = {
   backend: process.env.BACKEND_URL,
   emailUser: process.env.EMAIL_USER,
   emailPass: process.env.EMAIL_PASS,
-  exchangeKey: process.env.EXCHANGE_API_KEY
+  exchangeKey: process.env.EXCHANGE_API_KEY,
+  redisUri: process.env.REDIS_URI
 } as const;
 
 export default envConfig;

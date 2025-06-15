@@ -1,7 +1,7 @@
 import { ReserveTourType } from "./validators/tourValidators";
 
 export type JwtData = {
-  email: string;
+  id: string;
   role?: string;
 };
 
@@ -23,6 +23,13 @@ export type CookieData = {
   expires: Date;
   maxAge: number;
   data: string;
+};
+
+export type RedisUserSession = {
+  userId: string;
+  userAgent: string;
+  lastSeen: number;
+  issuedAt: number;
 };
 
 export type Currency = ReserveTourType["currency"];

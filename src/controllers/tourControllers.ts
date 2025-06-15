@@ -28,69 +28,69 @@ export const search = asyncWrapper(async (req: Request, res: Response) => {
 });
 
 export const tours = asyncWrapper(async (req: Request, res: Response) => {
-  const { data } = verifyToken(req.signedCookies["authToken"]);
-  const tours = await getTours(Object(req.query), data?.email);
+  const { data } = verifyToken(req.signedCookies["accessToken"]);
+  const tours = await getTours(Object(req.query), data?.id);
   responseHandler.ok(res, tours);
 });
 
 export const toursByCategory = asyncWrapper(async (req: Request, res: Response) => {
-  const { data } = verifyToken(req.signedCookies["authToken"]);
+  const { data } = verifyToken(req.signedCookies["accessToken"]);
   const category = req.params.category;
   const limit = typeof req.query.limit === "number" ? req.query.limit : 10;
-  const tours = await getToursByCategory(Object(req.query), category, limit, data?.email);
+  const tours = await getToursByCategory(Object(req.query), category, limit, data?.id);
   responseHandler.ok(res, tours);
 });
 
 export const tour = asyncWrapper(async (req: Request, res: Response) => {
-  const { data } = verifyToken(req.signedCookies["authToken"]);
-  const tour = await getTour(req.params.tourId, data?.email);
+  const { data } = verifyToken(req.signedCookies["accessToken"]);
+  const tour = await getTour(req.params.tourId, data?.id);
   responseHandler.ok(res, tour);
 });
 
 export const reserve = asyncWrapper(async (req: Request, res: Response) => {
-  const reserveId = await reserveTour(req.body, res.locals.email);
+  const reserveId = await reserveTour(req.body, res.locals.id);
   responseHandler.ok(res, { reserveId });
 });
 
 export const reservedDetails = asyncWrapper(async (req: Request, res: Response) => {
-  const reserved = await getReservedDetails(req.params.reserveId, res.locals.email);
+  const reserved = await getReservedDetails(req.params.reserveId, res.locals.id);
   responseHandler.ok(res, reserved);
 });
 
 export const bookedTour = asyncWrapper(async (req: Request, res: Response) => {
-  const booking = await getBooking(req.params.bookingId, res.locals.email);
+  const booking = await getBooking(req.params.bookingId, res.locals.id);
   responseHandler.ok(res, booking);
 });
 
 export const bookTour = asyncWrapper(async (req: Request, res: Response) => {
-  const { clientSecret, bookingId } = await bookReservedTour(req.body, req.params.reserveId, res.locals.email);
+  const { clientSecret, bookingId } = await bookReservedTour(req.body, req.params.reserveId, res.locals.id);
   responseHandler.ok(res, { clientSecret, bookingId });
 });
 
 export const cancelBooking = asyncWrapper(async (req: Request, res: Response) => {
-  await cancelBookedTour(req.params.bookingId, res.locals.email);
+  await cancelBookedTour(req.params.bookingId, res.locals.id);
   responseHandler.ok(res, { status: "canceled" });
 });
 
 export const reviewTour = asyncWrapper(async (req: Request, res: Response) => {
-  await tourReview(req.body, req.params.tourId, res.locals.email);
+  await tourReview(req.body, req.params.tourId, res.locals.id);
   responseHandler.ok(res, { message: "success" });
 });
 
 export const updateReview = asyncWrapper(async (req: Request, res: Response) => {
-  await updateTourReview(req.body, req.params.tourId, res.locals.email);
+  await updateTourReview(req.body, req.params.tourId, res.locals.id);
   responseHandler.ok(res, { message: "success" });
 });
 
 export const getReview = asyncWrapper(async (req: Request, res: Response) => {
   const limit = typeof req.query.limit === "number" ? req.query.limit : 10;
-  const { data } = verifyToken(req.signedCookies["authToken"]);
-  const reviews = await getTourReview(req.params.tourId, limit, data?.email);
+  const { data } = verifyToken(req.signedCookies["accessToken"]);
+  const reviews = await getTourReview(req.params.tourId, limit, data?.id);
   responseHandler.ok(res, reviews);
 });
 
 export const deleteReview = asyncWrapper(async (req: Request, res: Response) => {
-  await deleteTourReview(req.params.tourId, res.locals.email);
+  await deleteTourReview(req.params.tourId, res.locals.id);
   responseHandler.ok(res, { message: "success" });
 });
 

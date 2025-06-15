@@ -89,7 +89,7 @@ The backend is built with a strong emphasis on security, implementing measures t
 git clone https://github.com/LinuxHari/MERN-tour-backend
 
 # Navigate to the backend directory
-cd mern-tours-backend # Or whatever your backend folder is named
+cd MERN-tour-backend
 
 # Install dependencies
 npm install # Or yarn install

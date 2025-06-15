@@ -172,9 +172,9 @@ const userAggregations = {
       }
     }
   ],
-  getFavoriteToursIds: (email: string) => [
+  getFavoriteToursIds: (userId: string) => [
     {
-      $match: { email, isVerified: true }
+      $match: { _id: new mongoose.Types.ObjectId(userId), isVerified: true }
     },
     {
       $lookup: {

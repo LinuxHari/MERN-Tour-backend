@@ -68,18 +68,16 @@ const manyRequests = (res: Response) =>
   });
 
 const setCookie = (res: Response, { cookieName, expires, maxAge, data }: CookieData) =>
-  res
-    .cookie(cookieName, data, {
-      signed: true,
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge,
-      expires
-    })
-    .send();
+  res.cookie(cookieName, data, {
+    signed: true,
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge,
+    expires
+  });
 
-const clearCookie = (res: Response, cookieName: string) => res.clearCookie(cookieName).send();
+const clearCookie = (res: Response, cookieName: string) => res.clearCookie(cookieName);
 
 const responseHandler = {
   error,

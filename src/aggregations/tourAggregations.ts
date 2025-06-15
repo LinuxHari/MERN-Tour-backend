@@ -1,4 +1,4 @@
-import { PipelineStage, Types } from "mongoose";
+import mongoose, { PipelineStage, Types } from "mongoose";
 import { ToursParams, ToursByCategoryParams } from "./type";
 
 const destinationPipe = [
@@ -415,29 +415,16 @@ const tourAggregations = {
       }
     ];
   },
-  getTour: (tourId: string, email?: string) => {
+  getTour: (tourId: string, userId?: string) => {
     return [
       { $match: { tourId } },
       ...destinationPipe,
-      ...(email
+      ...(userId
         ? [
             {
               $lookup: {
-                from: "users",
-                let: { userEmail: email },
-                pipeline: [{ $match: { $expr: { $eq: ["$email", "$$userEmail"] } } }, { $project: { _id: 1 } }],
-                as: "userInfo"
-              }
-            },
-            {
-              $set: {
-                userId: { $arrayElemAt: ["$userInfo._id", 0] }
-              }
-            },
-            {
-              $lookup: {
                 from: "bookings",
-                let: { tourId: "$tourId", userId: "$userId" },
+                let: { tourId: "$tourId", userId: new mongoose.Types.ObjectId(userId) },
                 pipeline: [
                   {
                     $match: {
@@ -496,8 +483,8 @@ const tourAggregations = {
       }
     ];
   },
-  getReviews: (tourId: Types.ObjectId, limit: number, email?: string, page: number = 1) => {
-    const needUserReview = page === 1 && email !== undefined;
+  getReviews: (tourId: Types.ObjectId, limit: number, userId?: string, page: number = 1) => {
+    const needUserReview = page === 1 && userId !== undefined;
     const effectiveLimit = needUserReview ? limit - 1 : limit;
     const skip = page > 1 ? (page - 1) * limit : 0;
 
@@ -541,6 +528,7 @@ const tourAggregations = {
           userReview: needUserReview
             ? [
                 { $match: { tourId } },
+                { $match: { userId: new mongoose.Types.ObjectId(userId) } },
                 {
                   $lookup: {
                     from: "users",
@@ -550,7 +538,6 @@ const tourAggregations = {
                   }
                 },
                 { $unwind: { path: "$userInfo" } },
-                { $match: { "userInfo.email": email } },
                 { $limit: 1 },
                 {
                   $addFields: {
@@ -584,6 +571,7 @@ const tourAggregations = {
             : [],
           otherReviews: [
             { $match: { tourId } },
+            ...(needUserReview ? [{ $match: { userId: { $ne: new mongoose.Types.ObjectId(userId) } } }] : []), // Changed to match userId directly
             {
               $lookup: {
                 from: "users",
@@ -593,7 +581,6 @@ const tourAggregations = {
               }
             },
             { $unwind: { path: "$userInfo" } },
-            ...(needUserReview ? [{ $match: { "userInfo.email": { $ne: email } } }] : []),
             {
               $addFields: {
                 userName: { $concat: ["$userInfo.firstName", " ", "$userInfo.lastName"] },
