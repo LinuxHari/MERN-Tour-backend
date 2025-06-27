@@ -13,7 +13,9 @@ export const verifyToken = (token: string) => {
   try {
     const data = jwt.verify(token, envConfig.jwtSecret as string) as JwtData;
     return { error: false, data };
-  } catch (_) {
+  } catch (err) {
+    console.log(err, "errot jwt");
+
     return { error: true, data: null };
   }
 };

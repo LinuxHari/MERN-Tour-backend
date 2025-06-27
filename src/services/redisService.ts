@@ -18,7 +18,11 @@ redisClient
 
 const setUserSession = async (userSessionData: RedisUserSession, refreshToken: string) => {
   const sessionKey = redisKeys.getSessionKey(refreshToken);
-  await redisClient.multi().hSet(sessionKey, userSessionData).expire(sessionKey, REFRESH_TOKEN_EXPIRY).execAsPipeline();
+  await redisClient
+    .multi()
+    .hSet(sessionKey, userSessionData)
+    .expire(sessionKey, REFRESH_TOKEN_EXPIRY * 1000)
+    .execAsPipeline();
 };
 
 const getUserSession = async (refreshToken: string) => await redisClient.hGetAll(redisKeys.getSessionKey(refreshToken));

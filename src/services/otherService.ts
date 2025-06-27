@@ -8,7 +8,6 @@ export const getNewUserTokens = async (refreshToken: string) => {
   if (!refreshToken) throw new UnauthroizedError(`Invalid refresh token ${refreshToken}`);
 
   const userSession = await redis.getUserSession(refreshToken);
-
   if (!Object.keys(userSession).length) throw new UnauthroizedError(`Invalid refresh token ${refreshToken}`);
 
   await redis.removeSessionToken(userSession.userId, refreshToken);

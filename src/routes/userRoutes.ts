@@ -29,7 +29,6 @@ import {
 } from "../validators/userValidators";
 import verifyAuthToken from "../middlewares/verifyAuthToken";
 import { SingleTourParamSchema } from "../validators/tourValidators";
-import { PageSchema } from "../validators/adminValidators";
 
 const router = express.Router();
 

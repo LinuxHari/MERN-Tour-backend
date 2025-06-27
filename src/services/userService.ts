@@ -31,7 +31,7 @@ export const sendUserResetPassMail = async (email: string) => {
   const user = await User.findOne({ email, isDeleted: false }, { firstName: 1, lastName: 1 }).lean();
   if (!user) throw new BadRequestError(`Invalid email ${email} sent to verification process`);
   const token = generateToken({ id: String(user._id) });
-  await sendResetPassMail(user.email, token, `${user.firstName} ${user.lastName}`);
+  await sendResetPassMail(email, token, `${user.firstName} ${user.lastName}`);
 };
 
 export const verifyUserResetToken = async (token: string) => {
@@ -118,7 +118,7 @@ export const updateUserPassword = async ({ newPassword, oldPassword }: PasswordS
   if (!user) throw new BadRequestError(`User with id ${id} does not exist`);
   const isValidPassword = await user.validatePassword(oldPassword);
   if (!isValidPassword) throw new BadRequestError("Invalid password");
-  user.hashPassword(newPassword);
+  await user.hashPassword(newPassword);
   await user.save();
 };
 
@@ -128,7 +128,8 @@ export const updateUserResetPassword = async (newPassword: string, token: string
   const user = await User.findOne({ _id: new mongoose.Types.ObjectId(data.id), isDeleted: false });
   if (!user) throw new BadRequestError(`User with id ${data.id} does not exist`);
   if (!user.isVerified) throw new UnauthroizedError(`User email ${user.email} is not verified`);
-  user.hashPassword(newPassword);
+  await user.hashPassword(newPassword);
+  console.log(user, "user info");
   await user.save();
 };
 

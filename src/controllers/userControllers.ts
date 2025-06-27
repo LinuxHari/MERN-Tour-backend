@@ -72,12 +72,12 @@ export const sendResetPassMail = asyncWrapper(async (req: Request, res: Response
 });
 
 export const verifyResetToken = asyncWrapper(async (req: Request, res: Response) => {
-  await verifyUserResetToken(req.body.authToken);
+  await verifyUserResetToken(req.body.accessToken);
   responseHandler.ok(res, { message: "success" });
 });
 
 export const updateResetPassword = asyncWrapper(async (req: Request, res: Response) => {
-  await updateUserResetPassword(req.body.newPassword, req.body.authToken);
+  await updateUserResetPassword(req.body.newPassword, req.body.accessToken);
   responseHandler.ok(res, { message: "success" });
 });
 

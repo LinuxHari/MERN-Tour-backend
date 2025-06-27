@@ -63,7 +63,8 @@ const userSchema = new mongoose.Schema(
 
 userSchema.method("hashPassword", async function (password: string) {
   const saltCount = 10;
-  this.password = await bcrypt.hash(password, saltCount);
+  const hash = await bcrypt.hash(password, saltCount);
+  this.password = hash;
 });
 
 userSchema.method("validatePassword", async function (oldPassword: string): Promise<boolean> {
@@ -73,7 +74,7 @@ userSchema.method("validatePassword", async function (oldPassword: string): Prom
 export type UserModel = InferSchemaType<typeof userSchema>;
 
 type Methods = {
-  hashPassword: (password: string) => void;
+  hashPassword: (password: string) => Promise<void>;
   validatePassword: (oldPassword: string) => Promise<boolean>;
 };
 

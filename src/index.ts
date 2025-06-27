@@ -32,7 +32,7 @@ app.use(speedLimiter);
 app.use(
   cors({
     origin: envConfig.frontend,
-    methods: "GET,PUT,POST,DELETE",
+    methods: "GET,PUT,PATCH,POST,DELETE",
     credentials: true
   })
 );
