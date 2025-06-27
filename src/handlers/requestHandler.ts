@@ -16,7 +16,7 @@ const requestHandler =
   (schema: ZodType<any, any>, dataToValidate: DataToValidate = "body") =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      req["validatedQuery"] = await schema.parseAsync(req[dataToValidate]);
+      req[dataToValidate] = await schema.parseAsync(req[dataToValidate]);
       next();
     } catch (err) {
       if (err instanceof ZodError) {
