@@ -191,14 +191,6 @@ export const getUserBookings = async (
 export const getStats = async (id: string, ip?: string) => {
   const currentDate = new Date();
 
-  const monthsArray = Array.from({ length: 12 }, (_, i) => {
-    const date = new Date();
-    date.setMonth(date.getMonth() - i);
-    date.setDate(1);
-    date.setHours(0, 0, 0, 0);
-    return date;
-  }).reverse();
-
   const user = await User.findOne(
     { _id: new mongoose.Types.ObjectId(id), isDeleted: false, isVerified: true },
     { _id: 1 }
@@ -206,7 +198,7 @@ export const getStats = async (id: string, ip?: string) => {
 
   if (!user) throw new BadRequestError(`User with ip ${ip} tried to get access user stats ${id}`);
 
-  const userStats = await Booking.aggregate(userAggregations.getUserStats(currentDate, monthsArray, user._id));
+  const userStats = await Booking.aggregate(userAggregations.getUserStats(currentDate, user._id));
 
   return userStats[0];
 };

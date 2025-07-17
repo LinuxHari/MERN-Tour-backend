@@ -34,7 +34,7 @@ const router = express.Router();
 
 router.post("/signup", requestHandler(SignupSchema), signup);
 router.post("/login", requestHandler(LoginSchema), login);
-router.post("/logout", verifyAuthToken, requestHandler(TokenSchema, "signedCookies"), logout);
+router.post("/logout", verifyAuthToken, logout);
 
 router.post("/verify-email", requestHandler(TokenSchema), verifyEmail);
 router.post("/send-verification-email", requestHandler(EmailSchema), sendVerificationMail);

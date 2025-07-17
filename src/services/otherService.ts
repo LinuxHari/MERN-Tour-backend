@@ -37,9 +37,6 @@ export const getNewUserTokens = async (refreshToken: string) => {
 };
 
 export const removeUserSession = async (userId: string, accessToken: string, refreshToken: string) => {
-  if (!accessToken) throw new UnauthroizedError(`User session was try to be removed with invalid access token`);
-  if (!refreshToken) throw new UnauthroizedError(`User session was try to be removed with invalid refresh token`);
-
   const userSessionData = await redis.getUserSession(refreshToken);
 
   if (userSessionData) await redis.removeSessionToken(userId, refreshToken);

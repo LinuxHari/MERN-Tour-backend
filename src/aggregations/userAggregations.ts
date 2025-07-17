@@ -212,7 +212,7 @@ const userAggregations = {
       }
     }
   ],
-  getUserStats: (currentDate: Date, monthsArray: Date[], userId: mongoose.Types.ObjectId): PipelineStage[] => [
+  getUserStats: (currentDate: Date, userId: mongoose.Types.ObjectId): PipelineStage[] => [
     {
       $match: {
         userId: new mongoose.Types.ObjectId(userId),
@@ -304,16 +304,29 @@ const userAggregations = {
             $project: {
               startDate: 1,
               endDate: 1,
-              monthRanges: monthsArray.map((monthStart, i) => {
-                const monthEnd = new Date(monthStart);
-                monthEnd.setMonth(monthEnd.getMonth() + 1);
-
-                return {
-                  monthIndex: i,
-                  monthStart,
-                  monthEnd
-                };
-              })
+              monthRanges: {
+                $map: {
+                  input: [...Array(12).keys()],
+                  as: "i",
+                  in: {
+                    monthIndex: "$$i",
+                    monthStart: {
+                      $dateFromParts: {
+                        year: { $year: "$startDate" },
+                        month: { $add: ["$$i", 1] },
+                        day: 1
+                      }
+                    },
+                    monthEnd: {
+                      $dateFromParts: {
+                        year: { $year: "$startDate" },
+                        month: { $add: ["$$i", 2] },
+                        day: 1
+                      }
+                    }
+                  }
+                }
+              }
             }
           },
           { $unwind: "$monthRanges" },
@@ -377,11 +390,21 @@ const userAggregations = {
           {
             $group: {
               _id: "$monthIndex",
-              days: { $sum: "$daysInMonth" }
+              totalDays: { $sum: "$daysInMonth" }
+            }
+          },
+          { $sort: { _id: 1 } },
+          {
+            $group: {
+              _id: null,
+              monthlyData: { $push: "$totalDays" }
             }
           },
           {
-            $sort: { _id: 1 }
+            $project: {
+              _id: 0,
+              monthlyData: 1
+            }
           }
         ]
       }
@@ -392,7 +415,7 @@ const userAggregations = {
         upcomingTrips: { $ifNull: [{ $arrayElemAt: ["$upcomingTrips.count", 0] }, 0] },
         totalDestinations: { $ifNull: [{ $arrayElemAt: ["$totalDestinations.count", 0] }, 0] },
         totalDays: { $ifNull: [{ $arrayElemAt: ["$totalDays.totalDays", 0] }, 0] },
-        monthlyData: "$monthlyData"
+        monthlyData: { $ifNull: [{ $arrayElemAt: ["$monthlyData.monthlyData", 0] }, []] }
       }
     }
   ]
