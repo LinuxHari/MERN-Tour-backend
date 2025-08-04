@@ -212,6 +212,7 @@ const userAggregations = {
       }
     }
   ],
+
   getUserStats: (currentDate: Date, userId: mongoose.Types.ObjectId): PipelineStage[] => [
     {
       $match: {
