@@ -109,8 +109,9 @@ export const updateUserProfile = async (updatedData: UserSchemaType, id: string)
 
   if (!user) throw new NotFoundError("User not found");
 
-  const token = generateToken({ id: String(user._id), role: user.role });
-  return token;
+  const accessToken = generateToken({ id: String(user._id), role: user.role });
+  const refreshToken = generateRefreshToken();
+  return { accessToken, refreshToken };
 };
 
 export const updateUserPassword = async ({ newPassword, oldPassword }: PasswordSchemaType, id: string) => {

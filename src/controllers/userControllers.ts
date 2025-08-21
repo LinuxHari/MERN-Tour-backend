@@ -87,14 +87,22 @@ export const userInfo = asyncWrapper(async (_: Request, res: Response) => {
 });
 
 export const updateProfile = asyncWrapper(async (req: Request, res: Response) => {
-  const authToken = await updateUserProfile(req.body, res.locals.id);
+  const { accessToken, refreshToken } = await updateUserProfile(req.body, res.locals.id);
 
   responseHandler.setCookie(res, {
     cookieName: COOKIE.accessToken,
-    data: authToken,
-    maxAge: 60 * 60 * 24 * 365 * 1000,
-    expires: new Date(Date.now() + 60 * 60 * 24 * 365)
+    data: accessToken,
+    maxAge: ACCESS_TOKEN_EXPIRY * 1000,
+    expires: new Date(Date.now() + ACCESS_TOKEN_EXPIRY)
   });
+
+  responseHandler.setCookie(res, {
+    cookieName: COOKIE.refreshToken,
+    data: refreshToken,
+    maxAge: REFRESH_TOKEN_EXPIRY * 1000,
+    expires: new Date(Date.now() + REFRESH_TOKEN_EXPIRY)
+  });
+
   responseHandler.ok(res, { message: "success" });
 });
 
